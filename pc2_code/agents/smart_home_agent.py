@@ -32,8 +32,8 @@ class SmartHomeAgent(BaseAgent):
     def __init__(self):
         super().__init__(
             name="SmartHomeAgent",
-            port=int(os.getenv('PORT', 7125)),
-            health_port=int(os.getenv('HEALTH_PORT', 8125))
+            port=int(os.getenv('PORT', 7125),
+            health_port=int(os.getenv('HEALTH_PORT', 8125)
         )
         
         # Tapo credentials
@@ -44,7 +44,7 @@ class SmartHomeAgent(BaseAgent):
         self.devices = {}
         self.device_states = {}
         self.last_discovery = 0
-        self.discovery_interval = int(os.getenv('DEVICE_SCAN_INTERVAL', 60))
+        self.discovery_interval = int(os.getenv('DEVICE_SCAN_INTERVAL', 60)
         
         # AI Integration settings
         self.voice_control = os.getenv('VOICE_CONTROL', 'enabled') == 'enabled'
@@ -62,7 +62,7 @@ class SmartHomeAgent(BaseAgent):
         self.logger.info(f"SmartHomeAgent initialized. Voice control: {self.voice_control}")
         
         # Initialize devices
-        asyncio.create_task(self.initialize_devices())
+        asyncio.create_task(self.initialize_devices()
         
     async def initialize_devices(self):
         """Initialize known Tapo devices"""

@@ -60,7 +60,7 @@ for i, phrase in enumerate(test_phrases):
             "source_lang": "tl",
             "target_lang": "en",
             "session_id": "test_session_123",
-            "request_id": f"test_{i}_{int(time.time())}"
+            "request_id": f"test_{i}_{int(time.time()}"
         }
         
         # Send request

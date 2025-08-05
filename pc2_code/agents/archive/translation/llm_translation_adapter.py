@@ -44,7 +44,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "llm_translation_adapter.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "llm_translation_adapter.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -220,7 +220,7 @@ class LLMTranslationAdapter:
             return text
             
         # Remove excessive whitespace
-        text = re.sub(r'\s+', ' ', text.strip())
+        text = re.sub(r'\s+', ' ', text.strip()
         
         # Remove repetitive punctuation (e.g., !!! -> !)
         text = re.sub(r'([!?.,;:]){2,}', r'\1', text)
@@ -246,7 +246,7 @@ class LLMTranslationAdapter:
             dict: Translation result with metadata
         """
         # Generate a unique request ID for tracking
-        request_id = str(uuid.uuid4())[:8]
+        request_id = str(uuid.uuid4()[:8]
         
         if not text or text.strip() == "":
             return {"status": "success", "success": True, "translated": text, "message": "Empty text provided", "request_id": request_id}
@@ -259,7 +259,7 @@ class LLMTranslationAdapter:
         cleaned_text = self._clean_text_for_translation(text)
         
         # Track metrics for this request
-        word_count = len(cleaned_text.split())
+        word_count = len(cleaned_text.split()
         char_count = len(cleaned_text)
         
         try:
@@ -370,7 +370,7 @@ class LLMTranslationAdapter:
                 # 3. For longer text, ensure proper sentence structure
                 elif word_count > 8:
                     # Add period if missing at the end (for declarative sentences)
-                    if not cleaned_text.endswith(('.', '?', '!', ':', ';')):
+                    if not cleaned_text.endswith(('.', '?', '!', ':', ';'):
                         dynamic_prompt = cleaned_text + "."
                         logger.debug(f"Added sentence ending (ReqID: {request_id}): '{dynamic_prompt}'")
             
@@ -484,8 +484,8 @@ class LLMTranslationAdapter:
                 self.stats["avg_time"] = elapsed_time
                 self.stats["avg_nllb_time"] = elapsed_time
             else:
-                self.stats["avg_time"] = ((self.stats["avg_time"] * (self.stats["successful"] - 1)) + elapsed_time) / self.stats["successful"]
-                self.stats["avg_nllb_time"] = ((self.stats["avg_nllb_time"] * (self.stats["successful"] - 1)) + elapsed_time) / self.stats["successful"]
+                self.stats["avg_time"] = ((self.stats["avg_time"] * (self.stats["successful"] - 1) + elapsed_time) / self.stats["successful"]
+                self.stats["avg_nllb_time"] = ((self.stats["avg_nllb_time"] * (self.stats["successful"] - 1) + elapsed_time) / self.stats["successful"]
             
             logger.info(f"NLLB Translation successful in {elapsed_time:.2f}s: '{translated_text[:50]}...'")
             
@@ -552,10 +552,10 @@ class LLMTranslationAdapter:
             logger.warning("="*80)
         # Generate request ID if not provided
         if not request_id:
-            request_id = str(uuid.uuid4())[:8]
+            request_id = str(uuid.uuid4()[:8]
             
         # Track metrics for this request
-        word_count = len(text.split())
+        word_count = len(text.split()
         char_count = len(text)
         
         logger.info(f"Using Google Translate fallback (ReqID: {request_id}) for: '{text[:30]}...' [{word_count} words]")

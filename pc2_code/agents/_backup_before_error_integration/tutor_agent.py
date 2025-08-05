@@ -20,11 +20,11 @@ from pathlib import Path
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import BaseAgent
 from common.core.base_agent import BaseAgent
@@ -62,7 +62,6 @@ except Exception as e:
 
 # Setup logging
 LOG_PATH = str(PathManager.get_logs_dir() / "tutor_agent.log")
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[

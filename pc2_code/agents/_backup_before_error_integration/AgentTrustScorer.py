@@ -16,11 +16,11 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = PathManager.get_project_root()
 if str(PC2_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(PC2_CODE_DIR))
+    
 
 # Import required modules
 from common.core.base_agent import BaseAgent
@@ -51,7 +51,6 @@ def load_network_config():
         }
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[

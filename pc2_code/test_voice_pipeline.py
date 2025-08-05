@@ -62,17 +62,17 @@ class VoicePipelineTester:
         
         if silence:
             # Create silence
-            samples = np.zeros(int(sample_rate * duration))
+            samples = np.zeros(int(sample_rate * duration)
         else:
             # Create a simple sine wave for the text
-            t = np.linspace(0, duration, int(sample_rate * duration))
+            t = np.linspace(0, duration, int(sample_rate * duration)
             frequency = 440  # A4 note
             samples = np.sin(2 * np.pi * frequency * t)
             
             if noise:
                 # Add noise
                 noise_level = 0.1
-                samples += np.random.normal(0, noise_level, len(samples))
+                samples += np.random.normal(0, noise_level, len(samples)
         
         # Normalize
         samples = np.int16(samples * 32767)
@@ -82,7 +82,7 @@ class VoicePipelineTester:
             wav_file.setnchannels(1)
             wav_file.setsampwidth(2)
             wav_file.setframerate(sample_rate)
-            wav_file.writeframes(samples.tobytes())
+            wav_file.writeframes(samples.tobytes()
     
     def test_asr(self, audio_file: str, machine: str = "main_pc") -> Dict[str, Any]:
         """Test ASR on the specified machine"""

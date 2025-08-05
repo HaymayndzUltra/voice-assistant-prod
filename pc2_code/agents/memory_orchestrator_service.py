@@ -25,7 +25,7 @@ from common.utils.path_manager import PathManager
 # (I-adjust kung kinakailangan)
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+    
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
@@ -47,11 +47,11 @@ logger = logging.getLogger('MemoryOrchestratorService')
 
 # --- Constants with Port Registry Integration ---
 # Port registry removed - using environment variables with startup_config.yaml defaults
-DEFAULT_PORT = int(os.getenv("MEMORY_ORCHESTRATOR_PORT", 7140))  # Port para sa Orchestrator
+DEFAULT_PORT = int(os.getenv("MEMORY_ORCHESTRATOR_PORT", 7140)  # Port para sa Orchestrator
     
-DB_PATH = Path(PathManager.get_project_root()) / "data" / str(PathManager.get_data_dir() / "unified_memory.db")
+DB_PATH = Path(PathManager.get_project_root() / "data" / str(PathManager.get_data_dir() / "unified_memory.db")
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379)
 LIFECYCLE_INTERVAL = 3600 # 1 oras para sa decay/consolidation
 
 # ===================================================================
@@ -183,7 +183,7 @@ class MemoryStorageManager:
                     memory.created_at, memory.expires_at,
                     json.dumps(memory.metadata), json.dumps(memory.tags), json.dumps(memory.relationships),
                     memory.parent_id
-                ))
+                )
                 conn.commit()
                 self._cache_invalidate(memory.memory_id)
                 return True
@@ -206,7 +206,7 @@ class MemoryStorageManager:
                 conn = self._get_conn()
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM memories WHERE memory_id = ?", (memory_id,))
+                cursor.execute("SELECT * FROM memories WHERE memory_id = ?", (memory_id,)
                 row = cursor.fetchone()
                 if not row: return None
 
@@ -216,7 +216,7 @@ class MemoryStorageManager:
                     if memory_data[field]: memory_data[field] = json.loads(memory_data[field])
 
                 memory = MemoryEntry(**memory_data)
-                self._cache_put(memory_id, memory.model_dump())
+                self._cache_put(memory_id, memory.model_dump()
                 return memory
             except Exception as e:
                 logger.error(f"DB Error on get: {e}")
@@ -231,7 +231,7 @@ class MemoryStorageManager:
                 conn = self._get_conn()
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM memories WHERE parent_id = ?", (parent_id,))
+                cursor.execute("SELECT * FROM memories WHERE parent_id = ?", (parent_id,)
                 rows = cursor.fetchall()
                 
                 children = []
@@ -240,7 +240,7 @@ class MemoryStorageManager:
                     # Deserialize JSON fields
                     for field in ["metadata", "tags", "relationships"]:
                         if memory_data[field]: memory_data[field] = json.loads(memory_data[field])
-                    children.append(MemoryEntry(**memory_data))
+                    children.append(MemoryEntry(**memory_data)
                 return children
             except Exception as e:
                 logger.error(f"DB Error on get_memory_children: {e}")
@@ -259,7 +259,7 @@ class MemoryStorageManager:
                     INSERT INTO memory_relationships 
                     (source_memory_id, target_memory_id, relationship_type, strength, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?)
-                ''', (source_id, target_id, relationship_type, strength, now, now))
+                ''', (source_id, target_id, relationship_type, strength, now, now)
                 conn.commit()
                 return True
             except Exception as e:
@@ -282,14 +282,14 @@ class MemoryStorageManager:
                         JOIN memories m ON r.target_memory_id = m.memory_id
                         WHERE r.source_memory_id = ? AND r.relationship_type = ?
                     '''
-                    cursor.execute(query, (memory_id, relationship_type))
+                    cursor.execute(query, (memory_id, relationship_type)
                 else:
                     query = '''
                         SELECT r.*, m.* FROM memory_relationships r
                         JOIN memories m ON r.target_memory_id = m.memory_id
                         WHERE r.source_memory_id = ?
                     '''
-                    cursor.execute(query, (memory_id,))
+                    cursor.execute(query, (memory_id,)
                 
                 rows = cursor.fetchall()
                 related = []
@@ -330,7 +330,7 @@ class MemoryStorageManager:
                     memory_data = dict(row)
                     for field in ["metadata", "tags", "relationships"]:
                         if memory_data[field]: memory_data[field] = json.loads(memory_data[field])
-                    memories.append(MemoryEntry(**memory_data))
+                    memories.append(MemoryEntry(**memory_data)
                 return memories
             except Exception as e:
                 logger.error(f"DB Error on get_all_memories: {e}")
@@ -348,7 +348,7 @@ class MemoryStorageManager:
                 cursor.execute('''
                     INSERT INTO context_groups (name, description, created_at, updated_at)
                     VALUES (?, ?, ?, ?)
-                ''', (name, description, now, now))
+                ''', (name, description, now, now)
                 group_id = cursor.lastrowid
                 conn.commit()
                 return group_id
@@ -368,7 +368,7 @@ class MemoryStorageManager:
                 cursor.execute('''
                     INSERT INTO memory_group_mappings (memory_id, group_id, created_at)
                     VALUES (?, ?, ?)
-                ''', (memory_id, group_id, now))
+                ''', (memory_id, group_id, now)
                 conn.commit()
                 return True
             except Exception as e:
@@ -391,7 +391,7 @@ class MemoryStorageManager:
     def _cache_put(self, memory_id: str, data: Dict, ttl: int = 3600):
         try:
             if self.redis:
-                self.redis.setex(f"mem:{memory_id}", ttl, json.dumps(data))
+                self.redis.setex(f"mem:{memory_id}", ttl, json.dumps(data)
         except Exception as e:
             logger.warning(f"Redis PUT error: {e}")
 
@@ -538,7 +538,7 @@ class MemoryOrchestratorService(BaseAgent):
             else:
                 return {"status": "error", "message": "Failed to save memory to database."}
         except Exception as e:
-            self.report_error("add_memory_error", str(e))
+            self.report_error("add_memory_error", str(e)
             return {"status": "error", "message": f"Invalid memory format: {e}"}
 
     def get_memory(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -638,7 +638,7 @@ class MemoryOrchestratorService(BaseAgent):
                 return {"status": "success", "results": results, "count": len(results)}
         except Exception as e:
             logger.error(f"Error searching memories: {e}")
-            self.report_error("search_error", str(e))
+            self.report_error("search_error", str(e)
             return {"status": "error", "message": f"Failed to search memories: {e}"}
             
     def semantic_search(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -700,7 +700,7 @@ class MemoryOrchestratorService(BaseAgent):
             }
         except Exception as e:
             logger.error(f"Error in batch add: {e}")
-            self.report_error("batch_add_error", str(e))
+            self.report_error("batch_add_error", str(e)
             return {"status": "error", "message": f"Batch operation failed: {e}"}
             
     def batch_get_memories(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -721,7 +721,7 @@ class MemoryOrchestratorService(BaseAgent):
                     memory.access_count += 1
                     memory.last_accessed_at = time.time()
                     self.storage.add_or_update_memory(memory)
-                    memories.append(memory.model_dump())
+                    memories.append(memory.model_dump()
                     
             return {
                 "status": "success", 
@@ -730,7 +730,7 @@ class MemoryOrchestratorService(BaseAgent):
             }
         except Exception as e:
             logger.error(f"Error in batch get: {e}")
-            self.report_error("batch_get_error", str(e))
+            self.report_error("batch_get_error", str(e)
             return {"status": "error", "message": f"Batch operation failed: {e}"}
             
     def update_memory(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -773,14 +773,14 @@ class MemoryOrchestratorService(BaseAgent):
                 cursor = conn.cursor()
                 
                 # First, check if the memory exists
-                cursor.execute("SELECT memory_id FROM memories WHERE memory_id = ?", (memory_id,))
+                cursor.execute("SELECT memory_id FROM memories WHERE memory_id = ?", (memory_id,)
                 if not cursor.fetchone():
                     return {"status": "error", "message": f"Memory with ID {memory_id} not found."}
                 
                 # If cascade is true, also delete child memories
                 if cascade:
                     # Get all children
-                    cursor.execute("SELECT memory_id FROM memories WHERE parent_id = ?", (memory_id,))
+                    cursor.execute("SELECT memory_id FROM memories WHERE parent_id = ?", (memory_id,)
                     children = [row[0] for row in cursor.fetchall()]
                     
                     # Delete children recursively
@@ -789,13 +789,13 @@ class MemoryOrchestratorService(BaseAgent):
                 
                 # Delete relationships
                 cursor.execute("DELETE FROM memory_relationships WHERE source_memory_id = ? OR target_memory_id = ?", 
-                               (memory_id, memory_id))
+                               (memory_id, memory_id)
                 
                 # Delete group mappings
-                cursor.execute("DELETE FROM memory_group_mappings WHERE memory_id = ?", (memory_id,))
+                cursor.execute("DELETE FROM memory_group_mappings WHERE memory_id = ?", (memory_id,)
                 
                 # Finally, delete the memory itself
-                cursor.execute("DELETE FROM memories WHERE memory_id = ?", (memory_id,))
+                cursor.execute("DELETE FROM memories WHERE memory_id = ?", (memory_id,)
                 
                 conn.commit()
                 
@@ -806,7 +806,7 @@ class MemoryOrchestratorService(BaseAgent):
                 return {"status": "success", "message": f"Memory {memory_id} deleted successfully."}
         except Exception as e:
             logger.error(f"Error deleting memory: {e}")
-            self.report_error("delete_error", str(e))
+            self.report_error("delete_error", str(e)
             return {"status": "error", "message": f"Failed to delete memory: {e}"}
         
     def reinforce_memory(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -900,7 +900,7 @@ class MemoryOrchestratorService(BaseAgent):
 
             except Exception as e:
                 logger.error(f"Error in lifecycle management thread: {e}", exc_info=True)
-                self.report_error("lifecycle_error", str(e))
+                self.report_error("lifecycle_error", str(e)
 
     def _apply_decay_and_consolidation(self, memory: MemoryEntry) -> MemoryEntry:
         """
@@ -916,7 +916,7 @@ class MemoryOrchestratorService(BaseAgent):
         # Apply decay formula
         decay_factor = 1.0 - (decay_rate * age_days)
         memory.importance *= decay_factor
-        memory.importance = max(0.0, min(1.0, memory.importance))  # Ensure it stays between 0 and 1
+        memory.importance = max(0.0, min(1.0, memory.importance)  # Ensure it stays between 0 and 1
         
         # Check for tier promotion based on importance thresholds
         if memory.memory_tier == "short" and memory.importance < self.tier_thresholds["short_to_medium"]:

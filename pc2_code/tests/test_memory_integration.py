@@ -11,8 +11,8 @@ import sys
 import os
 
 # Ensure the parent directory is in the path for imports
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 from common.utils.path_env import get_project_root
 
 # Import the services to test
@@ -39,7 +39,7 @@ class MemoryClient:
             }
         }
         self.socket.send_json(request)
-        return json.loads(self.socket.recv().decode('utf-8'))
+        return json.loads(self.socket.recv().decode('utf-8')
     
     def get_memory(self, memory_id):
         """Get a memory by ID"""
@@ -48,7 +48,7 @@ class MemoryClient:
             "memory_id": memory_id
         }
         self.socket.send_json(request)
-        return json.loads(self.socket.recv().decode('utf-8'))
+        return json.loads(self.socket.recv().decode('utf-8')
     
     def update_memory(self, memory_id, updates):
         """Update a memory"""
@@ -58,7 +58,7 @@ class MemoryClient:
             "payload": updates
         }
         self.socket.send_json(request)
-        return json.loads(self.socket.recv().decode('utf-8'))
+        return json.loads(self.socket.recv().decode('utf-8')
     
     def delete_memory(self, memory_id):
         """Delete a memory"""
@@ -67,7 +67,7 @@ class MemoryClient:
             "memory_id": memory_id
         }
         self.socket.send_json(request)
-        return json.loads(self.socket.recv().decode('utf-8'))
+        return json.loads(self.socket.recv().decode('utf-8')
     
     def search_memory(self, query, limit=10):
         """Search memories"""
@@ -77,7 +77,7 @@ class MemoryClient:
             "limit": limit
         }
         self.socket.send_json(request)
-        return json.loads(self.socket.recv().decode('utf-8'))
+        return json.loads(self.socket.recv().decode('utf-8')
     
     def close(self):
         """Close the connection"""
@@ -94,7 +94,7 @@ class TestMemoryIntegration(unittest.TestCase):
         # Create a temporary directory for test files
         cls.temp_dir = os.path.join(get_project_root(), "tests", "temp_test_db")
         os.makedirs(cls.temp_dir, exist_ok=True)
-        cls.db_path = os.path.join(cls.temp_dir, str(PathManager.get_data_dir() / "test_memory.db"))
+        cls.db_path = os.path.join(cls.temp_dir, str(PathManager.get_data_dir() / "test_memory.db")
         
         # Start MemoryOrchestratorService in a separate thread
         cls.memory_service = MemoryOrchestratorService(
@@ -114,7 +114,7 @@ class TestMemoryIntegration(unittest.TestCase):
         # Create direct connection to Redis for verification
         cls.redis_client = redis.Redis(
             host=os.environ.get('REDIS_HOST', 'localhost'),
-            port=int(os.environ.get('REDIS_PORT', 6379)),
+            port=int(os.environ.get('REDIS_PORT', 6379),
             password=os.environ.get('REDIS_PASSWORD', None),
             decode_responses=True
         )
@@ -171,7 +171,7 @@ class TestMemoryIntegration(unittest.TestCase):
         # Verify in database
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute("SELECT content, importance_score FROM memory_entries WHERE memory_id = ?", (memory_id,))
+        cursor.execute("SELECT content, importance_score FROM memory_entries WHERE memory_id = ?", (memory_id,)
         result = cursor.fetchone()
         conn.close()
         
@@ -260,7 +260,7 @@ class TestMemoryIntegration(unittest.TestCase):
         # Verify it's gone from database
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM memory_entries WHERE memory_id = ?", (memory_id,))
+        cursor.execute("SELECT COUNT(*) FROM memory_entries WHERE memory_id = ?", (memory_id,)
         count = cursor.fetchone()[0]
         conn.close()
         self.assertEqual(count, 0, "Memory should be deleted from database")

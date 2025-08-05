@@ -13,10 +13,9 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 
 # Ensure project root in path for relative imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
 from common.utils.path_manager import PathManager
 # Configure logging format if not already configured elsewhere
-logging.basicConfig(level=logging.INFO)
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
@@ -46,7 +45,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 class HealthMonitorAgent(BaseAgent):
@@ -217,8 +216,6 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 
-# Standardized environment variables (Blueprint.md Step 4)
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):

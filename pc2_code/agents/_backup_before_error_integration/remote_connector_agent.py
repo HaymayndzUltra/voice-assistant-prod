@@ -28,12 +28,12 @@ from typing import Dict, Any, Optional, Union, List # Combined and ordered impor
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import base agent and config loaders
 from common.core.base_agent import BaseAgent
@@ -88,7 +88,6 @@ log_level = app_config.get('system.log_level', 'INFO')
 log_file_path = Path(app_config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "remote_connector.log")
 log_file_path.parent.mkdir(exist_ok=True)
 
-logging.basicConfig(
     level=getattr(logging, log_level),
     format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
     handlers=[

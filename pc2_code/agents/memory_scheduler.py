@@ -31,12 +31,12 @@ from common.utils.path_manager import PathManager
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+    
 
 # Add the project's root directory to the Python path
 ROOT_DIR = PC2_CODE_DIR.parent
 if ROOT_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, ROOT_DIR.as_posix())
+    
 
 from common.core.base_agent import BaseAgent
 
@@ -45,16 +45,13 @@ from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 from common.env_helpers import get_env
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "memory_scheduler.log"))),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "memory_scheduler.log")),
         logging.StreamHandler()
     ]
 )
@@ -113,7 +110,7 @@ class MemoryScheduler(BaseAgent):
             # ✅ Using BaseAgent's built-in error reporting
         except Exception as e:
             logger.error(f"Error setting up ZMQ connections: {e}")
-            self.report_error("zmq_setup_error", str(e))
+            self.report_error("zmq_setup_error", str(e)
     
     def _setup_schedules(self):
         """Set up scheduled tasks"""
@@ -140,7 +137,7 @@ class MemoryScheduler(BaseAgent):
                 time.sleep(60)  # Check every minute
             except Exception as e:
                 logger.error(f"Error in scheduler thread: {e}")
-                self.report_error("scheduler_error", str(e))
+                self.report_error("scheduler_error", str(e)
     
     def _send_to_orchestrator(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Send a request to the MemoryOrchestratorService"""
@@ -202,7 +199,7 @@ class MemoryScheduler(BaseAgent):
             logger.info("Memory decay process completed")
         except Exception as e:
             logger.error(f"Error in memory decay process: {e}")
-            self.report_error("decay_process_error", str(e))
+            self.report_error("decay_process_error", str(e)
     
     def run_memory_consolidation(self):
         """Run memory consolidation process"""
@@ -247,7 +244,7 @@ class MemoryScheduler(BaseAgent):
             logger.info("Memory consolidation process completed")
         except Exception as e:
             logger.error(f"Error in memory consolidation process: {e}")
-            self.report_error("consolidation_process_error", str(e))
+            self.report_error("consolidation_process_error", str(e)
     
     def run_memory_cleanup(self):
         """Run memory cleanup process (archive or delete very old, unimportant memories)"""
@@ -291,7 +288,7 @@ class MemoryScheduler(BaseAgent):
             logger.info("Memory cleanup process completed")
         except Exception as e:
             logger.error(f"Error in memory cleanup process: {e}")
-            self.report_error("cleanup_process_error", str(e))
+            self.report_error("cleanup_process_error", str(e)
     
     def run_health_check(self):
         """Run a health check on the memory system"""
@@ -306,7 +303,7 @@ class MemoryScheduler(BaseAgent):
             
             if response.get("status") != "success":
                 logger.error(f"Memory system health check failed: {response.get('message')}")
-                self.report_error("health_check_failed", response.get('message', 'Unknown error'))
+                self.report_error("health_check_failed", response.get('message', 'Unknown error')
                 return
             
             status = response.get("system_status", {})
@@ -330,7 +327,7 @@ class MemoryScheduler(BaseAgent):
             logger.info("Memory system health check completed")
         except Exception as e:
             logger.error(f"Error in memory system health check: {e}")
-            self.report_error("health_check_error", str(e))
+            self.report_error("health_check_error", str(e)
     
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming requests"""
@@ -388,7 +385,7 @@ class MemoryScheduler(BaseAgent):
             "version": getattr(self, "version", "1.0.0"),
             "port": self.port,
             "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
+            "error_reporting": bool(getattr(self, "error_bus", None)
         }
 if __name__ == "__main__":
     try:

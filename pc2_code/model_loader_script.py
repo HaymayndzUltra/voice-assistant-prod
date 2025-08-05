@@ -15,7 +15,7 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
@@ -32,8 +32,8 @@ def setup_environment():
     os.makedirs(PathManager.join_path("models", "cache"), exist_ok=True)
     
     # Set environment variables
-    os.environ["TRANSFORMERS_CACHE"] = str(Path(PathManager.join_path("models", "cache")).absolute())
-    os.environ["HF_HOME"] = str(Path(PathManager.join_path("models", "cache")).absolute())
+    os.environ["TRANSFORMERS_CACHE"] = str(Path(PathManager.join_path("models", "cache").absolute()
+    os.environ["HF_HOME"] = str(Path(PathManager.join_path("models", "cache").absolute()
     
     logger.info("Environment and directories set up")
 
@@ -50,7 +50,7 @@ def download_translation_models():
         tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M")
         
         # Save model to local directory
-        model_path = Path(PathManager.join_path("models", "translation/nllb-200-distilled-600M"))
+        model_path = Path(PathManager.join_path("models", "translation/nllb-200-distilled-600M")
         model.save_pretrained(model_path)
         tokenizer.save_pretrained(model_path)
         
@@ -73,7 +73,7 @@ def download_tinyllama():
         tokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")
         
         # Save model to local directory
-        model_path = Path(PathManager.join_path("models", "llm/tinyllama-1.1b-chat"))
+        model_path = Path(PathManager.join_path("models", "llm/tinyllama-1.1b-chat")
         model.save_pretrained(model_path)
         tokenizer.save_pretrained(model_path)
         
@@ -96,7 +96,7 @@ def download_mistral():
         tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2")
         
         # Save model to local directory
-        model_path = Path(PathManager.join_path("models", "llm/mistral-7b-instruct"))
+        model_path = Path(PathManager.join_path("models", "llm/mistral-7b-instruct")
         model.save_pretrained(model_path)
         tokenizer.save_pretrained(model_path)
         
@@ -114,7 +114,7 @@ def download_bergamot():
         # This is a placeholder - actual Bergamot download would require
         # installing and configuring the bergamot-translator package
         # For now, we'll just create a placeholder directory
-        model_path = Path(PathManager.join_path("models", "translation/bergamot"))
+        model_path = Path(PathManager.join_path("models", "translation/bergamot")
         model_path.mkdir(exist_ok=True)
         
         logger.info(f"Bergamot download would be done to {model_path}")
@@ -129,7 +129,7 @@ def setup_model_config():
     logger.info("Setting up model configuration")
     
     try:
-        config_path = Path(get_file_path("pc2_config", "model_config.yaml"))
+        config_path = Path(get_file_path("pc2_config", "model_config.yaml")
         config_dir = config_path.parent
         config_dir.mkdir(exist_ok=True)
         

@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "m2m_adapter.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "m2m_adapter.log"),
         logging.StreamHandler()
     ]
 )
@@ -179,7 +179,7 @@ class M2MTranslationAdapter:
                 self.stats["avg_time"] = elapsed_time
             else:
                 self.stats["avg_time"] = (
-                    (self.stats["avg_time"] * (self.stats["successful"] - 1)) + elapsed_time
+                    (self.stats["avg_time"] * (self.stats["successful"] - 1) + elapsed_time
                 ) / self.stats["successful"]
             
             logger.info(f"Translation successful in {elapsed_time:.2f}s: '{translated_text[:50]}...'")
@@ -287,8 +287,8 @@ from common.utils.path_manager import PathManager
                     text = request.get("text", "")
                     
                     # Support both naming conventions for language params
-                    src_lang = request.get("src_lang", request.get("source_lang", "tl"))
-                    tgt_lang = request.get("tgt_lang", request.get("target_lang", "en"))
+                    src_lang = request.get("src_lang", request.get("source_lang", "tl")
+                    tgt_lang = request.get("tgt_lang", request.get("target_lang", "en")
                     
                     # Translate
                     result = self.translate(text, src_lang, tgt_lang)

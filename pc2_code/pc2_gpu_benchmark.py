@@ -79,7 +79,7 @@ def run_benchmark(sizes=[1000, 2000, 4000]):
         start = time.time()
         torch.matmul(a_cpu, b_cpu)
         cpu_time = (time.time() - start) * 1000  # ms
-        cpu_gflops = (flops / (cpu_time / 1000)) / 1e9
+        cpu_gflops = (flops / (cpu_time / 1000) / 1e9
         
         print(f"{size:<10} {'CPU':<8} {cpu_time:.2f} ms     {cpu_gflops:.2f}")
         
@@ -96,7 +96,7 @@ def run_benchmark(sizes=[1000, 2000, 4000]):
             torch.matmul(a_gpu, b_gpu)
             torch.cuda.synchronize()
             gpu_time = (time.time() - start) * 1000  # ms
-            gpu_gflops = (flops / (gpu_time / 1000)) / 1e9
+            gpu_gflops = (flops / (gpu_time / 1000) / 1e9
             
             print(f"{size:<10} {'GPU':<8} {gpu_time:.2f} ms     {gpu_gflops:.2f}")
             

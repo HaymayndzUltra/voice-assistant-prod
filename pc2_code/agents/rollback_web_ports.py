@@ -8,19 +8,17 @@ from common.core.base_agent import BaseAgent
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "web_ports_rollback.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "web_ports_rollback.log"),
         logging.StreamHandler()
     ]
 )
 
 class WebPortRollback:
     def __init__(self):
-
-        super().__init__(*args, **kwargs)        self.backup_dir = "port_changes_backup"
+        self.backup_dir = "port_changes_backup"
         self.files_to_rollback = {
             'autonomous_web_assistant.py': {
                 'port': 5604,

@@ -19,7 +19,7 @@ def print_fancy_header(text):
 
 def print_json(data):
     """Print formatted JSON with indentation"""
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2)
 
 def main():
     print_fancy_header("PC2 TINYLLAMA SERVICE HEALTH CHECK CLIENT")
@@ -99,4 +99,4 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main()

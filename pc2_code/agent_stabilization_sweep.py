@@ -61,7 +61,7 @@ def run_agent(script_path: Path) -> bool:
     otherwise False.
     """
     for pattern in INVOCATION_PATTERNS:
-        cmd = pattern.format(python=sys.executable, script=str(script_path))
+        cmd = pattern.format(python=sys.executable, script=str(script_path)
         log(f"\n[TEST] Launching {script_path.relative_to(AGENTS_DIR.parent)} with: {cmd}")
 
         try:

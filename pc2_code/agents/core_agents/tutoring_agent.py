@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import common utilities if available
 try:
@@ -47,13 +47,12 @@ except ImportError:
 
 
 # Get the absolute path of the current directory
-current_dir = os.path.dirname(os.path.abspath(__file__))
+current_dir = os.path.dirname(os.path.abspath(__file__)
 
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(os.path.join(current_dir, str(PathManager.get_logs_dir() / "tutoring_agent.log")), mode="a"),
+        logging.FileHandler(os.path.join(current_dir, str(PathManager.get_logs_dir() / "tutoring_agent.log"), mode="a"),
         logging.StreamHandler()
     ]
 )
@@ -83,7 +82,7 @@ class AdvancedTutoringAgent:
             self.llm_socket = self.context.socket(zmq.REQ)
             self.llm_socket.setsockopt(zmq.LINGER, 0)  # Don't wait on close
             self.llm_socket.setsockopt(zmq.RCVTIMEO, 15000)  # 15 second timeout
-            self.llm_socket.connect(get_zmq_connection_string({ENHANCED_MODEL_ROUTER_PORT}, "localhost")))
+            self.llm_socket.connect(get_zmq_connection_string({ENHANCED_MODEL_ROUTER_PORT}, "localhost"))
             logging.info(f"[LLM] Successfully connected to EnhancedModelRouter at tcp://localhost:{ENHANCED_MODEL_ROUTER_PORT}")
             self.llm_available = True  # FORCE TRUE FOR TESTING
         except Exception as e:
@@ -236,7 +235,7 @@ class AdvancedTutoringAgent:
         try:
             # Generate lesson using LLM
             lesson = self._generate_lesson_with_llm(self.current_topic, self.difficulty_level)
-            logging.info(f"[LLM] Lesson generation path complete. Lesson keys: {list(lesson.keys())}")
+            logging.info(f"[LLM] Lesson generation path complete. Lesson keys: {list(lesson.keys()}")
             # Add to lesson history
             self.lesson_history.append(lesson)
             

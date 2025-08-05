@@ -187,11 +187,11 @@ class TieredResponder(BaseAgent):
             # Check tier patterns and route accordingly
             for tier in self.tiers:
                 if any(pattern in text for pattern in tier['patterns']):
-                    asyncio.run(tier['handler'](query, tier['name']))
+                    asyncio.run(tier['handler'](query, tier['name'])
                     return
             
             # If no pattern matches, default to deep analysis
-            asyncio.run(self._handle_deep_response(query, 'deep'))
+            asyncio.run(self._handle_deep_response(query, 'deep')
             
         except Exception as e:
             self.logger.error(f"Error handling PC2 query: {e}", extra={
@@ -362,7 +362,7 @@ class TieredResponder(BaseAgent):
             'uptime_seconds': uptime,
             'total_responses': total_responses,
             'responses_per_minute': (total_responses / uptime) * 60 if uptime > 0 else 0,
-            'pc2_query_percentage': (self.response_stats['pc2_specific_queries'] / max(1, self.response_stats['total_queries'])) * 100,
+            'pc2_query_percentage': (self.response_stats['pc2_specific_queries'] / max(1, self.response_stats['total_queries']) * 100,
             'machine': 'PC2'
         }
 

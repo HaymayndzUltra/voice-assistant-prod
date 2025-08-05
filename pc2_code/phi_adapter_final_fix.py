@@ -294,7 +294,7 @@ class PhiTranslator:
             return False
             
         # Length check - translation shouldn't be much longer or shorter than original
-        words_ratio = len(translation.split()) / max(1, len(original.split()))
+        words_ratio = len(translation.split() / max(1, len(original.split())
         if words_ratio < 0.5 or words_ratio > 2.5:
             logger.warning(f"Translation length ratio suspicious: {words_ratio}")
             return False

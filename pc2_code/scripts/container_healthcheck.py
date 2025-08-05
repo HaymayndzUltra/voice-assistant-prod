@@ -38,7 +38,7 @@ def check_process_running(process_name: str) -> bool:
             stderr=subprocess.DEVNULL, 
             text=True
         )
-        return len(output.strip()) > 0
+        return len(output.strip() > 0
     except subprocess.CalledProcessError:
         return False
 
@@ -49,7 +49,7 @@ def check_port_open(host: str, port: int) -> bool:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(TIMEOUT)
-            result = sock.connect_ex((host, port))
+            result = sock.connect_ex((host, port)
             sock.close()
             if result == 0:
                 return True
@@ -172,4 +172,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main() 

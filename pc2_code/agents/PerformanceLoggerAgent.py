@@ -16,14 +16,14 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+
 from common.utils.path_manager import PathManager
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import common utilities if available
 try:
@@ -44,11 +44,10 @@ from pc2_code.agents.error_bus_template import setup_error_reporting, report_err
 config = Config().get_config()
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "performance_logger.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "performance_logger.log"),
         logging.StreamHandler()
     ]
 )
@@ -203,7 +202,7 @@ class PerformanceLoggerAgent(BaseAgent):
                 metric['duration'],
                 metric['timestamp'],
                 json.dumps(metric['metadata'])
-            ))
+            )
             
             conn.commit()
             conn.close()
@@ -224,7 +223,7 @@ class PerformanceLoggerAgent(BaseAgent):
                 usage['memory_mb'],
                 usage['timestamp'],
                 json.dumps(usage['metadata'])
-            ))
+            )
             
             conn.commit()
             conn.close()
@@ -240,7 +239,7 @@ class PerformanceLoggerAgent(BaseAgent):
                 FROM metrics
                 WHERE agent = ? AND timestamp BETWEEN ? AND ?
                 ORDER BY timestamp
-            ''', (agent, start_time, end_time))
+            ''', (agent, start_time, end_time)
             
             metrics = []
             for row in cursor.fetchall():
@@ -265,7 +264,7 @@ class PerformanceLoggerAgent(BaseAgent):
                 FROM resource_usage
                 WHERE agent = ? AND timestamp BETWEEN ? AND ?
                 ORDER BY timestamp
-            ''', (agent, start_time, end_time))
+            ''', (agent, start_time, end_time)
             
             usage = []
             for row in cursor.fetchall():
@@ -380,8 +379,6 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:
@@ -411,7 +408,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 def connect_to_main_pc_service(self, service_name: str):

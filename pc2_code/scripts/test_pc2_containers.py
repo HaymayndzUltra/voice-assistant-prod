@@ -113,7 +113,7 @@ class ContainerTester:
     
     def test_memory_service(self, host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 7140) -> Dict:
         """Test the Memory Orchestrator Service functionality."""
-        test_key = f"test_key_{int(time.time())}"
+        test_key = f"test_key_{int(time.time()}"
         test_value = {"test": "data", "timestamp": time.time()}
         
         try:
@@ -180,7 +180,7 @@ class ContainerTester:
             for container in containers:
                 for target in ["ai-system-pc2-memory:7140", "ai-system-pc2-redis:6379"]:
                     target_host, target_port = target.split(":")
-                    can_connect = self.check_connectivity(container, target_host, int(target_port))
+                    can_connect = self.check_connectivity(container, target_host, int(target_port)
                     
                     self.results["connectivity"][f"{container}_to_{target_host}"] = {
                         "connected": can_connect,
@@ -220,7 +220,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Test PC2 containers")
     parser.add_argument(
         "--containers",
-        choices=["all"] + list(CONTAINER_GROUPS.keys()),
+        choices=["all"] + list(CONTAINER_GROUPS.keys(),
         default="all",
         help="Which container groups to test"
     )
@@ -282,4 +282,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main() 

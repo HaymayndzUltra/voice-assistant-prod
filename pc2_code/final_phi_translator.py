@@ -39,7 +39,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "phi_translator.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "phi_translator.log"),
         logging.StreamHandler()
     ]
 )
@@ -345,7 +345,7 @@ class PhiTranslator:
         
         # Strategy 2: Check for exact matches in complete sentences
         for tagalog, english in COMPLETE_SENTENCES.items():
-            if text.lower().startswith(tagalog.lower()):
+            if text.lower().startswith(tagalog.lower():
                 # For partial matches at start of sentence
                 remainder = text[len(tagalog):].strip()
                 if remainder:
@@ -612,7 +612,7 @@ class PhiTranslator:
             return False
             
         # Length check
-        if len(translation.split()) > len(original.split()) * 3:
+        if len(translation.split() > len(original.split() * 3:
             return False
             
         # Content check for contamination

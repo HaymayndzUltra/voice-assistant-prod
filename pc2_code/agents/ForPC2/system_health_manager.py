@@ -21,17 +21,17 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+
 from common.utils.path_manager import PathManager
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+    
 
 # Add the project's root directory to the Python path
 ROOT_DIR = PC2_CODE_DIR.parent
 if ROOT_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, ROOT_DIR.as_posix())
+    
 
 from common.core.base_agent import BaseAgent
 
@@ -41,8 +41,6 @@ from pc2_code.agents.error_bus_template import setup_error_reporting, report_err
 from pc2_code.agents.utils.config_loader import Config
 from common.env_helpers import get_env
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 # Load configuration at the module level
 config = Config().get_config()
@@ -50,11 +48,10 @@ config = Config().get_config()
 
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "system_health_manager.log"))),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "system_health_manager.log")),
         logging.StreamHandler()
     ]
 )
@@ -76,11 +73,11 @@ class SystemHealthManager(BaseAgent):
         super().__init__(name="SystemHealthManager", port=port, health_check_port=health_check_port, **kwargs)
         
         # Configuration
-        self.memory_orchestrator_host = get_pc2_ip())
+        self.memory_orchestrator_host = get_pc2_ip()
         self.memory_orchestrator_port = 7140
         self.memory_orchestrator_endpoint = f"tcp://{self.memory_orchestrator_host}:{self.memory_orchestrator_port}"
         
-        self.memory_scheduler_host = get_pc2_ip())
+        self.memory_scheduler_host = get_pc2_ip()
         self.memory_scheduler_port = 7142
         self.memory_scheduler_endpoint = f"tcp://{self.memory_scheduler_host}:{self.memory_scheduler_port}"
         
@@ -129,7 +126,7 @@ class SystemHealthManager(BaseAgent):
             logger.info(f"Connected to error bus at {self.error_bus_endpoint}")
         except Exception as e:
             logger.error(f"Error setting up ZMQ connections: {e}")
-            self._report_error("zmq_setup_error", str(e))
+            self._report_error("zmq_setup_error", str(e)
     
     def _run_health_checks(self):
         """Run periodic health checks on all monitored services"""
@@ -141,7 +138,7 @@ class SystemHealthManager(BaseAgent):
                 time.sleep(self.health_check_interval)
             except Exception as e:
                 logger.error(f"Error in health check thread: {e}")
-                self._report_error("health_check_error", str(e))
+                self._report_error("health_check_error", str(e)
     
     def _check_memory_orchestrator_health(self):
         """Check the health of the MemoryOrchestratorService"""
@@ -163,7 +160,7 @@ class SystemHealthManager(BaseAgent):
                     logger.debug("MemoryOrchestratorService is healthy")
                 else:
                     logger.warning(f"MemoryOrchestratorService health check failed: {response.get('message', 'Unknown error')}")
-                    self._report_error("memory_orchestrator_health_check_failed", str(response.get('message', 'Unknown error')))
+                    self._report_error("memory_orchestrator_health_check_failed", str(response.get('message', 'Unknown error'))
             else:
                 logger.error(f"Invalid response format from MemoryOrchestratorService: {response}")
                 self._report_error("memory_orchestrator_invalid_response", f"Invalid response format: {str(response)}")
@@ -172,7 +169,7 @@ class SystemHealthManager(BaseAgent):
             self._report_error("memory_orchestrator_timeout", "Health check request timed out")
         except Exception as e:
             logger.error(f"Error checking MemoryOrchestratorService health: {e}")
-            self._report_error("memory_orchestrator_health_check_error", str(e))
+            self._report_error("memory_orchestrator_health_check_error", str(e)
     
     def _check_memory_scheduler_health(self):
         """Check the health of the MemoryScheduler"""
@@ -194,7 +191,7 @@ class SystemHealthManager(BaseAgent):
                     logger.debug("MemoryScheduler is healthy")
                 else:
                     logger.warning(f"MemoryScheduler health check failed: {response.get('message', 'Unknown error')}")
-                    self._report_error("memory_scheduler_health_check_failed", str(response.get('message', 'Unknown error')))
+                    self._report_error("memory_scheduler_health_check_failed", str(response.get('message', 'Unknown error'))
             else:
                 logger.error(f"Invalid response format from MemoryScheduler: {response}")
                 self._report_error("memory_scheduler_invalid_response", f"Invalid response format: {str(response)}")
@@ -203,7 +200,7 @@ class SystemHealthManager(BaseAgent):
             self._report_error("memory_scheduler_timeout", "Health check request timed out")
         except Exception as e:
             logger.error(f"Error checking MemoryScheduler health: {e}")
-            self._report_error("memory_scheduler_health_check_error", str(e))
+            self._report_error("memory_scheduler_health_check_error", str(e)
             
     def _report_error(self, error_type: str, error_message: str):
         """Report errors to the central error bus"""
@@ -324,7 +321,7 @@ class SystemHealthManager(BaseAgent):
             "version": getattr(self, "version", "1.0.0"),
             "port": self.port,
             "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
+            "error_reporting": bool(getattr(self, "error_bus", None)
         }
 if __name__ == "__main__":
     try:

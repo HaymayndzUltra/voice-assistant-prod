@@ -101,7 +101,7 @@ class AgentHealthValidator:
             socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 second timeout
             
             # Connect to health port
-            socket.connect(get_zmq_connection_string({health_port}, "localhost")))
+            socket.connect(get_zmq_connection_string({health_port}, "localhost"))
             
             # Send health check request
             request = {'action': 'health_check'}
@@ -278,7 +278,7 @@ class AgentHealthValidator:
     def cleanup(self):
         """Cleanup all running processes"""
         print("\n🧹 Cleaning up...")
-        for agent_name in list(self.processes.keys()):
+        for agent_name in list(self.processes.keys():
             self.terminate_agent(agent_name)
 
 def main():

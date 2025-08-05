@@ -129,7 +129,7 @@ class TranslatorService:
             except Exception as e:
                 error_msg = f"Error in service loop: {str(e)}"
                 logger.error(error_msg)
-                logger.error(traceback.format_exc())
+                logger.error(traceback.format_exc()
                 try:
                     self.socket.send_json({"status": "error", "message": error_msg})
                 except:
@@ -142,7 +142,7 @@ class TranslatorService:
         text = message.get("text", "")
         source_lang = message.get("source_lang", "tl")
         target_lang = message.get("target_lang", "en")
-        session_id = message.get("session_id", str(uuid.uuid4()))
+        session_id = message.get("session_id", str(uuid.uuid4())
         
         logger.info(f"Translation request - From: {source_lang}, To: {target_lang}, Text length: {len(text)}")
         
@@ -209,5 +209,5 @@ if __name__ == "__main__":
         service.stop()
     except Exception as e:
         logger.error(f"Unhandled exception: {str(e)}")
-        logger.error(traceback.format_exc())
+        logger.error(traceback.format_exc()
         sys.exit(1)

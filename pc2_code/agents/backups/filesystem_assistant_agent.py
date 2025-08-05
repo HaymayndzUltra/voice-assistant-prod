@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import common utilities if available
 try:
@@ -39,10 +39,10 @@ except ImportError:
 
 
 # Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 
 # Setup logging with better organization
-LOG_DIR = Path(os.path.dirname(__file__)).parent / "logs"
+LOG_DIR = Path(os.path.dirname(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 LOG_PATH = LOG_DIR / str(PathManager.get_logs_dir() / "filesystem_assistant_agent.log")
 
@@ -365,16 +365,16 @@ config = load_config()= query.get("action")
                     response = self.handle_query(request)
                 
                 # Send response
-                self.socket.send_string(json.dumps(response))
+                self.socket.send_string(json.dumps(response)
             except json.JSONDecodeError as e:
                 logger.error(f"[FileSystemAssistant] Invalid JSON: {e}")
                 self.error_count += 1
-                self.socket.send_string(json.dumps({"status": "error", "reason": "Invalid JSON"}))
+                self.socket.send_string(json.dumps({"status": "error", "reason": "Invalid JSON"})
             except Exception as e:
                 logger.error(f"[FileSystemAssistant] Error in request handling: {e}")
                 self.error_count += 1
                 try:
-                    self.socket.send_string(json.dumps({"status": "error", "reason": str(e)}))
+                    self.socket.send_string(json.dumps({"status": "error", "reason": str(e)})
                 except:
                     # In case we can't even send the error response
                     pass

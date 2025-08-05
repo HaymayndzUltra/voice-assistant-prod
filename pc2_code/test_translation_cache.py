@@ -37,7 +37,7 @@ def main():
         print(f"Time: {elapsed_ms:.2f}ms")
     
     # Print cache stats
-    hit_ratio = (agent.cache_hits / (agent.cache_hits + agent.cache_misses)) * 100 if (agent.cache_hits + agent.cache_misses) > 0 else 0
+    hit_ratio = (agent.cache_hits / (agent.cache_hits + agent.cache_misses) * 100 if (agent.cache_hits + agent.cache_misses) > 0 else 0
     print("\nCache Statistics:")
     print(f"Cache size: {len(agent.translation_cache)}/{agent.cache_max_size}")
     print(f"Cache hits: {agent.cache_hits}")
@@ -46,7 +46,7 @@ def main():
     
     # Print some entries from the cache
     print("\nSample Cache Entries:")
-    for i, (key, value) in enumerate(agent.translation_cache.items()):
+    for i, (key, value) in enumerate(agent.translation_cache.items():
         if i >= 5:  # Show at most 5 entries
             break
         print(f"Key: {key[:40]}...")

@@ -42,7 +42,7 @@ from common.env_helpers import get_env
     socket.connect(ff"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7206")
     
     request = {'action': 'health_check'}
-    socket.send_string(json.dumps(request))
+    socket.send_string(json.dumps(request)
     
     response = socket.recv_string()
     response_data = json.loads(response)

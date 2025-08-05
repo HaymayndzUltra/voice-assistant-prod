@@ -30,9 +30,9 @@ import os
 from common.utils.path_manager import PathManager
 
 # Set up paths using PathManager (after import)
-project_root = str(PathManager.get_project_root())
+project_root = str(PathManager.get_project_root()
 if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+    
 
 # Import base agent and config loaders
 from common.core.base_agent import BaseAgent
@@ -53,7 +53,7 @@ except ImportError as e:
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -62,13 +62,13 @@ def load_network_config():
         # Default fallback values
         return {
             "main_pc_ip": get_mainpc_ip(),
-            "pc2_ip": get_pc2_ip()),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
-                "filesystem_agent": int(os.environ.get("FILESYSTEM_AGENT_PORT", 5606)),
-                "filesystem_health": int(os.environ.get("FILESYSTEM_HEALTH_PORT", 5607)),
-                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+                "filesystem_agent": int(os.environ.get("FILESYSTEM_AGENT_PORT", 5606),
+                "filesystem_health": int(os.environ.get("FILESYSTEM_HEALTH_PORT", 5607),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150)
             }
         }
 
@@ -76,7 +76,6 @@ def load_network_config():
 LOG_DIR = Path(project_root) / "logs" # Use project_root for consistency
 LOG_DIR.mkdir(exist_ok=True)
 
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
@@ -89,14 +88,14 @@ logger = logging.getLogger("FilesystemAssistant")
 network_config = load_network_config()
 
 # Get machine IPs from network config
-MAIN_PC_IP = get_mainpc_ip())
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
-BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+MAIN_PC_IP = get_mainpc_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0")
 
 # Get port configuration from network config
-ZMQ_FILESYSTEM_AGENT_PORT = network_config.get("ports", {}).get("filesystem_agent", int(os.environ.get("FILESYSTEM_AGENT_PORT", 5606)))
-ZMQ_FILESYSTEM_HEALTH_PORT = network_config.get("ports", {}).get("filesystem_health", int(os.environ.get("FILESYSTEM_HEALTH_PORT", 5607)))
-ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+ZMQ_FILESYSTEM_AGENT_PORT = network_config.get("ports", {}).get("filesystem_agent", int(os.environ.get("FILESYSTEM_AGENT_PORT", 5606))
+ZMQ_FILESYSTEM_HEALTH_PORT = network_config.get("ports", {}).get("filesystem_health", int(os.environ.get("FILESYSTEM_HEALTH_PORT", 5607))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150))
 
 
 class FileSystemAssistantAgent(BaseAgent):
@@ -166,7 +165,7 @@ class FileSystemAssistantAgent(BaseAgent):
             "status": "ok", # Overall status, refine if specific checks fail
             "timestamp": datetime.now().isoformat(), # For human-readable timestamp
             "uptime_seconds": uptime_seconds,
-            "uptime_human": str(timedelta(seconds=int(uptime_seconds))), # Convert to human-readable
+            "uptime_human": str(timedelta(seconds=int(uptime_seconds)), # Convert to human-readable
             "metrics": {
                 "request_count": self.request_count,
                 "error_count": self.error_count,
@@ -205,7 +204,7 @@ class FileSystemAssistantAgent(BaseAgent):
                                 "is_dir": os.path.isdir(item_path),
                                 "size": os.path.getsize(item_path) if os.path.isfile(item_path) else None,
                                 "modified_timestamp": os.path.getmtime(item_path),
-                                "modified_human": datetime.fromtimestamp(os.path.getmtime(item_path)).isoformat()
+                                "modified_human": datetime.fromtimestamp(os.path.getmtime(item_path).isoformat()
                             }
                             entries.append(entry)
                     return {"status": "ok", "entries": entries}
@@ -252,7 +251,7 @@ class FileSystemAssistantAgent(BaseAgent):
                             if not isinstance(content, bytes):
                                 # If content is string, attempt to encode (default to utf-8)
                                 try:
-                                    content_bytes = content.encode(query.get("encoding", "utf-8"))
+                                    content_bytes = content.encode(query.get("encoding", "utf-8")
                                 except Exception:
                                     return {"status": "error", "reason": "Content must be bytes for binary write, or a string with valid encoding."}
                             else:
@@ -449,7 +448,7 @@ class FileSystemAssistantAgent(BaseAgent):
                 
             except zmq.error.ZMQError as e:
                 logger.error(f"ZMQ error in main loop: {e}")
-                self.report_error("ZMQ_ERROR", str(e))
+                self.report_error("ZMQ_ERROR", str(e)
                 try:
                     self.socket.send_json({
                         'status': 'error',
@@ -461,7 +460,7 @@ class FileSystemAssistantAgent(BaseAgent):
                 
             except Exception as e:
                 logger.error(f"Unexpected error in main loop: {e}", exc_info=True)
-                self.report_error("RUNTIME_ERROR", str(e))
+                self.report_error("RUNTIME_ERROR", str(e)
                 try:
                     self.socket.send_json({
                         'status': 'error',
@@ -566,8 +565,6 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

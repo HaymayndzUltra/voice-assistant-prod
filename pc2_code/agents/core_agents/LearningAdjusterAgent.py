@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import common utilities if available
 try:
@@ -29,7 +29,6 @@ except ImportError:
 
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("LearningAdjusterAgent")
 
 class LearningAdjusterAgent:
@@ -47,7 +46,7 @@ class LearningAdjusterAgent:
         # Initialize ZMQ context and socket
         self.context = zmq.Context()
         self.trust_socket = self.context.socket(zmq.REQ)
-        self.trust_socket.connect(get_zmq_connection_string(5590, "localhost")))  # AgentTrustScorer
+        self.trust_socket.connect(get_zmq_connection_string(5590, "localhost"))  # AgentTrustScorer
         
         # Initialize agent state
         self.running = True

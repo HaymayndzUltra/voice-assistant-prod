@@ -11,7 +11,7 @@ def check_agent_health(agent_name, port):
     """Check agent health using ZMQ"""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect(get_zmq_connection_string({port}, "localhost")))
+    socket.connect(get_zmq_connection_string({port}, "localhost"))
     
     try:
         socket.send_json({"action": "health_check"})

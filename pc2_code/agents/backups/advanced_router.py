@@ -68,7 +68,7 @@ TASK_KEYWORDS = {
 CODE_PATTERNS = [
     r"```[\w]*\n[\s\S]*?\n```",  # Code blocks
     r"def\s+\w+\s*\(.*?\):",     # Python function definitions
-    r"class\s+\w+(\s*\(.*?\))?:", # Python class definitions
+    r"class\s+\w+(\s*\(.*?\)?:", # Python class definitions
     r"import\s+[\w\.,\s]+",      # Import statements
     r"from\s+[\w\.]+\s+import",  # From import statements
     
@@ -153,7 +153,7 @@ def detect_task_type(prompt: str) -> str:
             scores[task_type] += 3
     
     # Get the task type with the highest score
-    max_score = max(scores.values())
+    max_score = max(scores.values()
     
     # If no clear signal, default to general
     if max_score == 0:

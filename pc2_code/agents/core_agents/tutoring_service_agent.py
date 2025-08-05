@@ -7,7 +7,7 @@ import sys
 import os
 
 # Get the absolute path of the current directory
-current_dir = os.path.dirname(os.path.abspath(__file__))
+current_dir = os.path.dirname(os.path.abspath(__file__)
 
 # Add the parent directory to sys.path
 parent_dir = os.path.dirname(current_dir)
@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import common utilities if available
 try:
@@ -37,11 +37,10 @@ except ImportError:
 
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(current_dir, str(PathManager.get_logs_dir() / "tutoring_service_agent.log")), mode="a"),
+        logging.FileHandler(os.path.join(current_dir, str(PathManager.get_logs_dir() / "tutoring_service_agent.log"), mode="a"),
         logging.StreamHandler()
     ]
 )
@@ -143,7 +142,7 @@ class TutoringServiceAgent:
             user_profile = request_data.get("user_profile")
             # Generate a session_id if not provided
             if not session_id:
-                session_id = str(uuid.uuid4())
+                session_id = str(uuid.uuid4()
             
             # Check if user_profile is provided
             if not user_profile:

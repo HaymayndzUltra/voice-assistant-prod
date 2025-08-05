@@ -11,7 +11,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 class TestConsolidatedTranslator(unittest.TestCase):
@@ -325,7 +325,7 @@ def run_tests():
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(f"Success rate: {(result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100:.2f}%")
+    print(f"Success rate: {(result.testsRun - len(result.failures) - len(result.errors) / result.testsRun * 100:.2f}%")
     
     return len(result.failures) + len(result.errors) == 0
 

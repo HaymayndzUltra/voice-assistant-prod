@@ -16,10 +16,9 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-logging.basicConfig # This line is functionally incomplete as per your request not to change code
+
+
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 

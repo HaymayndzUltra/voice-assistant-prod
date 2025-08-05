@@ -9,11 +9,10 @@ from common.env_helpers import get_env
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "dreamworld_test.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "dreamworld_test.log"),
         logging.StreamHandler()
     ]
 )

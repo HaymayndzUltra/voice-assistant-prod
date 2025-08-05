@@ -109,7 +109,7 @@ class CacheManager:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "cache_manager.log")),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "cache_manager.log"),
                 logging.StreamHandler()
             ]
         )
@@ -163,7 +163,7 @@ class CacheManager:
             'data': data,
             'timestamp': datetime.now().isoformat()
         }, sort_keys=True)
-        return f"cache:{hashlib.md5(key_data.encode()).hexdigest()}"
+        return f"cache:{hashlib.md5(key_data.encode().hexdigest()}"
 
     def _get_cache_stats(self) -> Dict[str, Any]:
         """Get current cache statistics"""
@@ -182,7 +182,7 @@ class CacheManager:
         """Enforce size limits for each cache type"""
         for cache_type, config in self.cache_config.items():
             pattern = f"cache:{cache_type}:*"
-            keys = list(self.redis.scan_iter(match=pattern))
+            keys = list(self.redis.scan_iter(match=pattern)
             
             if len(keys) > config['max_size']:
                 # Remove oldest entries

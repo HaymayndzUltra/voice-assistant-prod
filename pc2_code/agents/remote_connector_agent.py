@@ -28,12 +28,12 @@ from typing import Dict, Any, Optional, Union, List # Combined and ordered impor
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import base agent and config loaders
 from common.core.base_agent import BaseAgent
@@ -61,7 +61,7 @@ except ImportError as e:
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml" # Use project_root
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml" # Use project_root
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -80,15 +80,14 @@ network_config = load_network_config()
 
 # Get machine IPs from network config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 # Configure logging
 log_level = app_config.get('system.log_level', 'INFO')
-log_file_path = Path(app_config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "remote_connector.log")
+log_file_path = Path(app_config.get('system.logs_dir', 'logs') / str(PathManager.get_logs_dir() / "remote_connector.log")
 log_file_path.parent.mkdir(exist_ok=True)
 
-logging.basicConfig(
     level=getattr(logging, log_level),
     format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
     handlers=[
@@ -183,7 +182,7 @@ class RemoteConnectorAgent(BaseAgent):
 
         # Setup response cache
         self.cache_enabled = app_config.get('models.cache_enabled', True) # Use app_config
-        self.cache_dir = Path(app_config.get('system.cache_dir', 'cache')) / "model_responses" # Use app_config
+        self.cache_dir = Path(app_config.get('system.cache_dir', 'cache') / "model_responses" # Use app_config
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_ttl = app_config.get('models.cache_ttl', 3600)  # Cache TTL in seconds (default: 1 hour), use app_config
 
@@ -250,7 +249,7 @@ class RemoteConnectorAgent(BaseAgent):
         # Create a string representation of the request
         request_str = f"{model}:{prompt}:{system_prompt if system_prompt else ''}:{temperature}" # Handle None system_prompt
         # Create a hash of the request
-        return hashlib.md5(request_str.encode('utf-8')).hexdigest() # Encode to utf-8
+        return hashlib.md5(request_str.encode('utf-8').hexdigest() # Encode to utf-8
 
     def _check_cache(self, cache_key: str) -> Optional[str]:
         """Check if a response is in the cache and not expired"""
@@ -368,7 +367,7 @@ class RemoteConnectorAgent(BaseAgent):
             except requests.exceptions.Timeout:
                 logger.warning(f"Request to Ollama timed out after {timeout} seconds (attempt {attempt + 1}/{max_retries})")
                 if attempt < max_retries - 1:
-                    time.sleep(retry_delay * (2 ** attempt))  # Exponential backoff
+                    time.sleep(retry_delay * (2 ** attempt)  # Exponential backoff
                 else:
                     return {
                         "status": "error",
@@ -378,7 +377,7 @@ class RemoteConnectorAgent(BaseAgent):
             except requests.exceptions.ConnectionError:
                 logger.warning(f"Connection error to Ollama (attempt {attempt + 1}/{max_retries})")
                 if attempt < max_retries - 1:
-                    time.sleep(retry_delay * (2 ** attempt))  # Exponential backoff
+                    time.sleep(retry_delay * (2 ** attempt)  # Exponential backoff
                 else:
                     return {
                         "status": "error",
@@ -491,7 +490,7 @@ class RemoteConnectorAgent(BaseAgent):
                     "model": model_name
                 }
                 logger.debug(f"Querying Model Manager for status of {model_name}")
-                self.model_manager.send_string(json.dumps(request))
+                self.model_manager.send_string(json.dumps(request)
                 response_str = self.model_manager.recv_string()
                 response = json.loads(response_str)
 

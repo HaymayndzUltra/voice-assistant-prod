@@ -16,10 +16,9 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-logging.basicConfig # This line is functionally incomplete as per your request not to change code
+
+
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
@@ -30,7 +29,7 @@ logger = logging.getLogger(__name__)
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = str(Path(PathManager.get_project_root()) / "config" / "network_config.yaml")
+    config_path = str(Path(PathManager.get_project_root() / "config" / "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -49,7 +48,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 class ExperienceTrackerAgent(BaseAgent):
@@ -102,7 +101,7 @@ class ExperienceTrackerAgent(BaseAgent):
             raise
         # Socket to communicate with EpisodicMemoryAgent
         self.episodic_socket = self.context.socket(zmq.REQ)
-        self.episodic_socket.connect(get_zmq_connection_string({self.episodic_agent_port}, "localhost"))
+        self.episodic_socket.connect(get_zmq_connection_string({self.episodic_agent_port}, "localhost")
 
     def _start_health_check(self):
         def health_check_loop():
@@ -152,7 +151,7 @@ class ExperienceTrackerAgent(BaseAgent):
                 'action': 'store_memory',
                 'content': request.get('content') if isinstance(request.get('content'), str) else '',
                 'memory_type': 'experience',
-                'importance_score': request.get('importance_score', 0.5) if isinstance(request.get('importance_score', 0.5), (int, float)) else 0.5,
+                'importance_score': request.get('importance_score', 0.5) if isinstance(request.get('importance_score', 0.5), (int, float) else 0.5,
                 'metadata': request.get('metadata') if isinstance(request.get('metadata'), dict) else {},
                 'expires_at': request.get('expires_at') if isinstance(request.get('expires_at'), str) else None
             })

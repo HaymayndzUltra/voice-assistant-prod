@@ -20,9 +20,8 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-logging.basicConfig
+
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
@@ -128,15 +127,15 @@ class ContextManager(BaseAgent):
             r'\b(gusto ko|kailangan ko)\b'
         ]
         for pattern in command_patterns:
-            if re.search(pattern, text.lower()):
+            if re.search(pattern, text.lower():
                 importance += 0.1
                 break
-        if len(text.split()) > 15:
+        if len(text.split() > 15:
             importance += 0.1
-        return min(1.0, max(0.0, importance))
+        return min(1.0, max(0.0, importance)
 
     def _adjust_context_size(self):
-        avg_importance = np.mean(list(self.importance_scores.values())) if self.importance_scores else 0.5
+        avg_importance = np.mean(list(self.importance_scores.values()) if self.importance_scores else 0.5
         if avg_importance > 0.7:
             target_size = min(self.max_size, self.current_size + 2)
         elif avg_importance < 0.3:
@@ -287,7 +286,7 @@ class ContextManagerAgent:
             )
             return {'status': 'success', 'context_text': text}
         elif action == 'clear_context':
-            self.manager.clear_context(speaker=request.get('speaker'))
+            self.manager.clear_context(speaker=request.get('speaker')
             return {'status': 'success', 'message': 'Context cleared'}
         elif action == 'prune_context':
             self.manager.prune_context()
@@ -373,7 +372,7 @@ if __name__ == "__main__":
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -392,5 +391,5 @@ network_config = load_network_config() if 'load_network_config' in globals() els
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip() if isinstance(network_config, dict) else get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()) if isinstance(network_config, dict) else get_pc2_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip() if isinstance(network_config, dict) else get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0") if isinstance(network_config, dict) else "0.0.0.0"

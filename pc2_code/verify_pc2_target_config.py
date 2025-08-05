@@ -33,7 +33,7 @@ SERVICES = [
     {
         "name": "Primary Translator",
         "script": "agents/translator_agent.py",
-        "port": int(os.getenv('TRANSLATOR_PORT', '5563')),
+        "port": int(os.getenv('TRANSLATOR_PORT', '5563'),
         "bind_address": "0.0.0.0",
         "health_check_payload": {"action": "health_check"},
         "expected_response_pattern": ["status", "ok", "success"],
@@ -51,7 +51,7 @@ SERVICES = [
     {
         "name": "NLLB Translation Adapter",
         "script": "nllb_translation_adapter.py",
-        "port": int(os.getenv('NLLB_ADAPTER_PORT', '5581')),
+        "port": int(os.getenv('NLLB_ADAPTER_PORT', '5581'),
         "bind_address": "0.0.0.0",
         "health_check_payload": {
             "action": "translate", 
@@ -83,7 +83,7 @@ SERVICES = [
     {
         "name": "Memory Agent Health Port",
         "script": "agents/memory.py (health port)",
-        "port": int(os.getenv('EMR_PORT', '5598')),
+        "port": int(os.getenv('EMR_PORT', '5598'),
         "bind_address": "0.0.0.0",
         "health_check_payload": {"action": "health_check"},
         "expected_response_pattern": ["status", "ok", "success"],
@@ -137,7 +137,7 @@ SERVICES = [
     {
         "name": "Remote Connector Agent",
         "script": "agents/remote_connector_agent.py",
-        "port": int(os.getenv('REMOTE_CONNECTOR_PORT', '5557')),
+        "port": int(os.getenv('REMOTE_CONNECTOR_PORT', '5557'),
         "bind_address": "0.0.0.0",
         "health_check_payload": {"request_type": "check_status", "model": "phi3"},
         "expected_response_pattern": ["status", "success"],
@@ -149,7 +149,7 @@ def is_port_open(port, host='localhost'):
     """Check if a port is open on the specified host"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
-    result = sock.connect_ex((host, port))
+    result = sock.connect_ex((host, port)
     sock.close()
     return result == 0
 

@@ -11,8 +11,8 @@ import os
 from unittest.mock import MagicMock, patch
 
 # Ensure the parent directory is in the path for imports
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 # Import the agent to test
 from pc2_code.agents.UnifiedMemoryReasoningAgent import UnifiedMemoryReasoningAgent
@@ -65,7 +65,7 @@ class TestUnifiedMemoryReasoningAgent(unittest.TestCase):
         """Test that the agent initializes correctly."""
         self.assertEqual(self.agent.name, "UnifiedMemoryReasoningAgent")
         self.assertEqual(self.agent.port, 9999)
-        self.assertTrue(hasattr(self.agent, 'cache_manager'))
+        self.assertTrue(hasattr(self.agent, 'cache_manager')
 
     @patch('zmq.Context.socket')
     def test_health_check(self, mock_socket):

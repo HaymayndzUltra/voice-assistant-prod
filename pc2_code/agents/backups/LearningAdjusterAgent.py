@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 import zmq
 import json
 import logging
@@ -14,7 +14,7 @@ from pc2_code.config.system_config import get_service_host, get_service_port
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import common utilities if available
 try:
@@ -30,7 +30,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_adjuster.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_adjuster.log"),
         logging.StreamHandler()
     ]
 )
@@ -439,7 +439,7 @@ from common.env_helpers import get_env
                     poller.register(self.socket, zmq.POLLIN)
                     
                     # Poll with timeout to allow for clean shutdown
-                    if dict(poller.poll(1000)):
+                    if dict(poller.poll(1000):
                         # Receive and process message
                         message_data = self.socket.recv()
                         

@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 import hashlib
 
 # Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 from pc2_code.config.system_config import config
 from typing import Dict, Any
 
@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import common utilities if available
 try:
@@ -45,7 +45,7 @@ except ImportError:
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "remote_connector.log")
+log_file = Path(config.get('system.logs_dir', 'logs') / str(PathManager.get_logs_dir() / "remote_connector.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -129,7 +129,7 @@ class RemoteConnectorAgent(BaseAgent):
         
         # Setup response cache
         self.cache_enabled = config.get('models.cache_enabled', True)
-        self.cache_dir = Path(config.get('system.cache_dir', 'cache')) / "model_responses"
+        self.cache_dir = Path(config.get('system.cache_dir', 'cache') / "model_responses"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_ttl = config.get('models.cache_ttl', 3600)  # Cache TTL in seconds (default: 1 hour)
         
@@ -204,7 +204,7 @@ class RemoteConnectorAgent(BaseAgent):
         # Create a string representation of the request
         request_str = f"{model}:{prompt}:{system_prompt}:{temperature}"
         # Create a hash of the request
-        return hashlib.md5(request_str.encode()).hexdigest()
+        return hashlib.md5(request_str.encode().hexdigest()
     
     def _check_cache(self, cache_key):
         """Check if a response is in the cache and not expired"""
@@ -315,7 +315,7 @@ class RemoteConnectorAgent(BaseAgent):
             except requests.exceptions.Timeout:
                 logger.warning(f"Request timed out after {timeout} seconds (attempt {attempt + 1}/{max_retries})")
                 if attempt < max_retries - 1:
-                    time.sleep(retry_delay * (2 ** attempt))  # Exponential backoff
+                    time.sleep(retry_delay * (2 ** attempt)  # Exponential backoff
                 else:
                     return {
                         "status": "error",
@@ -325,7 +325,7 @@ class RemoteConnectorAgent(BaseAgent):
             except requests.exceptions.ConnectionError:
                 logger.warning(f"Connection error (attempt {attempt + 1}/{max_retries})")
                 if attempt < max_retries - 1:
-                    time.sleep(retry_delay * (2 ** attempt))  # Exponential backoff
+                    time.sleep(retry_delay * (2 ** attempt)  # Exponential backoff
                 else:
                     return {
                         "status": "error",
@@ -335,7 +335,7 @@ class RemoteConnectorAgent(BaseAgent):
                     
             except Exception as e:
                 logger.error(f"Unexpected error: {str(e)}")
-                logger.error(traceback.format_exc())
+                logger.error(traceback.format_exc()
                 return {
                     "status": "error",
                     "model": model,
@@ -422,7 +422,7 @@ class RemoteConnectorAgent(BaseAgent):
                     "model": model_name
                 }
                 
-                self.model_manager.send_string(json.dumps(request))
+                self.model_manager.send_string(json.dumps(request)
                 response_str = self.model_manager.recv_string()
                 response = json.loads(response_str)
                 
@@ -635,7 +635,7 @@ config = load_config()"""
             except Exception as e:
                 error_msg = f"Error handling request: {str(e)}"
                 logger.error(error_msg)
-                logger.error(traceback.format_exc())
+                logger.error(traceback.format_exc()
                 self.failed_requests += 1
                 try:
                     self.receiver.send_json({

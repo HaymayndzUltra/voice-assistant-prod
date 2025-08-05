@@ -23,19 +23,19 @@ from typing import Dict, List, Set, Optional, Any, Tuple
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+    sys.path.insert(0, PC2_CODE_DIR.as_posix()
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "standardize_agents.log"))),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "standardize_agents.log")),
         logging.StreamHandler()
     ]
 )
@@ -62,7 +62,7 @@ HEALTH_CHECK_TEMPLATE = (
     '            "version": getattr(self, "version", "1.0.0"),\n'
     '            "port": self.port,\n'
     '            "health_port": getattr(self, "health_port", None),\n'
-    '            "error_reporting": bool(getattr(self, "error_bus", None))\n'
+    '            "error_reporting": bool(getattr(self, "error_bus", None)\n'
     '        }\n'
 )
 
@@ -358,7 +358,7 @@ def find_redundant_agents(startup_config_path: Optional[str] = None) -> List[Tup
                     continue
                 # Check for similar names (e.g., "Agent" vs "AgentService")
                 if (name1 in name2 or name2 in name1) and name1 != name2:
-                    redundant.append((name1, name2))
+                    redundant.append((name1, name2)
         
         return redundant
     except Exception as e:

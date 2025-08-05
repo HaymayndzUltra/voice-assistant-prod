@@ -6,7 +6,7 @@ from pathlib import Path
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 if str(current_dir) not in sys.path:
-    sys.path.insert(0, str(current_dir))
+    sys.path.insert(0, str(current_dir)
 
 try:
 from pc2_code.agents.ForPC2.proactive_context_monitor import ProactiveContextMonitor

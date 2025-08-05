@@ -19,7 +19,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(str(PathManager.get_logs_dir() / "nllb_translator.log"))
+        logging.FileHandler(str(PathManager.get_logs_dir() / "nllb_translator.log")
     ]
 )
 logger = logging.getLogger("NLLBTranslatorAgent")

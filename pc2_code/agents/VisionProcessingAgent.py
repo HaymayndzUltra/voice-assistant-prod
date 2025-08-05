@@ -26,7 +26,7 @@ from common.utils.path_manager import PathManager
 # Add project root to path using PathManager (standardized approach)
 PROJECT_ROOT = PathManager.get_project_root()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import parse_agent_args
@@ -39,12 +39,11 @@ import psutil
 
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / str(PathManager.get_logs_dir() / "vision_processing_agent.log"))
+        logging.FileHandler(Path(PathManager.get_project_root() / "logs" / str(PathManager.get_logs_dir() / "vision_processing_agent.log")
     ]
 )
 logger = logging.getLogger("VisionProcessingAgent")
@@ -72,7 +71,7 @@ class VisionProcessingAgent(BaseAgent):
         self.running = True
         
         # Create output directory if it doesn't exist
-        self.output_dir = Path(PathManager.get_project_root()) / "data" / "vision_output"
+        self.output_dir = Path(PathManager.get_project_root() / "data" / "vision_output"
         os.makedirs(self.output_dir, exist_ok=True)
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")
@@ -104,7 +103,7 @@ class VisionProcessingAgent(BaseAgent):
             # Decode the base64 image
             try:
                 image_bytes = base64.b64decode(image_base64)
-                image = Image.open(io.BytesIO(image_bytes))
+                image = Image.open(io.BytesIO(image_bytes)
             except Exception as e:
                 logger.error(f"Error decoding image: {e}")
                 return {"status": "error", "error": f"Failed to decode image: {str(e)}"}
@@ -176,7 +175,7 @@ class VisionProcessingAgent(BaseAgent):
             "version": getattr(self, "version", "1.0.0"),
             "port": self.port,
             "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
+            "error_reporting": bool(getattr(self, "error_bus", None)
         }
 if __name__ == "__main__":
     # Standardized main execution block

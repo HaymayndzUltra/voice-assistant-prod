@@ -203,7 +203,7 @@ from common.utils.path_manager import PathManager
         
         for error in errors:
             # Create a hash for deduplication
-            error_hash = hashlib.md5(error.encode()).hexdigest()
+            error_hash = hashlib.md5(error.encode().hexdigest()
             
             if error_hash not in error_hashes:
                 error_hashes.add(error_hash)
@@ -252,7 +252,7 @@ from common.utils.path_manager import PathManager
                     formatted_summary += f"• {decision}\n"
             
             # Simple token counting approximation
-            tokens = len(formatted_summary.split())
+            tokens = len(formatted_summary.split()
             if tokens > max_tokens:
                 # Truncate and add note about truncation
                 words = formatted_summary.split()
@@ -332,13 +332,13 @@ from common.utils.path_manager import PathManager
                 response = self.handle_query(query)
                 
                 # Send reply back to client
-                self.socket.send_string(json.dumps(response))
+                self.socket.send_string(json.dumps(response)
                 
             except Exception as e:
                 logging.error(f"[ContextSummarizer] Error: {str(e)}")
                 # Try to send error response if possible
                 try:
-                    self.socket.send_string(json.dumps({"status": "error", "message": str(e)}))
+                    self.socket.send_string(json.dumps({"status": "error", "message": str(e)})
                 except:
                     pass
     
@@ -354,7 +354,7 @@ def send_context_request(request, port=ZMQ_CONTEXT_SUMMARIZER_PORT):
     socket = context.socket(zmq.REQ)
     socket.connect(f"tcp://127.0.0.1:{port}")
     
-    socket.send_string(json.dumps(request))
+    socket.send_string(json.dumps(request)
     response = socket.recv_string()
     
     socket.close()

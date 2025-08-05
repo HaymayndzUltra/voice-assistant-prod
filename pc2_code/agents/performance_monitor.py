@@ -13,23 +13,15 @@ from typing import Dict, Any, List, Optional
 from collections import defaultdict, deque
 from pathlib import Path
 import numpy as np
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
-
-
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+# Canonical imports as per IMPLEMENTATION_CHECKLIST.md
+from common.utils.env_standardizer import (
+    get_mainpc_ip, get_pc2_ip, get_env, get_current_machine
+)
 from common.utils.path_manager import PathManager
-# Add the project's pc2_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-PC2_CODE_DIR = get_main_pc_code()
-if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
-
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.core.base_agent import BaseAgent
+from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
+from common.utils.log_setup import configure_logging
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.utils.config_loader import Config
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
@@ -115,16 +107,8 @@ class PerformanceMonitor(BaseAgent):
         self._start_monitoring()
         
     def _setup_logging(self):
-        """Setup logging configuration"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "performance_monitor.log")),
-                logging.StreamHandler()
-            ]
-        )
-        self.logger = logging.getLogger('PerformanceMonitor')
+        """Setup logging configuration using canonical pattern"""
+        self.logger = configure_logging(__name__)
         
     def _setup_zmq(self):
         """Setup ZMQ sockets for metrics and health monitoring"""
@@ -183,7 +167,7 @@ class PerformanceMonitor(BaseAgent):
             except Exception as e:
                 self.logger.error(f"Error broadcasting metrics: {str(e)}")
                 if self.error_bus:
-                    report_error(self.error_bus, "metrics_broadcast_error", str(e))
+                    report_error(self.error_bus, "metrics_broadcast_error", str(e)
                 time.sleep(5)
                 
     def _monitor_health(self):
@@ -196,7 +180,7 @@ class PerformanceMonitor(BaseAgent):
             except Exception as e:
                 self.logger.error(f"Error monitoring health: {str(e)}")
                 if self.error_bus:
-                    report_error(self.error_bus, "health_monitoring_error", str(e))
+                    report_error(self.error_bus, "health_monitoring_error", str(e)
                 time.sleep(5)
                 
     def _calculate_metrics(self) -> Dict[str, Any]:
@@ -259,7 +243,7 @@ class PerformanceMonitor(BaseAgent):
             
         base_status = {
             'timestamp': datetime.now().isoformat(),
-            'status': 'ok' if resources_ok and all(s['status'] == 'ok' for s in services_health.values()) else 'degraded',
+            'status': 'ok' if resources_ok and all(s['status'] == 'ok' for s in services_health.values() else 'degraded',
             'resources': {
                 'status': 'ok' if resources_ok else 'degraded',
                 'stats': metrics['resources']
@@ -294,7 +278,7 @@ class PerformanceMonitor(BaseAgent):
         except Exception as e:
             self.logger.error(f"Error logging metric: {str(e)}")
             if self.error_bus:
-                report_error(self.error_bus, "metric_logging_error", str(e))
+                report_error(self.error_bus, "metric_logging_error", str(e)
             
     def get_service_metrics(self, service: str) -> Dict[str, Any]:
         """Get metrics for a specific service"""
@@ -311,7 +295,7 @@ class PerformanceMonitor(BaseAgent):
         except Exception as e:
             self.logger.error(f"Error getting service metrics: {str(e)}")
             if self.error_bus:
-                report_error(self.error_bus, "service_metrics_error", str(e))
+                report_error(self.error_bus, "service_metrics_error", str(e)
             return {}
             
     def get_alerts(self) -> List[Dict[str, Any]]:
@@ -420,10 +404,6 @@ def main():
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
-
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
@@ -453,7 +433,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 if __name__ == "__main__":

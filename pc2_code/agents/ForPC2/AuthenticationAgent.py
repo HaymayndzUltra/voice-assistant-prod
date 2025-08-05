@@ -5,6 +5,7 @@ Authentication Agent
 - Provides secure login/logout functionality
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 import zmq
 import json
 import logging
@@ -25,7 +26,7 @@ from common.utils.path_manager import PathManager
 # Add project root to path using PathManager (single setup)
 PROJECT_ROOT = PathManager.get_project_root()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    
 
 # Import config module
 try:
@@ -40,7 +41,6 @@ except ImportError as e:
 # Configure logging
 log_directory = os.path.join('logs')
 os.makedirs(log_directory, exist_ok=True)
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
@@ -52,7 +52,7 @@ logger = logging.getLogger('AuthenticationAgent')
 # Load configuration at the module level
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -61,12 +61,12 @@ def load_network_config():
         # Default fallback values
         return {
             "main_pc_ip": get_mainpc_ip(),
-            "pc2_ip": get_pc2_ip()),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
-                "auth_agent": int(os.environ.get("AUTH_PORT", 7116)),
-                "auth_health": int(os.environ.get("AUTH_HEALTH_PORT", 8116))
+                "auth_agent": int(os.environ.get("AUTH_PORT", 7116),
+                "auth_health": int(os.environ.get("AUTH_HEALTH_PORT", 8116)
             }
         }
 
@@ -74,12 +74,12 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = get_mainpc_ip())
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
-BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
-AUTH_PORT = network_config.get("ports", {}).get("auth_agent", int(os.environ.get("AUTH_PORT", 7116)))
-AUTH_HEALTH_PORT = network_config.get("ports", {}).get("auth_health", int(os.environ.get("AUTH_HEALTH_PORT", 8116)))
-ERROR_BUS_PORT = int(os.environ.get("ERROR_BUS_PORT", 7150))
+MAIN_PC_IP = get_mainpc_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0")
+AUTH_PORT = network_config.get("ports", {}).get("auth_agent", int(os.environ.get("AUTH_PORT", 7116))
+AUTH_HEALTH_PORT = network_config.get("ports", {}).get("auth_health", int(os.environ.get("AUTH_HEALTH_PORT", 8116))
+ERROR_BUS_PORT = int(os.environ.get("ERROR_BUS_PORT", 7150)
 
 class AuthenticationAgent(BaseAgent):
     """Authentication Agent for system-wide authentication and authorization."""
@@ -168,7 +168,7 @@ class AuthenticationAgent(BaseAgent):
     
     def _hash_password(self, password: str) -> str:
         """Hash a password using SHA-256."""
-        return hashlib.sha256(password.encode()).hexdigest()
+        return hashlib.sha256(password.encode().hexdigest()
     
     def _generate_token(self) -> str:
         """Generate a random session token."""
@@ -241,7 +241,7 @@ class AuthenticationAgent(BaseAgent):
             return {'status': 'success', 'message': 'User registered successfully'}
         except Exception as e:
             logger.error(f"Error handling registration: {e}")
-            self.report_error("REGISTRATION_ERROR", str(e))
+            self.report_error("REGISTRATION_ERROR", str(e)
             return {'status': 'error', 'message': str(e)}
     
     def _handle_login(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -273,7 +273,7 @@ class AuthenticationAgent(BaseAgent):
             }
         except Exception as e:
             logger.error(f"Error handling login: {e}")
-            self.report_error("LOGIN_ERROR", str(e))
+            self.report_error("LOGIN_ERROR", str(e)
             return {'status': 'error', 'message': str(e)}
     
     def _handle_logout(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -291,7 +291,7 @@ class AuthenticationAgent(BaseAgent):
                 return {'status': 'error', 'message': 'Invalid token'}
         except Exception as e:
             logger.error(f"Error handling logout: {e}")
-            self.report_error("LOGOUT_ERROR", str(e))
+            self.report_error("LOGOUT_ERROR", str(e)
             return {'status': 'error', 'message': str(e)}
     
     def _handle_token_validation(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -310,7 +310,7 @@ class AuthenticationAgent(BaseAgent):
                 return {'status': 'success', 'valid': False}
         except Exception as e:
             logger.error(f"Error handling token validation: {e}")
-            self.report_error("TOKEN_VALIDATION_ERROR", str(e))
+            self.report_error("TOKEN_VALIDATION_ERROR", str(e)
             return {'status': 'error', 'message': str(e)}
     
     def _get_health_status(self) -> Dict[str, Any]:
@@ -351,11 +351,11 @@ class AuthenticationAgent(BaseAgent):
                         
                 except zmq.error.ZMQError as e:
                     logger.error(f"ZMQ error: {e}")
-                    self.report_error("ZMQ_ERROR", str(e))
+                    self.report_error("ZMQ_ERROR", str(e)
                     time.sleep(1)  # Sleep to avoid tight loop on error
                 except Exception as e:
                     logger.error(f"Error processing message: {e}")
-                    self.report_error("PROCESSING_ERROR", str(e))
+                    self.report_error("PROCESSING_ERROR", str(e)
                     # Try to send error response
                     try:
                         self.socket.send_json({
@@ -457,9 +457,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

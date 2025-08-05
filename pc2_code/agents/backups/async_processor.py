@@ -151,7 +151,7 @@ class AsyncProcessor:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "async_processor.log")),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "async_processor.log"),
                 logging.StreamHandler()
             ]
         )

@@ -62,13 +62,13 @@ import uuid
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import config parser utility with fallback
 try:
@@ -82,7 +82,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "self_healing_agent.log"))
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "self_healing_agent.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 
@@ -123,7 +123,7 @@ RECOVERY_ACTION_NOTIFY = "notify"
 
 def generate_unique_id():
     """Generate a unique ID"""
-    return str(uuid.uuid4())
+    return str(uuid.uuid4()
 
 class AgentStatus:
     """Class representing the status of an agent in the system"""

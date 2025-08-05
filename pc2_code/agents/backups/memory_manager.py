@@ -13,9 +13,9 @@ import os
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))
 
 
 from main_pc_code.src.core.base_agent import BaseAgent
@@ -33,7 +33,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "memory_manager.log"))),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "memory_manager.log")),
         logging.StreamHandler()
     ]
 )
@@ -210,7 +210,7 @@ class MemoryManager(BaseAgent):
                 json.dumps(metadata) if metadata else None,
                 expires_at.isoformat() if expires_at else None,
                 datetime.now().isoformat()
-            ))
+            )
             
             memory_id = cursor.lastrowid
             conn.commit()
@@ -246,7 +246,7 @@ class MemoryManager(BaseAgent):
                     WHERE content LIKE ? AND (expires_at IS NULL OR expires_at > ?)
                     ORDER BY importance_score DESC, last_accessed DESC
                     LIMIT ?
-                ''', (f'%{query}%', datetime.now().isoformat(), limit))
+                ''', (f'%{query}%', datetime.now().isoformat(), limit)
             elif memory_type:
                 # Filter by type
                 cursor.execute('''
@@ -256,7 +256,7 @@ class MemoryManager(BaseAgent):
                     WHERE memory_type = ? AND (expires_at IS NULL OR expires_at > ?)
                     ORDER BY importance_score DESC, last_accessed DESC
                     LIMIT ?
-                ''', (memory_type, datetime.now().isoformat(), limit))
+                ''', (memory_type, datetime.now().isoformat(), limit)
             else:
                 # Get all recent memories
                 cursor.execute('''
@@ -266,7 +266,7 @@ class MemoryManager(BaseAgent):
                     WHERE expires_at IS NULL OR expires_at > ?
                     ORDER BY importance_score DESC, last_accessed DESC
                     LIMIT ?
-                ''', (datetime.now().isoformat(), limit))
+                ''', (datetime.now().isoformat(), limit)
             
             memories = []
             for row in cursor.fetchall():
@@ -287,7 +287,7 @@ class MemoryManager(BaseAgent):
                     UPDATE memory_entries 
                     SET access_count = access_count + 1, last_accessed = ?
                     WHERE memory_id = ?
-                ''', (datetime.now().isoformat(), row[0]))
+                ''', (datetime.now().isoformat(), row[0])
             
             conn.commit()
             conn.close()
@@ -315,7 +315,7 @@ class MemoryManager(BaseAgent):
                 UPDATE memory_entries 
                 SET importance_score = ?
                 WHERE memory_id = ?
-            ''', (importance_score, memory_id))
+            ''', (importance_score, memory_id)
             
             if cursor.rowcount == 0:
                 conn.close()
@@ -349,7 +349,7 @@ class MemoryManager(BaseAgent):
             cursor.execute('''
                 DELETE FROM memory_entries 
                 WHERE expires_at IS NOT NULL AND expires_at <= ?
-            ''', (datetime.now().isoformat(),))
+            ''', (datetime.now().isoformat(),)
             
             deleted_count = cursor.rowcount
             conn.commit()
@@ -385,7 +385,7 @@ class MemoryManager(BaseAgent):
                 FROM memory_entries 
                 GROUP BY memory_type
             ''')
-            memories_by_type = dict(cursor.fetchall())
+            memories_by_type = dict(cursor.fetchall()
             
             # Average importance
             cursor.execute('SELECT AVG(importance_score) FROM memory_entries')
@@ -396,7 +396,7 @@ class MemoryManager(BaseAgent):
                 SELECT COUNT(*) 
                 FROM memory_entries 
                 WHERE expires_at IS NOT NULL AND expires_at <= ?
-            ''', (datetime.now().isoformat(),))
+            ''', (datetime.now().isoformat(),)
             expired_count = cursor.fetchone()[0]
             
             conn.close()

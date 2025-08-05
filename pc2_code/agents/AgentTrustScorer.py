@@ -10,20 +10,22 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
+# Canonical import stack (TODO 1 compliance)
+from common.utils.env_standardizer import (
+    get_mainpc_ip, get_pc2_ip, get_env, get_current_machine
+)
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
-# Add the project's pc2_code directory to the Python path
-PC2_CODE_DIR = PathManager.get_project_root()
-if str(PC2_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(PC2_CODE_DIR))
-
-# Import required modules
+from common.config_manager import get_service_url, get_redis_url
 from common.core.base_agent import BaseAgent
+from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
+from common.utils.log_setup import configure_logging
+
+# Additional required imports
+import os
+import threading
 from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
@@ -32,7 +34,7 @@ config = Config().get_config()
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -41,17 +43,16 @@ def load_network_config():
         # Default fallback values
         return {
             "main_pc_ip": get_mainpc_ip(),
-            "pc2_ip": get_pc2_ip()),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
-                "agent_trust_scorer": int(os.environ.get("AGENT_TRUST_SCORER_PORT", 5626)),
-                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+                "agent_trust_scorer": int(os.environ.get("AGENT_TRUST_SCORER_PORT", 5626),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150)
             }
         }
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
@@ -64,28 +65,36 @@ logger = logging.getLogger(__name__)
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = get_mainpc_ip())
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
-BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
-AGENT_TRUST_SCORER_PORT = network_config.get("ports", {}).get("agent_trust_scorer", int(os.environ.get("AGENT_TRUST_SCORER_PORT", 5626)))
-ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+MAIN_PC_IP = get_mainpc_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0")
+AGENT_TRUST_SCORER_PORT = network_config.get("ports", {}).get("agent_trust_scorer", int(os.environ.get("AGENT_TRUST_SCORER_PORT", 5626))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150))
 
 class AgentTrustScorer(BaseAgent):
     """
     AgentTrustScorer: Tracks and scores the reliability of AI models based on performance metrics.
     """
-    def __init__(self, port: int = None):
-        # Initialize state before BaseAgent
-        self.running = True
-        self.request_count = 0
-        self.main_pc_connections = {}
-        self.start_time = time.time()
-        
-        # Initialize BaseAgent with proper parameters
+    def __init__(self, port: int = None, health_port: int = 8626):
         super().__init__(
             name="AgentTrustScorer", 
             port=port if port is not None else AGENT_TRUST_SCORER_PORT
         )
+        self.logger = configure_logging(__name__)            # NEW (Δ-2) TODO 2 compliance
+        self.error_publisher = create_pc2_error_publisher("agent_trust_scorer")
+
+        self._setup_sockets()
+        self._start_health_check()
+        self._init_thread = threading.Thread(
+            target=self._initialize_background, daemon=True
+        )
+        self._init_thread.start()
+        
+        # Initialize state
+        self.running = True
+        self.request_count = 0
+        self.main_pc_connections = {}
+        self.start_time = time.time()
         
         # Initialize database
         self.db_path = PathManager.get_project_root() / "cache" / str(PathManager.get_data_dir() / "agent_trust_scores.db")
@@ -156,7 +165,7 @@ class AgentTrustScorer(BaseAgent):
         base_score = successful_interactions / total_interactions
         
         # Adjust for response time (faster is better)
-        time_factor = max(0, 1 - (response_time / 5.0))  # 5 seconds as max threshold
+        time_factor = max(0, 1 - (response_time / 5.0)  # 5 seconds as max threshold
         
         # Combine factors
         new_trust_score = (base_score * 0.7) + (time_factor * 0.3)
@@ -166,14 +175,14 @@ class AgentTrustScorer(BaseAgent):
             INSERT OR REPLACE INTO model_scores 
             (model_id, trust_score, total_interactions, successful_interactions, last_updated)
             VALUES (?, ?, ?, ?, ?)
-        ''', (model_id, new_trust_score, total_interactions, successful_interactions, datetime.now()))
+        ''', (model_id, new_trust_score, total_interactions, successful_interactions, datetime.now())
         
         # Log performance
         cursor.execute('''
             INSERT INTO performance_logs 
             (model_id, success, response_time, timestamp)
             VALUES (?, ?, ?, ?)
-        ''', (model_id, success, response_time, datetime.now()))
+        ''', (model_id, success, response_time, datetime.now())
         
         conn.commit()
         conn.close()
@@ -205,7 +214,7 @@ class AgentTrustScorer(BaseAgent):
             WHERE model_id = ? 
             ORDER BY timestamp DESC 
             LIMIT ?
-        ''', (model_id, limit))
+        ''', (model_id, limit)
         
         history = cursor.fetchall()
         conn.close()
@@ -330,7 +339,7 @@ class AgentTrustScorer(BaseAgent):
                     
             except zmq.error.ZMQError as e:
                 logger.error(f"ZMQ error: {e}")
-                self.report_error("ZMQ_ERROR", str(e))
+                self.report_error("ZMQ_ERROR", str(e)
                 try:
                     self.socket.send_json({
                         'status': 'error',
@@ -342,7 +351,7 @@ class AgentTrustScorer(BaseAgent):
                 
             except Exception as e:
                 logger.error(f"Error processing request: {str(e)}")
-                self.report_error("PROCESSING_ERROR", str(e))
+                self.report_error("PROCESSING_ERROR", str(e)
                 try:
                     self.socket.send_json({
                         'status': 'error',
@@ -362,9 +371,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

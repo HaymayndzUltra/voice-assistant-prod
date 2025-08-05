@@ -25,7 +25,7 @@ def check_adapter_status():
         print(f"[INFO] Sending 'stats' request to LLM adapter on tcp://{HOST}:{PORT} ...")
         socket.send_json({"action": "stats"})
         response = socket.recv_json()
-        print("[INFO] Received response:\n" + json.dumps(response, indent=2))
+        print("[INFO] Received response:\n" + json.dumps(response, indent=2)
 
         if response.get("status") == "success":
             model = response.get("model_name", "N/A")

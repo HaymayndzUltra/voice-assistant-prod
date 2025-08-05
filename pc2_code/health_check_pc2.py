@@ -28,7 +28,7 @@ for name, port, payload in services:
     status = "UNKNOWN"
     resp = None
     try:
-        sock.connect(get_zmq_connection_string({port}, "localhost")))
+        sock.connect(get_zmq_connection_string({port}, "localhost"))
         sock.send_json(payload)
         resp = sock.recv_json()
         status = "ONLINE"

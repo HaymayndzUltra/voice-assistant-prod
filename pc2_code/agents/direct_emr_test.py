@@ -34,7 +34,7 @@ socket.send_json(prompt)
 if socket.poll(15000):
     response = socket.recv_json()
     print("Received response from EMR:")
-    print(json.dumps(response, indent=2))
+    print(json.dumps(response, indent=2)
 else:
     print("No response from EMR within 15 seconds.")
 context.term() 

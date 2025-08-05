@@ -16,7 +16,7 @@ try:
     # Wait up to 3 seconds
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
-    socks = dict(poller.poll(3000))
+    socks = dict(poller.poll(3000)
     if socks.get(socket) == zmq.POLLIN:
         response = socket.recv_json()
         print("Task Router Health Response:", response)

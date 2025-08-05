@@ -2,7 +2,7 @@ from pathlib import Path
 
 def update_active_agents():
     # Read the current active_pc2_agents.md
-    agents_path = Path(get_file_path("data", "voice_samples/active_pc2_agents.md"))
+    agents_path = Path(get_file_path("data", "voice_samples/active_pc2_agents.md")
     agents_content = agents_path.read_text()
     
     # List of services to remove

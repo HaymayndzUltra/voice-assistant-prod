@@ -16,11 +16,11 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import common modules
 from common.core.base_agent import BaseAgent
@@ -61,7 +61,6 @@ def load_network_config():
         }
     
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
                    handlers=[logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger("TutoringAgent")
 

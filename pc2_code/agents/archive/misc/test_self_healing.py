@@ -16,7 +16,7 @@ from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # Setup logging
-LOG_DIR = Path(os.path.dirname(__file__)).parent / "logs"
+LOG_DIR = Path(os.path.dirname(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 LOG_PATH = LOG_DIR / str(PathManager.get_logs_dir() / "test_self_healing.log")
 
@@ -70,7 +70,7 @@ def main():
                     
                     # Send response
                     response = {"status": "ok", "message": "Test self-healing agent running"}
-                    rep_socket.send_string(json.dumps(response))
+                    rep_socket.send_string(json.dumps(response)
                 
                 # Broadcast health status periodically
                 status_message = json.dumps({

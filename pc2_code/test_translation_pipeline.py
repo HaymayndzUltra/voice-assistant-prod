@@ -26,7 +26,7 @@ class TranslationPipelineTester:
                 "text": text,
                 "source_lang": source_lang,
                 "target_lang": target_lang,
-                "session_id": f"test_{int(time.time())}"
+                "session_id": f"test_{int(time.time()}"
             }
             
             self.socket.send_json(request)

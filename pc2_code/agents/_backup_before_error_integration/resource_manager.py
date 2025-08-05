@@ -24,9 +24,8 @@ except ImportError as e:
     print(f"Import error: {e}")
     TORCH_AVAILABLE = False
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-logging.basicConfig(level=logging.INFO)
+
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 

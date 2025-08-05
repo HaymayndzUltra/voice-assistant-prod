@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "ollama_bridge.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "ollama_bridge.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )

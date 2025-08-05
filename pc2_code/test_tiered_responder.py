@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 # Add agents directory to path
-sys.path.insert(0, str(Path(__file__).parent / 'agents'))
+sys.path.insert(0, str(Path(__file__).parent / 'agents')
 
 def test_tiered_responder():
     """Test TieredResponder agent for stability"""
@@ -64,7 +64,7 @@ def test_tiered_responder_on_port():
     
     try:
         sock.connect('tcp://127.0.0.1:7100')
-        sock.send_string(json.dumps({'action': 'health_check'}))
+        sock.send_string(json.dumps({'action': 'health_check'})
         
         try:
             response = sock.recv_string()

@@ -27,7 +27,7 @@ import subprocess
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+
 from common.utils.path_manager import PathManager
 from pc2_code.agents.core_agents.http_server import setup_health_check_server
 from pc2_code.agents.utils.config_loader import Config
@@ -39,10 +39,9 @@ _agent_args = parse_agent_args()
 from pc2_code.config import system_config
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_monitor.log"))
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_monitor.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
@@ -106,7 +105,7 @@ class HealthMonitor:
                 self.agent_endpoints[name] = f"http://{name.lower()}:{port + 1}/health"
         
         # Initialize ZMQ
-        self._init_zmq(kwargs.get('test_ports'))
+        self._init_zmq(kwargs.get('test_ports')
         
         # Running flag
         self.running = True
@@ -264,7 +263,7 @@ class HealthMonitor:
         tasks = []
         for agent in self.agents:
             if agent.get('required', False):  # Only check required agents
-                tasks.append(self._check_agent_health_async(agent))
+                tasks.append(self._check_agent_health_async(agent)
         
         # Run all tasks concurrently and collect results
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -639,7 +638,7 @@ class HealthMonitor:
             "version": getattr(self, "version", "1.0.0"),
             "port": self.port,
             "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
+            "error_reporting": bool(getattr(self, "error_bus", None)
         }
 if __name__ == "__main__":
     # Create and run the health monitor agent

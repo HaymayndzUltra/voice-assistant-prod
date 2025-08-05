@@ -21,8 +21,8 @@ TRANSLATOR_REP_PORT = 5563  # Port where translator_agent.py binds its REP socke
 
 def generate_request_id():
     """Generate a unique request ID using timestamp and UUID"""
-    timestamp = int(time.time())
-    uuid_part = str(uuid.uuid4())[:8]
+    timestamp = int(time.time()
+    uuid_part = str(uuid.uuid4()[:8]
     return f"test_{timestamp}_{uuid_part}"
 
 def main():
@@ -143,7 +143,7 @@ def main():
     print(f"{Fore.RED}Timeouts:          {timeout_count}")
     print(f"{Fore.RED}Errors:            {error_count}")
     
-    success_rate = (success_count / len(test_cases)) * 100
+    success_rate = (success_count / len(test_cases) * 100
     color = Fore.GREEN if success_rate > 75 else Fore.YELLOW if success_rate > 25 else Fore.RED
     print(f"{color}Success Rate:      {success_rate:.1f}%\n")
     

@@ -50,7 +50,7 @@ def send_translation_request(text, source_lang="tl", target_lang="en", session_i
         
         # Send the request
         logger.info(f"Sending request: {json.dumps(request)}")
-        socket.send_string(json.dumps(request))
+        socket.send_string(json.dumps(request)
         
         # Wait for response
         response_json = socket.recv_string()
@@ -88,7 +88,7 @@ def send_health_check():
         
         # Send the request
         logger.info("Sending health check request")
-        socket.send_string(json.dumps(request))
+        socket.send_string(json.dumps(request)
         
         # Wait for response
         response_json = socket.recv_string()
@@ -110,7 +110,7 @@ def run_interactive_session():
     logger.info("Starting interactive session with translator server")
     logger.info("Type 'exit' to quit, 'health' for a health check")
     
-    session_id = f"interactive_{int(time.time())}"
+    session_id = f"interactive_{int(time.time()}"
     logger.info(f"Using session ID: {session_id}")
     
     try:
@@ -157,7 +157,7 @@ def run_test_suite():
     logger.info(f"Health check passed: {json.dumps(health, indent=2)}")
     
     # Test translations with a consistent session
-    session_id = f"test_suite_{int(time.time())}"
+    session_id = f"test_suite_{int(time.time()}"
     
     test_phrases = [
         "buksan mo ang file",

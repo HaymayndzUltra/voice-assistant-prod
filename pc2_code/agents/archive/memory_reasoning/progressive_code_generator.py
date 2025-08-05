@@ -20,14 +20,14 @@ import re
 import threading
 
 # Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 from pc2_code.config.system_config import config
 from pc2_code.agents.error_database import ErrorDatabase
 from common.env_helpers import get_env
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "progressive_code_generator.log")
+log_file = Path(config.get('system.logs_dir', 'logs') / str(PathManager.get_logs_dir() / "progressive_code_generator.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -93,7 +93,7 @@ class ProgressiveCodeGenerator:
                 request["system_prompt"] = system_prompt
             
             # Send request to model manager
-            self.model_manager.send_string(json.dumps(request))
+            self.model_manager.send_string(json.dumps(request)
             
             # Wait for response with timeout
             poller = zmq.Poller()
@@ -107,7 +107,7 @@ class ProgressiveCodeGenerator:
                     return response["text"]
                 else:
                     logger.error(f"Error from model manager: {response.get('error', 'Unknown error')}")
-                    raise Exception(response.get("error", "Unknown error"))
+                    raise Exception(response.get("error", "Unknown error")
             else:
                 logger.error("Timeout waiting for response from model manager")
                 raise Exception("Timeout waiting for response from model manager")
@@ -127,7 +127,7 @@ class ProgressiveCodeGenerator:
             }
             
             # Send request to executor agent
-            self.executor.send_string(json.dumps(request))
+            self.executor.send_string(json.dumps(request)
             
             # Wait for response with timeout
             poller = zmq.Poller()
@@ -141,7 +141,7 @@ class ProgressiveCodeGenerator:
                     return response["result"]
                 else:
                     logger.error(f"Error from executor agent: {response.get('error', 'Unknown error')}")
-                    raise Exception(response.get("error", "Unknown error"))
+                    raise Exception(response.get("error", "Unknown error")
             else:
                 logger.error("Timeout waiting for response from executor agent")
                 raise Exception("Timeout waiting for response from executor agent")
@@ -730,7 +730,7 @@ Please fix all errors in the code. Only provide the fully corrected code, no exp
                     }
                 
                 # Send response
-                self.receiver.send_string(json.dumps(response))
+                self.receiver.send_string(json.dumps(response)
             
             except zmq.Again:
                 # Timeout, continue loop
@@ -740,13 +740,13 @@ Please fix all errors in the code. Only provide the fully corrected code, no exp
                     "status": "error",
                     "error": "Invalid JSON in request"
                 }
-                self.receiver.send_string(json.dumps(response))
+                self.receiver.send_string(json.dumps(response)
             except Exception as e:
                 response = {
                     "status": "error",
                     "error": f"Error processing request: {str(e)}"
                 }
-                self.receiver.send_string(json.dumps(response))
+                self.receiver.send_string(json.dumps(response)
     
     def run(self):
         """Run the progressive code generator"""

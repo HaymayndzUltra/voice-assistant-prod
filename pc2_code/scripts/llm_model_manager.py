@@ -49,9 +49,9 @@ logging.basicConfig(
 logger = logging.getLogger("llm_model_manager")
 
 # Default paths
-BASE_DIR = Path(os.environ.get("MODEL_DIR", "/app/models"))
+BASE_DIR = Path(os.environ.get("MODEL_DIR", "/app/models")
 CONFIG_FILE = BASE_DIR / "model_config.json"
-CACHE_DIR = Path(str(PathManager.get_temp_dir() / "model_cache"))
+CACHE_DIR = Path(str(PathManager.get_temp_dir() / "model_cache")
 
 # Model definitions
 DEFAULT_MODELS = {
@@ -158,7 +158,7 @@ def download_model(model_name: str, force: bool = False) -> bool:
             cache_dir=str(CACHE_DIR),
             local_files_only=False
         )
-        tokenizer.save_pretrained(str(model_dir))
+        tokenizer.save_pretrained(str(model_dir)
         
         # Download model with appropriate config
         if model_type == "llm":
@@ -194,7 +194,7 @@ def download_model(model_name: str, force: bool = False) -> bool:
                 local_files_only=False
             )
         
-        model.save_pretrained(str(model_dir))
+        model.save_pretrained(str(model_dir)
         
         # Update config
         config["downloaded"][model_name] = {
@@ -380,4 +380,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main() 

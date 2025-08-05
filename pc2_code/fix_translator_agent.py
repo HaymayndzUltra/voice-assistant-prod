@@ -40,7 +40,7 @@ def fix_translator_agent():
                 return original_text_for_return
             
             # Normalize text: remove excessive spaces, standardize punctuation
-            normalized_text = re.sub(r'\\s+', ' ', text.strip())
+            normalized_text = re.sub(r'\\s+', ' ', text.strip()
             
             # Step 1: Language detection - check if already English
             if self._is_likely_english(normalized_text):

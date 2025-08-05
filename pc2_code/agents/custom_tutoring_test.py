@@ -17,7 +17,7 @@ def send_tutor_request(action, subject=None, difficulty=None, session_id=None, u
         "difficulty": difficulty,
         "session_id": session_id,
         "user_id": "test_user_001",
-        "request_id": str(uuid.uuid4()),
+        "request_id": str(uuid.uuid4(),
         "timestamp": time.time()
     }
     
@@ -25,14 +25,14 @@ def send_tutor_request(action, subject=None, difficulty=None, session_id=None, u
         request["user_profile"] = user_profile
 
     print(f"\n>>> Sending Request (Action: {action})...")
-    print(json.dumps(request, indent=2))
+    print(json.dumps(request, indent=2)
     
     try:
         socket.send_json(request)
         if socket.poll(10000):  # 10 second timeout
             response = socket.recv_json()
             print(f"\n<<< Received Response:")
-            print(json.dumps(response, indent=2))
+            print(json.dumps(response, indent=2)
             return response
         else:
             print("\n<<< ERROR: No response within 10 seconds.")

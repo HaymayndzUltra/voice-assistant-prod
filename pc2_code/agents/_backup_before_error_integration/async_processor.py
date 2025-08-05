@@ -21,7 +21,7 @@ from pathlib import Path
 # Add project root to path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
@@ -180,7 +180,6 @@ class AsyncProcessor(BaseAgent):
         logger.info(f"AsyncProcessor sockets initialized on ports: {pull_port}, {push_port}, {health_port}")
         
     def _setup_logging(self):
-        logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[

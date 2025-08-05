@@ -160,7 +160,7 @@ def run_benchmark():
             translation, elapsed_ms, method = translate_text(socket, text)
             
             if translation:
-                char_per_second = (len(text) / (elapsed_ms / 1000)) if elapsed_ms > 0 else 0
+                char_per_second = (len(text) / (elapsed_ms / 1000) if elapsed_ms > 0 else 0
                 print(f"  Translation: \"{translation[:50]}{'...' if len(translation) > 50 else ''}\"")
                 print(f"  Method: {method}, Time: {elapsed_ms:.2f}ms, Speed: {char_per_second:.1f} chars/sec")
                 
@@ -189,7 +189,7 @@ def run_benchmark():
         # Select a mix of texts
         test_texts = []
         for category in SAMPLE_TEXTS:
-            test_texts.append(random.choice(SAMPLE_TEXTS[category]))
+            test_texts.append(random.choice(SAMPLE_TEXTS[category])
         
         for i, text in enumerate(test_texts):
             print(f"\nText {i+1}/{len(test_texts)} ({len(text)} chars): \"{text[:50]}{'...' if len(text) > 50 else ''}\"")
@@ -197,7 +197,7 @@ def run_benchmark():
             translation, elapsed_ms, actual_method = translate_text(socket, text, force_method=method)
             
             if translation and actual_method == method:
-                char_per_second = (len(text) / (elapsed_ms / 1000)) if elapsed_ms > 0 else 0
+                char_per_second = (len(text) / (elapsed_ms / 1000) if elapsed_ms > 0 else 0
                 print(f"  Translation: \"{translation[:50]}{'...' if len(translation) > 50 else ''}\"")
                 print(f"  Time: {elapsed_ms:.2f}ms, Speed: {char_per_second:.1f} chars/sec")
                 
@@ -223,7 +223,7 @@ def run_benchmark():
             avg_time = statistics.mean(data["times"])
             max_time = max(data["times"]) if data["times"] else 0
             min_time = min(data["times"]) if data["times"] else 0
-            success_rate = (data["success"] / (data["success"] + data["fail"])) * 100 if (data["success"] + data["fail"]) > 0 else 0
+            success_rate = (data["success"] / (data["success"] + data["fail"]) * 100 if (data["success"] + data["fail"]) > 0 else 0
             
             print(f"\n{Colors.YELLOW}{method.upper()}:{Colors.ENDC}")
             print_result("  Average Time", f"{avg_time:.2f}ms", avg_time < 1000)
@@ -237,7 +237,7 @@ def run_benchmark():
         if data["times"]:
             avg_time = statistics.mean(data["times"])
             char_count = data["char_count"] / len(data["times"])
-            char_per_second = (char_count / (avg_time / 1000)) if avg_time > 0 else 0
+            char_per_second = (char_count / (avg_time / 1000) if avg_time > 0 else 0
             
             print(f"\n{Colors.YELLOW}{category.upper()}:{Colors.ENDC}")
             print_result("  Average Time", f"{avg_time:.2f}ms", avg_time < 1000)

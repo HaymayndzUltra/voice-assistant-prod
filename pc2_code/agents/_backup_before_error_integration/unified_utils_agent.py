@@ -18,13 +18,13 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]  # points to repo root
-sys.path.insert(0, str(BASE_DIR))
+
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import config parser utility
 try:
@@ -40,7 +40,6 @@ except ImportError as e:
 # Configure logging
 log_directory = os.path.join('logs')
 os.makedirs(log_directory, exist_ok=True)
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[

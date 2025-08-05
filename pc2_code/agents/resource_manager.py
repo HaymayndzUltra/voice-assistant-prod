@@ -13,8 +13,6 @@ from collections import deque
 from typing import Dict, Any, Optional
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 # Import path utilities
 from common.utils.path_manager import PathManager
@@ -28,9 +26,8 @@ except ImportError as e:
     print(f"Import error: {e}")
     TORCH_AVAILABLE = False
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-logging.basicConfig(level=logging.INFO)
+
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
@@ -456,7 +453,7 @@ if __name__ == "__main__":
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -475,5 +472,5 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")

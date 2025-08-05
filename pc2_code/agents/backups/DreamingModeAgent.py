@@ -32,13 +32,13 @@ import random
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import config parser utility with fallback
 try:
@@ -58,7 +58,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "dreaming_mode_agent.log"))
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "dreaming_mode_agent.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 
@@ -154,7 +154,7 @@ self.main_port = port if port else DREAMING_MODE_PORT
                         response = self.dreamworld_socket.recv_json()
                         if response.get("status") == "success":
                             logger.info("Dream simulation completed successfully")
-                            self._record_dream_result(True, response.get("quality", 0.5))
+                            self._record_dream_result(True, response.get("quality", 0.5)
                         else:
                             logger.warning(f"Dream simulation failed: {response.get('error', 'Unknown error')}")
                             self._record_dream_result(False, 0.0)

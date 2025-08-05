@@ -19,7 +19,7 @@ import logging
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
@@ -27,14 +27,14 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "container_start.log")))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "container_start.log"))
     ]
 )
 logger = logging.getLogger("container_start")
 
 def load_config():
     """Load the startup configuration."""
-    config_path = PathManager.join_path("pc2_code", PathManager.join_path("config", "startup_config.yaml"))
+    config_path = PathManager.join_path("pc2_code", PathManager.join_path("config", "startup_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -157,7 +157,7 @@ def main():
     for agent in agents:
         proc = start_agent(agent)
         if proc:
-            processes.append((agent["name"], proc, agent))
+            processes.append((agent["name"], proc, agent)
     
     if not processes:
         logger.error("Failed to start any agents")
@@ -196,14 +196,14 @@ def main():
                 # Start a new monitor thread
                 thread = threading.Thread(
                     target=monitor_agent,
-                    args=(agent_info["name"], new_proc, lambda: restart_callback(index, agent_info)),
+                    args=(agent_info["name"], new_proc, lambda: restart_callback(index, agent_info),
                     daemon=True
                 )
                 thread.start()
         
         thread = threading.Thread(
             target=monitor_agent,
-            args=(name, proc, lambda idx=i, a=agent: restart_callback(idx, a)),
+            args=(name, proc, lambda idx=i, a=agent: restart_callback(idx, a),
             daemon=True
         )
         thread.start()

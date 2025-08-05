@@ -23,7 +23,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "nllb_test_results.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "nllb_test_results.log"),
         logging.StreamHandler()
     ]
 )
@@ -318,15 +318,15 @@ class TranslationTester:
         text2 = text2.lower()
         
         # Count common words
-        words1 = set(text1.split())
-        words2 = set(text2.split())
+        words1 = set(text1.split()
+        words2 = set(text2.split()
         common_words = words1.intersection(words2)
         
         # Calculate Jaccard similarity
         if not words1 or not words2:
             return 0
             
-        similarity = len(common_words) / len(words1.union(words2))
+        similarity = len(common_words) / len(words1.union(words2)
         return similarity
     
     def generate_report(self):
@@ -426,7 +426,7 @@ from common.utils.path_manager import PathManager
     print(f"{Fore.YELLOW}=== NLLB Translation Quality Tester ==={Style.RESET_ALL}")
     print(f"Server: {args.server}:{args.port}")
     print(f"Test categories: {len(TEST_CATEGORIES)}")
-    print(f"Total test phrases: {sum(len(phrases) for phrases in TEST_CATEGORIES.values())}")
+    print(f"Total test phrases: {sum(len(phrases) for phrases in TEST_CATEGORIES.values()}")
     print()
     
     # Initialize tester

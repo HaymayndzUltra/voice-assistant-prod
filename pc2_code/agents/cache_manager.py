@@ -21,7 +21,7 @@ from pathlib import Path
 # Add project root to path using PathManager (standardized approach)
 PROJECT_ROOT = PathManager.get_project_root()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
@@ -99,7 +99,7 @@ class CacheManager(BaseAgent):
         try:
             self.redis = redis.Redis(
                 host=os.environ.get('REDIS_HOST', 'localhost'),
-                port=int(os.environ.get('REDIS_PORT', 6379)),
+                port=int(os.environ.get('REDIS_PORT', 6379),
                 password=os.environ.get('REDIS_PASSWORD', None),
                 decode_responses=False  # Keep as bytes for compatibility
             )
@@ -295,7 +295,7 @@ class CacheManager(BaseAgent):
             
             # Use configured TTL if not specified
             if ttl is None and cache_type in self.cache_config:
-                ttl = int(self.cache_config[cache_type]['ttl'].total_seconds())
+                ttl = int(self.cache_config[cache_type]['ttl'].total_seconds()
             elif ttl is None:
                 ttl = 3600  # Default 1 hour
             
@@ -391,7 +391,7 @@ class CacheManager(BaseAgent):
             "version": getattr(self, "version", "1.0.0"),
             "port": self.port,
             "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
+            "error_reporting": bool(getattr(self, "error_bus", None)
         })
         
         # Add Redis info if available
@@ -490,13 +490,11 @@ def main():
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -515,7 +513,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 if __name__ == "__main__":

@@ -136,7 +136,7 @@ PC2_SERVICES = [
 def check_port_in_use(port):
     """Check if a port is already in use on this system"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
+        return s.connect_ex(('localhost', port) == 0
 
 # Verify a specific ZMQ service
 def verify_service(service, context):
@@ -158,7 +158,7 @@ def verify_service(service, context):
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.LINGER, 0)
     socket.setsockopt(zmq.RCVTIMEO, REQUEST_TIMEOUT)
-    socket.connect(get_zmq_connection_string({service[, "localhost"))port']}")
+    socket.connect(get_zmq_connection_string({service[, "localhost")port']}")
     
     # Measure response time
     start_time = time.time()
@@ -307,7 +307,7 @@ def main():
         
         result = verify_service(service, context)
         results.append(result)
-        results_by_category[category].append((service, result))
+        results_by_category[category].append((service, result)
         
         if result["status"] == "HEALTHY":
             healthy_services += 1

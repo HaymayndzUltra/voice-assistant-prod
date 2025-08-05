@@ -58,7 +58,7 @@ def check_service(service_info):
     try:
         addr = f"tcp://127.0.0.1:{port}"
         sock.connect(addr)
-        sock.send_string(json.dumps(payload))
+        sock.send_string(json.dumps(payload)
         
         try:
             resp = sock.recv_string()

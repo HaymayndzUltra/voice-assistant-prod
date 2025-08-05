@@ -16,21 +16,21 @@ from enum import Enum
 import sys
 from pathlib import Path
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 from pc2_code.config.system_config import get_service_host, get_service_port
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "dream_world_agent.log"))),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "dream_world_agent.log")),
         logging.StreamHandler()
     ]
 )
@@ -325,7 +325,7 @@ class DreamWorldAgent:
             json.dumps(causal_analysis),
             json.dumps(counterfactuals),
             json.dumps(metadata)
-        ))
+        )
         
         simulation_id = cursor.lastrowid
         conn.commit()
@@ -353,7 +353,7 @@ class DreamWorldAgent:
             value,
             uncertainty,
             json.dumps(metadata)
-        ))
+        )
         
         conn.commit()
         conn.close()
@@ -370,7 +370,7 @@ class DreamWorldAgent:
             response = self.model_socket.recv_json()
             if response['status'] == 'success':
                 # Calculate uncertainty based on state complexity and model confidence
-                uncertainty = self._calculate_uncertainty(state, response.get('confidence', 0.5))
+                uncertainty = self._calculate_uncertainty(state, response.get('confidence', 0.5)
                 return response['evaluation'], uncertainty
             else:
                 logger.error(f"Error evaluating state: {response['message']}")
@@ -386,7 +386,7 @@ class DreamWorldAgent:
         uncertainty = 1.0 - model_confidence
         
         # Increase uncertainty for complex states
-        state_complexity = len(str(state)) / 1000  # Simple complexity metric
+        state_complexity = len(str(state) / 1000  # Simple complexity metric
         uncertainty += min(0.3, state_complexity)
         
         return min(1.0, uncertainty)
@@ -480,7 +480,7 @@ class DreamWorldAgent:
             if len(node.children) < len(self.scenario_templates[scenario].actions):
                 return self._expand_node(node, scenario)
             
-            node = max(node.children, key=lambda n: n.get_ucb())
+            node = max(node.children, key=lambda n: n.get_ucb()
         
         return node
     
@@ -642,7 +642,7 @@ config = load_config()"""
             UPDATE simulation_states
             SET simulation_id = ?
             WHERE simulation_id = 0
-        ''', (simulation_id,))
+        ''', (simulation_id,)
         
         conn.commit()
         conn.close()
@@ -753,10 +753,10 @@ config = load_config()"""
             json.dumps(template['actions']),
             json.dumps(template['constraints']),
             json.dumps(template['evaluation_metrics']),
-            json.dumps(template.get('metadata', {})),
+            json.dumps(template.get('metadata', {}),
             datetime.now(),
             datetime.now()
-        ))
+        )
         
         scenario_id = cursor.lastrowid
         conn.commit()
@@ -784,7 +784,7 @@ config = load_config()"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute('SELECT * FROM scenarios WHERE scenario_id = ?', (scenario_id,))
+        cursor.execute('SELECT * FROM scenarios WHERE scenario_id = ?', (scenario_id,)
         scenario = cursor.fetchone()
         
         conn.close()
@@ -818,7 +818,7 @@ config = load_config()"""
         cursor = conn.cursor()
         
         # Get current scenario
-        cursor.execute('SELECT * FROM scenarios WHERE scenario_id = ?', (scenario_id,))
+        cursor.execute('SELECT * FROM scenarios WHERE scenario_id = ?', (scenario_id,)
         scenario = cursor.fetchone()
         
         if not scenario:
@@ -838,13 +838,13 @@ config = load_config()"""
                 update_fields.append(f'{field} = ?')
                 if field in ['initial_state', 'actions', 'constraints',
                            'evaluation_metrics', 'metadata']:
-                    params.append(json.dumps(value))
+                    params.append(json.dumps(value)
                 else:
                     params.append(value)
         
         if update_fields:
             update_fields.append('updated_at = ?')
-            params.append(datetime.now())
+            params.append(datetime.now()
             params.append(scenario_id)
             
             query = f'''
@@ -878,7 +878,7 @@ config = load_config()"""
             while True:
                 # Receive message
                 identity, _, message = self.socket.recv_multipart()
-                message = json.loads(message.decode())
+                message = json.loads(message.decode()
                 
                 # Process message
                 response = self.handle_request(message)

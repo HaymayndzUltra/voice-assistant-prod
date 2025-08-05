@@ -31,13 +31,13 @@ import random
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
@@ -73,7 +73,6 @@ def load_network_config():
         }
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[

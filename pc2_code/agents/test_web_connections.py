@@ -21,6 +21,8 @@ def test_connection(port):
         print(f"❌ Failed to connect to port {port}: {e}")
         return False
     finally:
+        pass
+
 def main():
     # Test both web service ports
     ports = [5604, 5605]
@@ -33,7 +35,7 @@ def main():
         print(f"Port {port}: {status}")
     
     # Exit with error if any connection failed
-    if not all(results.values()):
+    if not all(results.values():
         sys.exit(1)
 
 if __name__ == "__main__":

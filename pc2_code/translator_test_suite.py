@@ -141,8 +141,8 @@ class TranslatorTester:
             return 1.0
         
         # Calculate word overlap ratio
-        trans_words = set(trans_norm.split())
-        expect_words = set(expect_norm.split())
+        trans_words = set(trans_norm.split()
+        expect_words = set(expect_norm.split()
         
         if not expect_words:
             return 0.0
@@ -244,7 +244,7 @@ class TranslatorTester:
         self._print_summary()
         
         # Check if test is successful (80%+ success rate)
-        success_rate = (self.results["successful"] / max(1, self.results["total_tests"])) * 100
+        success_rate = (self.results["successful"] / max(1, self.results["total_tests"]) * 100
         return success_rate >= 80.0
     
     def run_stress_test(self, iterations=20):
@@ -306,7 +306,7 @@ class TranslatorTester:
     
     def _print_summary(self):
         """Print a summary of test results"""
-        success_rate = (self.results["successful"] / max(1, self.results["total_tests"])) * 100
+        success_rate = (self.results["successful"] / max(1, self.results["total_tests"]) * 100
         avg_time = self.results["total_time"] / max(1, self.results["total_tests"])
         
         print("\n" + "=" * 60)

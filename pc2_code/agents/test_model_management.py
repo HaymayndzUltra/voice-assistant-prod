@@ -18,10 +18,10 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+
 from common.utils.path_manager import PathManager
-# Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
+# Add parent directory to path for imports - TODO 1 compliance: remove sys.path hacks
+# sys.path.append(str(Path(__file__).parent.parent))
 
 # Import components to test
 from enhanced_model_router import EnhancedModelRouter
@@ -29,15 +29,8 @@ from remote_connector_agent import RemoteConnectorAgent
 from tinyllama_service_enhanced import TinyLlamaService
 from common.env_helpers import get_env
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "test_model_management.log"))),
-        logging.StreamHandler()
-    ]
-)
+# Configure logging - TODO 1/3 compliance: use configure_logging instead of basicConfig
+# logging.basicConfig removed per canonical import requirements
 logger = logging.getLogger("ModelManagementTests")
 
 class TestModelManagementHierarchy(unittest.TestCase):
@@ -104,10 +97,8 @@ class TestModelManagementHierarchy(unittest.TestCase):
     
     def tearDown(self):
         """Clean up each test"""
-        self.router_
-        self.connector_
-        self.tinyllama_
-        self.
+        # Clean up test resources if needed
+        pass
     def test_router_health_check(self):
         """Test router health check"""
         logger.info("Testing router health check")
@@ -295,7 +286,7 @@ def run_tests():
         logger.info("Tests interrupted by user")
     except Exception as e:
         logger.error(f"Error running tests: {e}")
-        logger.error(traceback.format_exc())
+        logger.error(traceback.format_exc()
         sys.exit(1)
 
 if __name__ == "__main__":

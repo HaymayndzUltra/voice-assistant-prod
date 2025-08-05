@@ -32,7 +32,7 @@ from common.utils.path_manager import PathManager
 # Set up paths using PathManager (after import)
 project_root = str(PathManager.get_project_root())
 if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+    
 
 # Import base agent and config loaders
 from common.core.base_agent import BaseAgent
@@ -76,7 +76,6 @@ def load_network_config():
 LOG_DIR = Path(project_root) / "logs" # Use project_root for consistency
 LOG_DIR.mkdir(exist_ok=True)
 
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[

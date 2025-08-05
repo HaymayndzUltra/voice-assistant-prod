@@ -47,8 +47,8 @@ def print_metrics(start_time, text_length, prompt_length):
     """Calculate and print performance metrics"""
     elapsed = time.time() - start_time
     examples_ratio = round(prompt_length / max(text_length, 1), 2)
-    efficiency_score = min(10, max(1, 10 - (elapsed * 2)))
-    quality_score = min(10, max(1, examples_ratio * 3))
+    efficiency_score = min(10, max(1, 10 - (elapsed * 2))
+    quality_score = min(10, max(1, examples_ratio * 3)
     
     print(f"{Fore.MAGENTA}{'-'*90}{Style.RESET_ALL}")
     print(f"{Fore.YELLOW}PERFORMANCE METRICS:{Style.RESET_ALL}")
@@ -102,7 +102,7 @@ for category, examples in cases.items():
         print(f"{Fore.WHITE}{prompt}{Style.RESET_ALL}\n")
         
         # Performance metrics
-        elapsed, quality = print_metrics(start, len(text), len(prompt))
+        elapsed, quality = print_metrics(start, len(text), len(prompt)
         total_time += elapsed
         category_stats[category]['total_time'] += elapsed
         quality_scores.append(quality)
@@ -112,7 +112,7 @@ for cat, stats in category_stats.items():
     if stats['count'] > 0:
         stats['avg_time'] = stats['total_time'] / stats['count']
         # Calculate average word count in prompts
-        total_words = sum(len(p.split()) for p in stats['prompts'])
+        total_words = sum(len(p.split() for p in stats['prompts'])
         stats['avg_words'] = total_words / stats['count']
 
 # Final summary with enhanced analytics

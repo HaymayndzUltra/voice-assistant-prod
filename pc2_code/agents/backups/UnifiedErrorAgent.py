@@ -14,13 +14,13 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import config parser utility
 try:
@@ -40,7 +40,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_error_agent.log"))
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_error_agent.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(
@@ -129,7 +129,7 @@ self.main_port = port if port is not None else ERROR_AGENT_PORT
     def _check_error_thresholds(self):
         """Check if any error patterns exceed thresholds."""
         for error_type, pattern in self.error_patterns.items():
-            threshold = self.error_thresholds.get(pattern['severity'], float('inf'))
+            threshold = self.error_thresholds.get(pattern['severity'], float('inf')
             if pattern['count'] >= threshold:
                 logger.warning(f"Error threshold exceeded for {error_type}: {pattern['count']} occurrences")
                 self._trigger_alert(error_type, pattern)

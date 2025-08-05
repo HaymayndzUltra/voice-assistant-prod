@@ -24,10 +24,10 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 
 # Import task memory
 from web_automation.utils.task_memory import TaskMemory
@@ -38,7 +38,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_task_agent.log")))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_task_agent.log"))
     ]
 )
 logger = logging.getLogger('LLMTaskAgent')

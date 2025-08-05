@@ -34,15 +34,15 @@ import urllib.parse
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 from pc2_code.config.pc2_connections import get_connection_string
 from common.env_helpers import get_env
 
 # Setup logging
-LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "autonomous_web_assistant.log"))
+LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "autonomous_web_assistant.log")
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 logging.basicConfig(
@@ -86,7 +86,7 @@ class AutonomousWebAssistant:
         self.model_router = self.context.socket(zmq.REQ)
         try:
             # Try to use PC2 connection if available
-            self.model_router.connect(get_connection_string("enhanced_model_router"))
+            self.model_router.connect(get_connection_string("enhanced_model_router")
             logger.info("Connected to Enhanced Model Router on PC2")
         except (ImportError, ValueError):
             # Fallback to local connection
@@ -96,7 +96,7 @@ class AutonomousWebAssistant:
         # Connect to Enhanced Web Scraper (port 5602)
         self.web_scraper = self.context.socket(zmq.REQ)
         try:
-            self.web_scraper.connect(get_connection_string("enhanced_web_scraper"))
+            self.web_scraper.connect(get_connection_string("enhanced_web_scraper")
             logger.info("Connected to Enhanced Web Scraper on PC2")
         except (ImportError, ValueError):
             self.web_scraper.connect(f"tcp://localhost:{ENHANCED_WEB_SCRAPER_PORT}")
@@ -105,7 +105,7 @@ class AutonomousWebAssistant:
         # Connect to Contextual Memory Agent
         self.memory_agent = self.context.socket(zmq.REQ)
         try:
-            self.memory_agent.connect(get_connection_string("contextual_memory"))
+            self.memory_agent.connect(get_connection_string("contextual_memory")
             logger.info("Connected to Contextual Memory Agent on PC2")
         except (ImportError, ValueError):
             # Use the new port for consolidated Contextual Memory Agent (5596)
@@ -156,7 +156,7 @@ class AutonomousWebAssistant:
                 request["system_prompt"] = system_prompt
             
             # Send request to model manager
-            self.model_manager.send_string(json.dumps(request))
+            self.model_manager.send_string(json.dumps(request)
             
             # Wait for response with timeout
             poller = zmq.Poller()
@@ -170,7 +170,7 @@ class AutonomousWebAssistant:
                     return response["text"]
                 else:
                     logger.error(f"Error from model manager: {response.get('error', 'Unknown error')}")
-                    raise Exception(response.get("error", "Unknown error"))
+                    raise Exception(response.get("error", "Unknown error")
             else:
                 logger.error("Timeout waiting for response from model manager")
                 raise Exception("Timeout waiting for response from model manager")
@@ -193,7 +193,7 @@ class AutonomousWebAssistant:
     
     def navigate_to_url(self, url: str) -> Dict[str, Any]:
         """Navigate to a URL and return the page content"""
-        if not url.startswith(('http://', 'https://')):
+        if not url.startswith(('http://', 'https://'):
             url = 'https://' + url
         
         self._throttle_requests()
@@ -212,10 +212,10 @@ class AutonomousWebAssistant:
             
             # Extract main content (heuristic approach)
             main_content = ""
-            main_tags = soup.find_all(['article', 'main', 'div', 'section'], class_=lambda c: c and ('content' in c.lower() or 'main' in c.lower()))
+            main_tags = soup.find_all(['article', 'main', 'div', 'section'], class_=lambda c: c and ('content' in c.lower() or 'main' in c.lower())
             if main_tags:
                 # Use the largest content block
-                main_tag = max(main_tags, key=lambda tag: len(tag.get_text()))
+                main_tag = max(main_tags, key=lambda tag: len(tag.get_text())
                 main_content = main_tag.get_text(separator='\n', strip=True)
             else:
                 # Fallback: just get the body text
@@ -234,7 +234,7 @@ class AutonomousWebAssistant:
                 if href.startswith('/'):
                     base_url = '/'.join(url.split('/')[:3])  # http(s)://domain.com
                     href = base_url + href
-                if text and href.startswith(('http://', 'https://')):
+                if text and href.startswith(('http://', 'https://'):
                     links.append({"text": text[:100], "href": href})
             
             # Extract forms
@@ -340,7 +340,7 @@ class AutonomousWebAssistant:
                     related_questions.append(question_text)
             
             # Cache the search results
-            cache_key = hashlib.md5(query.encode()).hexdigest()
+            cache_key = hashlib.md5(query.encode().hexdigest()
             self.cached_results[cache_key] = {
                 "query": query,
                 "results": results,
@@ -394,7 +394,7 @@ class AutonomousWebAssistant:
                         fields.add(field['name'])
                 
                 # Check if this form has all the fields we want to fill
-                form_fields = set(form_data.keys())
+                form_fields = set(form_data.keys()
                 if form_fields.issubset(fields):
                     target_form = form
                     break
@@ -409,8 +409,8 @@ class AutonomousWebAssistant:
                             fields.add(field['name'])
                     
                     # Count matches
-                    form_fields = set(form_data.keys())
-                    match_count = len(form_fields.intersection(fields))
+                    form_fields = set(form_data.keys()
+                    match_count = len(form_fields.intersection(fields)
                     if match_count > max_match_count:
                         max_match_count = match_count
                         target_form = form
@@ -442,7 +442,7 @@ class AutonomousWebAssistant:
             if action.startswith('/'):
                 base_url = '/'.join(url.split('/')[:3])  # http(s)://domain.com
                 action = base_url + action
-            elif not action.startswith(('http://', 'https://')):
+            elif not action.startswith(('http://', 'https://'):
                 # Relative to current page
                 action = url + '/' + action
             
@@ -645,16 +645,16 @@ Focus on extracting the most relevant facts or information that would help answe
                     response = {"status": "error", "error": "Unknown action"}
                 
                 # Send the response
-                self.socket.send_string(json.dumps(response))
+                self.socket.send_string(json.dumps(response)
                 
             except json.JSONDecodeError:
                 logger.error("Invalid JSON in request")
-                self.socket.send_string(json.dumps({"status": "error", "error": "Invalid JSON"}))
+                self.socket.send_string(json.dumps({"status": "error", "error": "Invalid JSON"})
             except Exception as e:
                 logger.error(f"Error handling request: {str(e)}")
                 traceback.print_exc()
                 try:
-                    self.socket.send_string(json.dumps({"status": "error", "error": str(e)}))
+                    self.socket.send_string(json.dumps({"status": "error", "error": str(e)})
                 except zmq.ZMQError:
                     pass  # Socket might be in a bad state
     

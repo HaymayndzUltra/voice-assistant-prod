@@ -14,7 +14,7 @@ def start_agent(script, args=None, port=None, dry_run=False):
         print(f"Command: {' '.join(cmd)}")
         
         # Use the correct path for PC2 agents
-        working_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "agents")
+        working_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)), "agents")
         print(f"Working directory: {working_dir}")
         
         if dry_run:

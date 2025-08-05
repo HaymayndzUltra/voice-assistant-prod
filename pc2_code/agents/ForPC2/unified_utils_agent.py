@@ -18,13 +18,13 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]  # points to repo root
-sys.path.insert(0, str(BASE_DIR))
+
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import config parser utility
 try:
@@ -40,7 +40,6 @@ except ImportError as e:
 # Configure logging
 log_directory = os.path.join('logs')
 os.makedirs(log_directory, exist_ok=True)
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
@@ -52,7 +51,7 @@ logger = logging.getLogger('UnifiedUtilsAgent')
 # Load configuration at the module level
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -61,13 +60,13 @@ def load_network_config():
         # Default fallback values
         return {
             "main_pc_ip": get_mainpc_ip(),
-            "pc2_ip": get_pc2_ip()),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
-                "utils_agent": int(os.environ.get("UTILS_AGENT_PORT", 7118)),
-                "utils_health": int(os.environ.get("UTILS_AGENT_HEALTH_PORT", 8118)),
-                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+                "utils_agent": int(os.environ.get("UTILS_AGENT_PORT", 7118),
+                "utils_health": int(os.environ.get("UTILS_AGENT_HEALTH_PORT", 8118),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150)
             }
         }
 
@@ -75,12 +74,12 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = get_mainpc_ip())
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
-BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
-UTILS_AGENT_PORT = network_config.get("ports", {}).get("utils_agent", int(os.environ.get("UTILS_AGENT_PORT", 7118)))
-UTILS_AGENT_HEALTH_PORT = network_config.get("ports", {}).get("utils_health", int(os.environ.get("UTILS_AGENT_HEALTH_PORT", 8118)))
-ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+MAIN_PC_IP = get_mainpc_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0")
+UTILS_AGENT_PORT = network_config.get("ports", {}).get("utils_agent", int(os.environ.get("UTILS_AGENT_PORT", 7118))
+UTILS_AGENT_HEALTH_PORT = network_config.get("ports", {}).get("utils_health", int(os.environ.get("UTILS_AGENT_HEALTH_PORT", 8118))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150))
 
 class UnifiedUtilsAgent(BaseAgent):
     """
@@ -149,11 +148,11 @@ class UnifiedUtilsAgent(BaseAgent):
                         file.unlink()
                         result["files_removed"] += 1
                     except Exception as e:
-                        result["errors"].append(str(e))
+                        result["errors"].append(str(e)
             logging.info(f"Temp files cleaned: {result['files_removed']} files removed.")
         except Exception as e:
-            result["errors"].append(str(e))
-            self.report_error("TEMP_FILES_CLEANUP_ERROR", str(e))
+            result["errors"].append(str(e)
+            self.report_error("TEMP_FILES_CLEANUP_ERROR", str(e)
         return result
 
     def cleanup_logs(self, log_dir: str = "agents/logs", days_old: int = 7) -> dict:
@@ -162,17 +161,17 @@ class UnifiedUtilsAgent(BaseAgent):
         try:
             log_path = Path(log_dir)
             if log_path.exists():
-                for file in log_path.glob(str(PathManager.get_logs_dir() / "*.log")):
+                for file in log_path.glob(str(PathManager.get_logs_dir() / "*.log"):
                     try:
-                        if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime)).days > days_old:
+                        if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime).days > days_old:
                             file.unlink()
                             result["files_removed"] += 1
                     except Exception as e:
-                        result["errors"].append(str(e))
+                        result["errors"].append(str(e)
             logging.info(f"Old logs cleaned: {result['files_removed']} files removed.")
         except Exception as e:
-            result["errors"].append(str(e))
-            self.report_error("LOGS_CLEANUP_ERROR", str(e))
+            result["errors"].append(str(e)
+            self.report_error("LOGS_CLEANUP_ERROR", str(e)
         return result
 
     def cleanup_cache(self, cache_dir: str = "agents/cache", days_old: int = 1) -> dict:
@@ -183,15 +182,15 @@ class UnifiedUtilsAgent(BaseAgent):
             if cache_path.exists():
                 for file in cache_path.glob("*"):
                     try:
-                        if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime)).days > days_old:
+                        if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime).days > days_old:
                             file.unlink()
                             result["files_removed"] += 1
                     except Exception as e:
-                        result["errors"].append(str(e))
+                        result["errors"].append(str(e)
             logging.info(f"Cache cleaned: {result['files_removed']} files removed.")
         except Exception as e:
-            result["errors"].append(str(e))
-            self.report_error("CACHE_CLEANUP_ERROR", str(e))
+            result["errors"].append(str(e)
+            self.report_error("CACHE_CLEANUP_ERROR", str(e)
         return result
 
     def cleanup_browser_cache(self) -> dict:
@@ -203,15 +202,15 @@ class UnifiedUtilsAgent(BaseAgent):
             edge_cache_dirs = []
             sys_platform = platform.system()
             if sys_platform == "Windows":
-                chrome_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Cache"))
-                firefox_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles"))
-                edge_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Cache"))
+                chrome_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Cache")
+                firefox_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles")
+                edge_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Cache")
             elif sys_platform == "Darwin":
-                chrome_cache_dirs.append(os.path.expanduser("~/Library/Caches/Google/Chrome"))
-                firefox_cache_dirs.append(os.path.expanduser("~/Library/Caches/Firefox"))
+                chrome_cache_dirs.append(os.path.expanduser("~/Library/Caches/Google/Chrome")
+                firefox_cache_dirs.append(os.path.expanduser("~/Library/Caches/Firefox")
             elif sys_platform == "Linux":
-                chrome_cache_dirs.append(str(PathManager.get_cache_dir() / "google-chrome")))
-                firefox_cache_dirs.append(str(PathManager.get_cache_dir() / "mozilla/firefox")))
+                chrome_cache_dirs.append(str(PathManager.get_cache_dir() / "google-chrome"))
+                firefox_cache_dirs.append(str(PathManager.get_cache_dir() / "mozilla/firefox"))
             all_cache_dirs = chrome_cache_dirs + firefox_cache_dirs + edge_cache_dirs
             for cache_dir in all_cache_dirs:
                 if os.path.exists(cache_dir):
@@ -236,8 +235,8 @@ class UnifiedUtilsAgent(BaseAgent):
                         result["errors"].append(f"Error cleaning cache directory {cache_dir}: {str(e)}")
             logging.info(f"Browser caches cleaned: {result['browsers_cleaned']} browsers, {result['files_removed']} files removed, {result['bytes_freed']} bytes freed.")
         except Exception as e:
-            result["errors"].append(str(e))
-            self.report_error("BROWSER_CACHE_CLEANUP_ERROR", str(e))
+            result["errors"].append(str(e)
+            self.report_error("BROWSER_CACHE_CLEANUP_ERROR", str(e)
         return result
 
     def _get_dir_size(self, dir_path: str) -> int:
@@ -263,13 +262,13 @@ class UnifiedUtilsAgent(BaseAgent):
         except subprocess.CalledProcessError as e:
             result["status"] = "error"
             result["message"] = f"Error running Windows Disk Cleanup: {str(e)}"
-            result["errors"].append(str(e))
-            self.report_error("WINDOWS_DISK_CLEANUP_ERROR", str(e))
+            result["errors"].append(str(e)
+            self.report_error("WINDOWS_DISK_CLEANUP_ERROR", str(e)
         except Exception as e:
             result["status"] = "error"
             result["message"] = f"Error running Windows Disk Cleanup: {str(e)}"
-            result["errors"].append(str(e))
-            self.report_error("WINDOWS_DISK_CLEANUP_ERROR", str(e))
+            result["errors"].append(str(e)
+            self.report_error("WINDOWS_DISK_CLEANUP_ERROR", str(e)
         return result
 
     def cleanup_system(self) -> dict:
@@ -333,7 +332,7 @@ class UnifiedUtilsAgent(BaseAgent):
                         self.request_count += 1
                 except zmq.error.ZMQError as e:
                     logger.error(f"ZMQ error in run loop: {e}")
-                    self.report_error("ZMQ_ERROR", str(e))
+                    self.report_error("ZMQ_ERROR", str(e)
                     try:
                         self.socket.send_json({'status': 'error', 'error': str(e)})
                     except:
@@ -341,7 +340,7 @@ class UnifiedUtilsAgent(BaseAgent):
                     time.sleep(1)  # Avoid tight loop on error
                 except Exception as e:
                     logger.error(f"Error in run loop: {e}")
-                    self.report_error("RUN_LOOP_ERROR", str(e))
+                    self.report_error("RUN_LOOP_ERROR", str(e)
                     try:
                         self.socket.send_json({'status': 'error', 'error': str(e)})
                     except:
@@ -420,8 +419,6 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

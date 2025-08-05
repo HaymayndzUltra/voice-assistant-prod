@@ -15,14 +15,14 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 
 import time# Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import config parser utility
 try:
@@ -42,7 +42,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_utils_agent.log"))
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_utils_agent.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(
@@ -81,10 +81,10 @@ self.main_port = port if port is not None else UTILS_AGENT_PORT
                         file.unlink()
                         result["files_removed"] += 1
                     except Exception as e:
-                        result["errors"].append(str(e))
+                        result["errors"].append(str(e)
             logging.info(f"Temp files cleaned: {result['files_removed']} files removed.")
         except Exception as e:
-            result["errors"].append(str(e))
+            result["errors"].append(str(e)
         return result
 
     def cleanup_logs(self, log_dir: str = "agents/logs", days_old: int = 7) -> dict:
@@ -93,16 +93,16 @@ self.main_port = port if port is not None else UTILS_AGENT_PORT
         try:
             log_path = Path(log_dir)
             if log_path.exists():
-                for file in log_path.glob(str(PathManager.get_logs_dir() / "*.log")):
+                for file in log_path.glob(str(PathManager.get_logs_dir() / "*.log"):
                     try:
-                        if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime)).days > days_old:
+                        if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime).days > days_old:
                             file.unlink()
                             result["files_removed"] += 1
                     except Exception as e:
-                        result["errors"].append(str(e))
+                        result["errors"].append(str(e)
             logging.info(f"Old logs cleaned: {result['files_removed']} files removed.")
         except Exception as e:
-            result["errors"].append(str(e))
+            result["errors"].append(str(e)
         return result
 
     def cleanup_cache(self, cache_dir: str = "agents/cache", days_old: int = 1) -> dict:
@@ -113,14 +113,14 @@ self.main_port = port if port is not None else UTILS_AGENT_PORT
             if cache_path.exists():
                 for file in cache_path.glob("*"):
                     try:
-                        if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime)).days > days_old:
+                        if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime).days > days_old:
                             file.unlink()
                             result["files_removed"] += 1
                     except Exception as e:
-                        result["errors"].append(str(e))
+                        result["errors"].append(str(e)
             logging.info(f"Cache cleaned: {result['files_removed']} files removed.")
         except Exception as e:
-            result["errors"].append(str(e))
+            result["errors"].append(str(e)
         return result
 
     def cleanup_browser_cache(self) -> dict:
@@ -132,15 +132,15 @@ self.main_port = port if port is not None else UTILS_AGENT_PORT
             edge_cache_dirs = []
             sys_platform = platform.system()
             if sys_platform == "Windows":
-                chrome_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Cache"))
-                firefox_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles"))
-                edge_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Cache"))
+                chrome_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Cache")
+                firefox_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles")
+                edge_cache_dirs.append(os.path.expandvars("%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Cache")
             elif sys_platform == "Darwin":
-                chrome_cache_dirs.append(os.path.expanduser("~/Library/Caches/Google/Chrome"))
-                firefox_cache_dirs.append(os.path.expanduser("~/Library/Caches/Firefox"))
+                chrome_cache_dirs.append(os.path.expanduser("~/Library/Caches/Google/Chrome")
+                firefox_cache_dirs.append(os.path.expanduser("~/Library/Caches/Firefox")
             elif sys_platform == "Linux":
-                chrome_cache_dirs.append(str(PathManager.get_cache_dir() / "google-chrome")))
-                firefox_cache_dirs.append(str(PathManager.get_cache_dir() / "mozilla/firefox")))
+                chrome_cache_dirs.append(str(PathManager.get_cache_dir() / "google-chrome"))
+                firefox_cache_dirs.append(str(PathManager.get_cache_dir() / "mozilla/firefox"))
             all_cache_dirs = chrome_cache_dirs + firefox_cache_dirs + edge_cache_dirs
             for cache_dir in all_cache_dirs:
                 if os.path.exists(cache_dir):
@@ -165,7 +165,7 @@ self.main_port = port if port is not None else UTILS_AGENT_PORT
                         result["errors"].append(f"Error cleaning cache directory {cache_dir}: {str(e)}")
             logging.info(f"Browser caches cleaned: {result['browsers_cleaned']} browsers, {result['files_removed']} files removed, {result['bytes_freed']} bytes freed.")
         except Exception as e:
-            result["errors"].append(str(e))
+            result["errors"].append(str(e)
         return result
 
     def _get_dir_size(self, dir_path: str) -> int:
@@ -191,11 +191,11 @@ self.main_port = port if port is not None else UTILS_AGENT_PORT
         except subprocess.CalledProcessError as e:
             result["status"] = "error"
             result["message"] = f"Error running Windows Disk Cleanup: {str(e)}"
-            result["errors"].append(str(e))
+            result["errors"].append(str(e)
         except Exception as e:
             result["status"] = "error"
             result["message"] = f"Error running Windows Disk Cleanup: {str(e)}"
-            result["errors"].append(str(e))
+            result["errors"].append(str(e)
         return result
 
     def cleanup_system(self) -> dict:

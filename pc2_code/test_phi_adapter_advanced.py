@@ -17,7 +17,7 @@ def main():
     socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5581")
 
     token = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")
-    wrong_token = "wrongtoken" + str(random.randint(1, 10000))
+    wrong_token = "wrongtoken" + str(random.randint(1, 10000)
 
     print("\n=== HEALTH CHECK (valid token) ->")
     resp = send_request(socket, {"action": "health", "token": token})

@@ -60,7 +60,7 @@ def test_pub_sub():
         "text": "buksan mo ang file",
         "session_id": "test_session",
         "timestamp": time.time(),
-        "request_id": f"test_{int(time.time())}",
+        "request_id": f"test_{int(time.time()}",
         "source_lang": "tl",
         "target_lang": "en"
     }

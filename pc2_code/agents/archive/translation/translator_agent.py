@@ -71,7 +71,7 @@ try:
 except Exception as e:
     pass
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+sys.path.append(str(Path(__file__).resolve().parent.parent)
 
 try:
 from pc2_code.config.system_config import get_config_for_service, get_config_for_machine
@@ -82,7 +82,7 @@ from pc2_code.config.system_config import get_config_for_service, get_config_for
     pc2_general_config = get_config_for_machine("pc2")
 
     LOG_LEVEL = pc2_general_config.get('log_level', 'INFO')
-    LOGS_DIR = Path(pc2_general_config.get('logs_dir', 'logs'))
+    LOGS_DIR = Path(pc2_general_config.get('logs_dir', 'logs')
     
     CONFIG_MAIN_PC_REP_PORT = agent_config.get('zmq_port', 5563)
     CONFIG_ZMQ_BIND_ADDRESS = agent_config.get('zmq_bind_address', "0.0.0.0")
@@ -539,7 +539,7 @@ class TranslatorAgent:
     def _handle_main_request(self):
         """Handle main translation requests with enhanced error recovery"""
         try:
-            request = json.loads(self.socket.recv_string())
+            request = json.loads(self.socket.recv_string()
             action = request.get('action', 'translate')
             
             if action == 'translate':
@@ -562,22 +562,22 @@ class TranslatorAgent:
                     self.socket.send_string(json.dumps({
                         'status': 'ok',
                         'translation': result
-                    }))
+                    })
                 else:
                     self.socket.send_string(json.dumps({
                         'status': 'queued',
                         'queue_position': len(self.request_queue)
-                    }))
+                    })
             
             elif action == 'health_check':
                 self.health_check_count += 1
-                self.socket.send_string(json.dumps(self.get_health_status()))
+                self.socket.send_string(json.dumps(self.get_health_status())
             
             else:
                 self.socket.send_string(json.dumps({
                     'status': 'error',
                     'error': f'Unknown action: {action}'
-                }))
+                })
                 
         except Exception as e:
             self.error_count += 1
@@ -585,7 +585,7 @@ class TranslatorAgent:
             self.socket.send_string(json.dumps({
                 'status': 'error',
                 'error': str(e)
-            }))
+            })
 
     def _process_request_batch(self):
         """Process queued requests in batches for better performance"""
@@ -599,7 +599,7 @@ class TranslatorAgent:
         while self.request_queue and len(batch) < self.batch_size:
             if time.time() - start_time > self.batch_timeout:
                 break
-            batch.append(self.request_queue.popleft())
+            batch.append(self.request_queue.popleft()
         
         if batch:
             self.batch_count += 1
@@ -618,14 +618,14 @@ class TranslatorAgent:
                     self.socket.send_string(json.dumps({
                         'status': 'ok',
                         'translation': result
-                    }))
+                    })
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error processing batch request: {str(e)}")
                     self.socket.send_string(json.dumps({
                         'status': 'error',
                         'error': str(e)
-                    }))
+                    })
 
     def _perform_maintenance(self):
         """Perform regular maintenance tasks"""
@@ -649,23 +649,23 @@ class TranslatorAgent:
     def _handle_health_check(self):
         """Handle health check requests with detailed metrics"""
         try:
-            request = json.loads(self.health_socket.recv_string())
+            request = json.loads(self.health_socket.recv_string()
             if request.get('action') == 'health_check':
                 self.health_check_count += 1
                 status = self.get_health_status()
-                self.health_socket.send_string(json.dumps(status))
+                self.health_socket.send_string(json.dumps(status)
             else:
                 self.health_socket.send_string(json.dumps({
                     'status': 'error',
                     'error': 'Invalid health check request'
-                }))
+                })
         except Exception as e:
             self.error_count += 1
             logger.error(f"Error handling health check: {str(e)}")
             self.health_socket.send_string(json.dumps({
                 'status': 'error',
                 'error': str(e)
-            }))
+            })
 
     def translate_command(self, text: str, source_lang="tl", target_lang="en", session_id=None) -> str:
         """Enhanced translation with improved error recovery and context awareness"""
@@ -721,7 +721,7 @@ class TranslatorAgent:
 
     def _update_context(self, text: str):
         """Update current context based on text content"""
-        words = set(text.lower().split())
+        words = set(text.lower().split()
         for context, keywords in self.domain_contexts.items():
             if keywords.intersection(words):
                 self.current_context = context
@@ -735,12 +735,12 @@ class TranslatorAgent:
                         "text": text,
                     "source_lang": source_lang,
                     "target_lang": target_lang
-                }))
+                })
                 
                 if self.nllb_socket.poll(5000) == 0:
                     raise TimeoutError("NLLB translation timeout")
                 
-                response = json.loads(self.nllb_socket.recv_string())
+                response = json.loads(self.nllb_socket.recv_string()
                 if response.get("status") == "ok":
                     self._reset_circuit('nllb')
                     return response["translation"], response.get("confidence", 0.8)
@@ -750,7 +750,7 @@ class TranslatorAgent:
                 except Exception as e:
                 self._update_circuit('nllb')
                 if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay * (attempt + 1))
+                    time.sleep(self.retry_delay * (attempt + 1)
                 else:
                     raise e
 
@@ -763,7 +763,7 @@ class TranslatorAgent:
                 except Exception as e:
                 self._update_circuit('google')
                 if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay * (attempt + 1))
+                    time.sleep(self.retry_delay * (attempt + 1)
                 else:
                     raise e
 
@@ -860,7 +860,7 @@ class TranslatorAgent:
             return
         lru_candidates = self.cache_keys_order[:5] if len(self.cache_keys_order) > 5 else self.cache_keys_order
         # Pick lowest freq among LRU
-        evict_key = min(lru_candidates, key=lambda k: self.cache_access_freq.get(k, 0))
+        evict_key = min(lru_candidates, key=lambda k: self.cache_access_freq.get(k, 0)
         self.cache.pop(evict_key, None)
         self.cache_keys_order.remove(evict_key)
         self.cache_access_freq.pop(evict_key, None)
@@ -920,7 +920,7 @@ class TranslatorAgent:
                 import psutil
     except ImportError as e:
         print(f"Import error: {e}")
-                process = psutil.Process(os.getpid())
+                process = psutil.Process(os.getpid()
                 mem_info = process.memory_info()
                 return mem_info.rss / (1024 * 1024)
             except ImportError:
@@ -943,7 +943,7 @@ class TranslatorAgent:
 
     def _reduce_cache_size(self, aggressive=False):
         # Remove cold/old entries
-        to_remove = max(10, int(0.1 * self.cache_max_size)) if aggressive else max(1, int(0.03 * self.cache_max_size))
+        to_remove = max(10, int(0.1 * self.cache_max_size) if aggressive else max(1, int(0.03 * self.cache_max_size)
         for _ in range(to_remove):
             if len(self.cache) > self.cache_max_size:
                 self._evict_cache_entry()
@@ -960,7 +960,7 @@ class TranslatorAgent:
         logger.info(f"Compressed {len(idle_sessions)} idle sessions.")
 
     def _generate_session_id(self):
-        return str(uuid.uuid4())
+        return str(uuid.uuid4()
 
     def _update_session(self, session_id, original_text, translated_text):
         if session_id not in self.sessions:

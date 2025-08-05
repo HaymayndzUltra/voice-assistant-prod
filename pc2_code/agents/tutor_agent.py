@@ -23,11 +23,11 @@ from pathlib import Path
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import BaseAgent
 from common.core.base_agent import BaseAgent
@@ -66,7 +66,6 @@ except Exception as e:
 
 # Setup logging
 LOG_PATH = str(PathManager.get_logs_dir() / "tutor_agent.log")
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
@@ -164,7 +163,7 @@ class AdaptiveLearningEngine:
         
         # Predict difficulty adjustment
         with torch.no_grad():
-            adjustment = self.difficulty_model(torch.FloatTensor(features_scaled))
+            adjustment = self.difficulty_model(torch.FloatTensor(features_scaled)
             
         return float(adjustment[0])
         
@@ -616,7 +615,7 @@ from pc2_code.utils.pc2_error_publisher import PC2ErrorPublisher, create_pc2_err
         if self.students[student_id].performance_history:
             prev_perf_data = self.students[student_id].performance_history[-1]
             if prev_perf_data.get("lesson_id") == lesson_id:
-                previous_performance = PerformanceMetrics(**prev_perf_data.get("performance", {}))
+                previous_performance = PerformanceMetrics(**prev_perf_data.get("performance", {})
                 
         feedback = self.feedback_generator.generate_feedback(performance, previous_performance)
         

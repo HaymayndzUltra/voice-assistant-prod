@@ -20,16 +20,15 @@ from collections import defaultdict, deque
 import subprocess
 import zmq
 
-
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
 from common.utils.path_manager import PathManager
+
 # --- Path Setup ---
 MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+    
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
@@ -46,7 +45,7 @@ logger = logging.getLogger('ErrorManagementSystem')
 # --- Constants ---
 DEFAULT_PORT = 7125 # Main port for receiving commands
 ERROR_BUS_PORT = 7150 # Port for the ZMQ PUB/SUB Error Bus
-DB_PATH = PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db"))
+DB_PATH = PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db")
 LOGS_DIR = "logs"
 HEARTBEAT_INTERVAL = 15
 HEARTBEAT_TIMEOUT = 45
@@ -85,7 +84,7 @@ class ErrorCollectorModule:
                 if not self.logs_dir.exists():
                     time.sleep(LOG_SCAN_INTERVAL)
                     continue
-                for log_file in self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log")):
+                for log_file in self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log"):
                     self._process_log_file(log_file)
             except Exception as e:
                 logger.error(f"Error in log scanning loop: {e}")
@@ -160,9 +159,9 @@ class ErrorAnalyzerModule:
         for i, error1 in enumerate(errors):
             for error2 in errors[i+1:]:
                 if error1.get('source') != error2.get('source'):
-                    time_diff = abs(error1.get('timestamp', 0) - error2.get('timestamp', 0))
+                    time_diff = abs(error1.get('timestamp', 0) - error2.get('timestamp', 0)
                     if 0 < time_diff < 60:
-                        correlations.append((error1, error2))
+                        correlations.append((error1, error2)
         return correlations
 
     def _detect_anomalies(self, errors: List[Dict]) -> List:
@@ -198,7 +197,7 @@ class RecoveryManagerModule:
         logger.info("Heartbeat Monitor thread started.")
         while self.system.running:
             now = time.time()
-            for agent_name, info in list(self.agent_registry.items()):
+            for agent_name, info in list(self.agent_registry.items():
                 if now - info.get('last_heartbeat', now) > HEARTBEAT_TIMEOUT:
                     info['missed_heartbeats'] += 1
                     if info['missed_heartbeats'] >= MAX_MISSED_HEARTBEATS and info.get('status') != 'offline':
@@ -312,11 +311,6 @@ class RecoveryManagerModule:
         try:
             # Try to find and kill the process by name
             import psutil
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from common.env_helpers import get_env
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
                 try:
                     cmdline = proc.info['cmdline']
@@ -354,7 +348,7 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
             
             # Get SystemDigitalTwin address from environment or use default
             sdt_host = get_mainpc_ip()
-            sdt_port = int(os.environ.get('SYSTEM_DIGITAL_TWIN_PORT', 7120))
+            sdt_port = int(os.environ.get('SYSTEM_DIGITAL_TWIN_PORT', 7120)
             socket.connect(f"tcp://{sdt_host}:{sdt_port}")
             
             # Send request for agent info
@@ -414,7 +408,7 @@ class ErrorManagementSystem(BaseAgent):
         # --- Error Bus (ZMQ PUB/SUB) ---
         # CHECKLIST ITEM: Error Bus Enhancement
         self.error_bus_sub = self.context.socket(zmq.SUB)
-        self.error_bus_sub.connect(get_zmq_connection_string({ERROR_BUS_PORT}, "localhost")))
+        self.error_bus_sub.connect(get_zmq_connection_string({ERROR_BUS_PORT}, "localhost"))
         self.error_bus_sub.setsockopt(zmq.SUBSCRIBE, b"ERROR:")
         self.error_bus_listener_thread = threading.Thread(target=self._listen_error_bus, daemon=True)
         self.error_bus_listener_thread.start()
@@ -463,7 +457,7 @@ class ErrorManagementSystem(BaseAgent):
             details: Additional details about the recovery
         """
         try:
-            action_id = str(uuid.uuid4())
+            action_id = str(uuid.uuid4()
             timestamp = time.time()
             
             with self.db_lock:
@@ -490,7 +484,7 @@ class ErrorManagementSystem(BaseAgent):
         while self.running:
             try:
                 topic, msg = self.error_bus_sub.recv_multipart()
-                error_data = json.loads(msg.decode('utf-8'))
+                error_data = json.loads(msg.decode('utf-8')
                 self.collector.handle_direct_report(error_data)
             except Exception as e:
                 logger.error(f"Error processing message from Error Bus: {e}")
@@ -500,7 +494,7 @@ class ErrorManagementSystem(BaseAgent):
         action = request.get("action")
         data = request.get("data", {})
         if action == "heartbeat":
-            self.recovery.receive_heartbeat(data.get("agent_name"))
+            self.recovery.receive_heartbeat(data.get("agent_name")
             return {"status": "success", "message": "Heartbeat received."}
         elif action == "get_system_status":
             return {
@@ -521,9 +515,9 @@ class ErrorManagementSystem(BaseAgent):
                     error_data.get("error_id", f"err-{uuid.uuid4()}"),
                     error_data.get("source"), error_data.get("error_type"),
                     error_data.get("message"), error_data.get("severity"),
-                    error_data.get("timestamp", time.time()),
-                    json.dumps(error_data.get("details", {}))
-                ))
+                    error_data.get("timestamp", time.time(),
+                    json.dumps(error_data.get("details", {})
+                )
                 conn.commit()
             except Exception as e:
                 logger.error(f"Failed to write error to DB: {e}")
@@ -537,7 +531,7 @@ class ErrorManagementSystem(BaseAgent):
                 conn = sqlite3.connect(self.db_path)
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM error_log ORDER BY timestamp DESC LIMIT ?", (limit,))
+                cursor.execute("SELECT * FROM error_log ORDER BY timestamp DESC LIMIT ?", (limit,)
                 rows = cursor.fetchall()
                 return [dict(row) for row in rows]
             except Exception as e:
@@ -571,5 +565,5 @@ if __name__ == '__main__':
             "version": getattr(self, "version", "1.0.0"),
             "port": self.port,
             "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
+            "error_reporting": bool(getattr(self, "error_bus", None)
         }

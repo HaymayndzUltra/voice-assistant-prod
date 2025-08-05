@@ -13,11 +13,11 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Add project root to Python path for common_utils import
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
@@ -51,7 +51,7 @@ child_processes = []
 def setup_logging():
     """Sets up the main logger for the launcher."""
     os.makedirs(os.path.join(BASE_DIR, LOGS_DIR), exist_ok=True)
-    log_file = os.path.join(BASE_DIR, LOGS_DIR, str(PathManager.get_logs_dir() / "system_launcher.log"))
+    log_file = os.path.join(BASE_DIR, LOGS_DIR, str(PathManager.get_logs_dir() / "system_launcher.log")
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] - %(message)s",
@@ -96,13 +96,13 @@ def load_config():
 
 def build_dependency_graph(agents_config):
     """Builds a dependency graph from the agent configurations."""
-    return {agent['name']: set(agent.get('dependencies', [])) for agent in agents_config}
+    return {agent['name']: set(agent.get('dependencies', []) for agent in agents_config}
 
 def calculate_startup_batches(graph):
     """Calculates the startup order in batches using TopologicalSorter."""
     try:
         ts = TopologicalSorter(graph)
-        startup_order = tuple(ts.static_order())
+        startup_order = tuple(ts.static_order()
         logger.info(f"Calculated startup order: {startup_order}")
         
         batches = []
@@ -115,7 +115,7 @@ def calculate_startup_batches(graph):
                 logger.error(f"FATAL: Dependency issue. Cannot find next batch. Launched: {launched_agents}, Remaining: {remaining_agents}")
                 return None
             
-            batches.append(list(batch))
+            batches.append(list(batch)
             launched_agents.update(batch)
             remaining_agents.difference_update(batch)
         
@@ -130,7 +130,7 @@ def launch_agent(agent_config):
     name = agent_config['name']
     relative_script_path = agent_config['script_path']
     script_path = os.path.join(BASE_DIR, relative_script_path)
-    log_file_path = os.path.join(BASE_DIR, LOGS_DIR, f"{name.replace(' ', '_str(PathManager.get_logs_dir() / ")}.log"))
+    log_file_path = os.path.join(BASE_DIR, LOGS_DIR, f"{name.replace(' ', '_str(PathManager.get_logs_dir() / ")}.log")
 
     if not os.path.exists(script_path):
         logger.error(f"Agent '{name}': Script not found at {script_path}. Skipping.")
@@ -242,7 +242,7 @@ def free_up_ports(agents_config):
     ports = []
     for agent in agents_config:
         if "port" in agent:
-            ports.append(str(agent["port"]))
+            ports.append(str(agent["port"])
 
     if not ports:
         return
@@ -292,7 +292,7 @@ def free_up_ports(agents_config):
                 parts = line.split()
                 if len(parts) >= 2:
                     try:
-                        pids.add(int(parts[1]))
+                        pids.add(int(parts[1])
                     except ValueError:
                         continue
 

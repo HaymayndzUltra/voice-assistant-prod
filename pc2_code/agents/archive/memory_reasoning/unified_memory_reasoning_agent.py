@@ -27,14 +27,14 @@ import sys
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Add parent directory to path for config import
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 from pc2_code.config.system_config import config
 
 # Constants
-LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log"))
+LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log")
 CONTEXT_STORE_PATH = "memory_store.json"
 ERROR_PATTERNS_PATH = "error_patterns.json"
 ZMQ_PORT = 5596  # Unique port for PC2
@@ -179,21 +179,21 @@ class ContextManager:
         ]
         
         for pattern in command_patterns:
-            if re.search(pattern, text.lower()):
+            if re.search(pattern, text.lower():
                 importance += 0.1
                 break
         
         # Longer texts might contain more information
-        if len(text.split()) > 15:
+        if len(text.split() > 15:
             importance += 0.1
         
         # Cap importance between 0 and 1
-        return min(1.0, max(0.0, importance))
+        return min(1.0, max(0.0, importance)
     
     def _adjust_context_size(self):
         """Dynamically adjust context window size based on conversation complexity"""
         # Calculate average importance
-        avg_importance = np.mean(list(self.importance_scores.values())) if self.importance_scores else 0.5
+        avg_importance = np.mean(list(self.importance_scores.values()) if self.importance_scores else 0.5
         
         # Calculate conversation complexity (higher importance = more complex)
         if avg_importance > 0.7:
@@ -398,11 +398,11 @@ class UnifiedMemoryReasoningAgent:
             
             # Detect domains
             domains = []
-            if re.search(r"database|sql|sqlite", all_code.lower()):
+            if re.search(r"database|sql|sqlite", all_code.lower():
                 domains.append("database operations")
-            if re.search(r"web|http|flask|api|route", all_code.lower()):
+            if re.search(r"web|http|flask|api|route", all_code.lower():
                 domains.append("web functionality")
-            if re.search(r"concurrency|thread|async", all_code.lower()):
+            if re.search(r"concurrency|thread|async", all_code.lower():
                 domains.append("concurrency features")
             
             # Create summary
@@ -426,7 +426,7 @@ class UnifiedMemoryReasoningAgent:
             # Add recent exchanges
             if user_queries:
                 summary += "\nRecent exchanges:\n"
-                for i in range(min(3, len(user_queries))):
+                for i in range(min(3, len(user_queries)):
                     summary += f"User: {user_queries[i][:100]}...\n"
                     if i < len(system_responses):
                         summary += f"System: {system_responses[i][:100]}...\n"
@@ -515,7 +515,7 @@ class UnifiedMemoryReasoningAgent:
             # Apply token limit if specified
             if max_tokens:
                 # Simple token estimation (rough)
-                total_tokens = len(str(summary)) // 4
+                total_tokens = len(str(summary) // 4
                 if total_tokens > max_tokens:
                     # Compress summary
                     compression_ratio = max_tokens / total_tokens
@@ -627,9 +627,9 @@ class UnifiedMemoryReasoningAgent:
             "successful_requests": self.successful_requests,
             "failed_requests": self.failed_requests,
             "health_check_requests": self.health_check_requests,
-            "sessions_count": len(self.context_store.get("sessions", {})),
-            "error_patterns_count": len(self.error_patterns.get("patterns", {})),
-            "error_history_count": len(self.error_patterns.get("history", []))
+            "sessions_count": len(self.context_store.get("sessions", {}),
+            "error_patterns_count": len(self.error_patterns.get("patterns", {}),
+            "error_history_count": len(self.error_patterns.get("history", [])
         }
     
     def run(self):
@@ -643,13 +643,13 @@ class UnifiedMemoryReasoningAgent:
                     msg = self.socket.recv_string()
                     request = json.loads(msg)
                     response = self.handle_request(request)
-                    self.socket.send_string(json.dumps(response))
+                    self.socket.send_string(json.dumps(response)
                 
                 # Check health socket
                 if self.health_socket.poll(timeout=100) == zmq.POLLIN:
                     msg = self.health_socket.recv_string()
                     response = self.get_status()
-                    self.health_socket.send_string(json.dumps(response))
+                    self.health_socket.send_string(json.dumps(response)
                 
             except Exception as e:
                 logger.error(f"Error in service loop: {e}")

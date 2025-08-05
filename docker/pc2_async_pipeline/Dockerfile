@@ -33,9 +33,8 @@ RUN mkdir -p /app/logs
 COPY docker/pc2_async_pipeline/health_check.sh /health_check.sh
 RUN chmod +x /health_check.sh
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD /health_check.sh
-
 # Default command (will be overridden by docker-compose)
 CMD ["python", "pc2_code/agents/async_processor.py"]
+
+# Health check as required by endorsement document
+HEALTHCHECK CMD curl -f http://localhost:${HEALTH_PORT}/health || exit 1

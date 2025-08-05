@@ -31,7 +31,7 @@ class DataOptimizer:
 
     def _serialize_json(self, data: Any) -> str:
         """Serialize data using JSON"""
-        return json.dumps(data, separators=(',', ':'))
+        return json.dumps(data, separators=(',', ':')
 
     def _serialize_msgpack(self, data: Any) -> bytes:
         """Serialize data using MessagePack"""
@@ -39,7 +39,7 @@ class DataOptimizer:
 
     def _serialize_compressed_json(self, data: Any) -> str:
         """Serialize and compress data using JSON"""
-        json_str = json.dumps(data, separators=(',', ':'))
+        json_str = json.dumps(data, separators=(',', ':')
         compressed = zlib.compress(json_str.encode(), level=self.compression_level)
         return base64.b64encode(compressed).decode()
 
@@ -63,17 +63,17 @@ class DataOptimizer:
         """Check if object is large enough to optimize"""
         if isinstance(value, str):
             return len(value) > 1000
-        if isinstance(value, (list, dict)):
-            return len(str(value)) > 1000
+        if isinstance(value, (list, dict):
+            return len(str(value) > 1000
         return False
 
     def _create_reference(self, value: Any) -> Dict[str, str]:
         """Create a reference for a large object"""
-        reference_id = hashlib.md5(str(value).encode()).hexdigest()
+        reference_id = hashlib.md5(str(value).encode().hexdigest()
         return {
             'type': 'reference',
             'id': reference_id,
-            'size': len(str(value))
+            'size': len(str(value)
         }
 
     def restore_references(self, data: Dict[str, Any], reference_store: Dict[str, Any]) -> Dict[str, Any]:
@@ -90,12 +90,12 @@ class DataOptimizer:
     def get_optimized_payload_size(self, data: Any, method: str = 'compressed_msgpack') -> int:
         """Get size of optimized payload"""
         optimized = self.optimize_payload(data, method)
-        return len(str(optimized))
+        return len(str(optimized)
 
     def get_reference_optimized_size(self, data: Dict[str, Any]) -> int:
         """Get size of reference-optimized payload"""
         optimized = self.optimize_references(data)
-        return len(str(optimized))
+        return len(str(optimized)
 
 def optimize_zmq_message(message: Dict[str, Any], optimize_references: bool = True) -> Dict[str, Any]:
     """Optimize a ZMQ message"""
@@ -109,8 +109,8 @@ def optimize_zmq_message(message: Dict[str, Any], optimize_references: bool = Tr
     optimized = optimizer.optimize_payload(message)
     
     # Add size information for debugging
-    optimized['original_size'] = len(str(message))
-    optimized['optimized_size'] = len(str(optimized))
+    optimized['original_size'] = len(str(message)
+    optimized['optimized_size'] = len(str(optimized)
     optimized['compression_ratio'] = optimized['original_size'] / optimized['optimized_size'] if optimized['optimized_size'] > 0 else 1
     
     return optimized

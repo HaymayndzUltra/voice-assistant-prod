@@ -12,7 +12,7 @@ import numpy as np
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Try to import sklearn, but don't fail if not available
 try:
@@ -40,7 +40,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "episodic_memory_agent.log"))),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "episodic_memory_agent.log")),
         logging.StreamHandler()
     ]
 )
@@ -256,7 +256,7 @@ class EpisodicMemoryAgent(BaseAgent):
             datetime.now(),
             json.dumps(context),
             importance_score
-        ))
+        )
         
         episode_id = cursor.lastrowid
         
@@ -269,7 +269,7 @@ class EpisodicMemoryAgent(BaseAgent):
             '',  # Will be updated with interactions
             '',  # Will be updated with summary
             json.dumps(context)
-        ))
+        )
         
         conn.commit()
         conn.close()
@@ -288,7 +288,7 @@ class EpisodicMemoryAgent(BaseAgent):
         if context.get('user_priority', 0) > 0:
             score += min(0.2, context['user_priority'] * 0.1)
         
-        return min(1.0, max(0.0, score))
+        return min(1.0, max(0.0, score)
     
     def _add_interaction(self, episode_id: int, speaker: str, content: str, 
                         intent: str, sentiment: float, metadata: Dict[str, Any]):
@@ -308,14 +308,14 @@ class EpisodicMemoryAgent(BaseAgent):
             intent,
             sentiment,
             json.dumps(metadata)
-        ))
+        )
         
         # Update full-text search index
         cursor.execute('''
             UPDATE episodes_fts 
             SET content = content || ' ' || ?
             WHERE rowid = ?
-        ''', (content, episode_id))
+        ''', (content, episode_id)
         
         conn.commit()
         conn.close()
@@ -334,7 +334,7 @@ class EpisodicMemoryAgent(BaseAgent):
                 episode_id,
                 tag['tag'],
                 tag['confidence']
-            ))
+            )
         
         conn.commit()
         conn.close()
@@ -356,7 +356,7 @@ class EpisodicMemoryAgent(BaseAgent):
             relationship_type,
             strength,
             json.dumps(metadata or {})
-        ))
+        )
         
         conn.commit()
         conn.close()
@@ -376,7 +376,7 @@ class EpisodicMemoryAgent(BaseAgent):
             description,
             datetime.now(),
             json.dumps(metadata or {})
-        ))
+        )
         
         group_id = cursor.lastrowid
         conn.commit()
@@ -394,7 +394,7 @@ class EpisodicMemoryAgent(BaseAgent):
             INSERT INTO episode_context_groups 
             (episode_id, group_id, relevance_score)
             VALUES (?, ?, ?)
-        ''', (episode_id, group_id, relevance_score))
+        ''', (episode_id, group_id, relevance_score)
         
         conn.commit()
         conn.close()
@@ -546,7 +546,7 @@ class EpisodicMemoryAgent(BaseAgent):
             FROM episode_context_groups
             WHERE group_id = ?
             ORDER BY relevance_score DESC
-        ''', (group_id,))
+        ''', (group_id,)
         
         episodes = cursor.fetchall()
         conn.close()
@@ -562,7 +562,7 @@ class EpisodicMemoryAgent(BaseAgent):
             UPDATE episodes
             SET status = ?
             WHERE episode_id = ?
-        ''', (status, episode_id))
+        ''', (status, episode_id)
         
         conn.commit()
         conn.close()
@@ -578,7 +578,7 @@ class EpisodicMemoryAgent(BaseAgent):
                    importance_score, status
             FROM episodes
             WHERE episode_id = ?
-        ''', (episode_id,))
+        ''', (episode_id,)
         
         episode = cursor.fetchone()
         if not episode:
@@ -591,7 +591,7 @@ class EpisodicMemoryAgent(BaseAgent):
             FROM interactions
             WHERE episode_id = ?
             ORDER BY timestamp
-        ''', (episode_id,))
+        ''', (episode_id,)
         
         interactions = cursor.fetchall()
         
@@ -600,7 +600,7 @@ class EpisodicMemoryAgent(BaseAgent):
             SELECT tag, confidence
             FROM episode_tags
             WHERE episode_id = ?
-        ''', (episode_id,))
+        ''', (episode_id,)
         
         tags = cursor.fetchall()
         
@@ -610,7 +610,7 @@ class EpisodicMemoryAgent(BaseAgent):
             FROM context_groups g
             JOIN episode_context_groups ecg ON g.group_id = ecg.group_id
             WHERE ecg.episode_id = ?
-        ''', (episode_id,))
+        ''', (episode_id,)
         
         context_groups = cursor.fetchall()
         
@@ -669,14 +669,14 @@ class EpisodicMemoryAgent(BaseAgent):
                 response = self.handle_request(request)
                 
                 # Send response
-                self.socket.send_string(json.dumps(response))
+                self.socket.send_string(json.dumps(response)
                 
             except Exception as e:
                 logger.error(f"Error in service loop: {e}")
                 self.socket.send_string(json.dumps({
                     "status": "error",
                     "error": str(e)
-                }))
+                })
 
 
     def _get_health_status(self) -> dict:

@@ -41,7 +41,7 @@ from selenium.common.exceptions import (
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import service discovery and network utilities
 from main_pc_code.utils.service_discovery_client import register_service, discover_service, get_service_address
@@ -73,7 +73,6 @@ config = Config().get_config() # This seems to be pc2_code.agents.utils.config_l
 log_file_path = project_root / 'logs' / str(PathManager.get_logs_dir() / "unified_web_agent.log") # Use project_root
 os.makedirs(log_file_path.parent, exist_ok=True) # Use .parent for directory
 
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[

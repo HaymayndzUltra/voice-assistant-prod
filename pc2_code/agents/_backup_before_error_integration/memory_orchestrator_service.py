@@ -25,7 +25,7 @@ from common.utils.path_manager import PathManager
 # (I-adjust kung kinakailangan)
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+    
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent

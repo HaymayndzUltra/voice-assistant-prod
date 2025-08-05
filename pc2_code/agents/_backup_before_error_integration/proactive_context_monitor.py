@@ -24,13 +24,13 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(BASE_DIR))
+
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import necessary modules
 try:
@@ -45,7 +45,6 @@ except ImportError as e:
 # Configure logging
 log_directory = os.path.join('logs')
 os.makedirs(log_directory, exist_ok=True)
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[

@@ -12,9 +12,9 @@ from common.core.base_agent import BaseAgent
 from common.utils.path_manager import PathManager
 
 # Setup logging
-LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / str(PathManager.get_logs_dir() / "context_summarizer.log")
+LOG_PATH = Path(os.path.dirname(__file__).parent / "logs" / str(PathManager.get_logs_dir() / "context_summarizer.log")
 LOG_PATH.parent.mkdir(exist_ok=True)
-SUMMARY_STORE_PATH = Path(os.path.dirname(__file__)).parent / "data" / "context_summary_store.json"
+SUMMARY_STORE_PATH = Path(os.path.dirname(__file__).parent / "data" / "context_summary_store.json"
 SUMMARY_STORE_PATH.parent.mkdir(exist_ok=True)
 ZMQ_CONTEXT_SUMMARIZER_PORT = 5610
 
@@ -193,12 +193,12 @@ class ContextSummarizer:
                 msg = self.socket.recv_string()
                 query = json.loads(msg)
                 resp = self.handle_query(query)
-                self.socket.send_string(json.dumps(resp))
+                self.socket.send_string(json.dumps(resp)
             except Exception as e:
                 logger.error(f"[ContextSummarizer] Error in service loop: {e}")
                 with self.lock:
                     self.error_count += 1
-                self.socket.send_string(json.dumps({"status": "error", "reason": str(e)}))
+                self.socket.send_string(json.dumps({"status": "error", "reason": str(e)})
 
     def stop(self):
         """Stop the Context Summarizer agent"""

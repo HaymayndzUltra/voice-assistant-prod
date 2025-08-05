@@ -25,7 +25,7 @@ def check_agent_health(port, name):
         try:
             response = socket.recv_json()
             print(f"Response from {name}:")
-            print(json.dumps(response, indent=2))
+            print(json.dumps(response, indent=2)
             return True, response
         except zmq.error.Again:
             print(f"ERROR: No response from {name} (timeout)")

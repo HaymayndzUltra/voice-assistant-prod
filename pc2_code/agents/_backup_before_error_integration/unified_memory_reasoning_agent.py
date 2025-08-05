@@ -25,14 +25,13 @@ import sys
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from common.core.base_agent import BaseAgent
 from pc2_code.config.system_config import config
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[

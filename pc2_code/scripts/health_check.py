@@ -22,7 +22,7 @@ from typing import Dict, Any, List, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
@@ -30,14 +30,14 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_check.log")))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_check.log"))
     ]
 )
 logger = logging.getLogger("health_check")
 
 def load_config() -> Optional[Dict[str, Any]]:
     """Load the startup configuration."""
-    config_path = PathManager.join_path("pc2_code", PathManager.join_path("config", "startup_config.yaml"))
+    config_path = PathManager.join_path("pc2_code", PathManager.join_path("config", "startup_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -118,7 +118,7 @@ def check_agent_health_socket(agent: Dict[str, Any]) -> bool:
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
-        result = sock.connect_ex(('localhost', agent['port']))
+        result = sock.connect_ex(('localhost', agent['port'])
         sock.close()
         
         if result == 0:
@@ -141,7 +141,7 @@ from common.env_helpers import get_env
         socket = context.socket(zmq.REQ)
         socket.setsockopt(zmq.LINGER, 0)
         socket.setsockopt(zmq.RCVTIMEO, 2000)
-        socket.connect(get_zmq_connection_string({agent[, "localhost"))health_check_port']}")
+        socket.connect(get_zmq_connection_string({agent[, "localhost")health_check_port']}")
         
         # Send health check request
         socket.send_json({"action": "health_check"})

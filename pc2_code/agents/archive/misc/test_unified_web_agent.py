@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 
 # Configure logging
 logging.basicConfig(
@@ -34,13 +34,13 @@ class TestClient:
     
     def send_request(self, request):
         """Send request to agent"""
-        self.socket.send_string(json.dumps(request))
+        self.socket.send_string(json.dumps(request)
         response = self.socket.recv_string()
         return json.loads(response)
     
     def check_health(self):
         """Check agent health"""
-        self.health_socket.send_string(json.dumps({"action": "health_check"}))
+        self.health_socket.send_string(json.dumps({"action": "health_check"})
         response = self.health_socket.recv_string()
         return json.loads(response)
     
@@ -183,11 +183,11 @@ def main():
             try:
                 logger.info(f"\nRunning test: {test_name}")
                 result = test_func(client)
-                results.append((test_name, result))
+                results.append((test_name, result)
                 logger.info(f"Test {test_name}: {'PASSED' if result else 'FAILED'}")
             except Exception as e:
                 logger.error(f"Test {test_name} failed with error: {e}")
-                results.append((test_name, False))
+                results.append((test_name, False)
         
         # Print summary
         logger.info("\nTest Summary:")
@@ -207,4 +207,4 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main() 

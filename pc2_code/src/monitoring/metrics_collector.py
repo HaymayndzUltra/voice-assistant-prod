@@ -37,13 +37,13 @@ import sqlite3
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import config parser utility with fallback
 try:
@@ -58,7 +58,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "metrics_collector_agent.log"))
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "metrics_collector_agent.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 
@@ -126,13 +126,13 @@ class MetricsCollectorAgent:
             self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
             
             # Metrics storage
-            self.metrics_history: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
+            self.metrics_history: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1000)
             self.current_metrics: Dict[str, float] = {}
             
             # Database setup
-            self.db_path = Path(PathManager.join_path("data", str(PathManager.get_data_dir() / "metrics.db")))
+            self.db_path = Path(PathManager.join_path("data", str(PathManager.get_data_dir() / "metrics.db"))
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
-            self.conn = sqlite3.connect(str(self.db_path))
+            self.conn = sqlite3.connect(str(self.db_path)
             self._create_tables()
             
             # Collection settings
@@ -244,7 +244,7 @@ class MetricsCollectorAgent:
             cursor.execute('''
             INSERT INTO metrics (metric_name, value, metric_type, timestamp, tags)
             VALUES (?, ?, ?, ?, ?)
-            ''', (metric_name, value, metric_type, metric.timestamp, json.dumps(tags or {})))
+            ''', (metric_name, value, metric_type, metric.timestamp, json.dumps(tags or {}))
             self.conn.commit()
             
             # Publish metric update
@@ -423,7 +423,7 @@ class MetricsCollectorAgent:
                 # Clean up old metrics from database
                 cutoff_time = time.time() - (self.retention_days * 24 * 3600)
                 cursor = self.conn.cursor()
-                cursor.execute('DELETE FROM metrics WHERE timestamp < ?', (cutoff_time,))
+                cursor.execute('DELETE FROM metrics WHERE timestamp < ?', (cutoff_time,)
                 deleted_count = cursor.rowcount
                 self.conn.commit()
                 

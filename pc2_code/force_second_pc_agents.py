@@ -8,7 +8,7 @@ import time
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 def get_config():
     config_path = PathManager.join_path("config", "distributed_config.json")

@@ -136,21 +136,21 @@ class ContextManager:
         ]
         
         for pattern in command_patterns:
-            if re.search(pattern, text.lower()):
+            if re.search(pattern, text.lower():
                 importance += 0.1
                 break
         
         # Longer texts might contain more information
-        if len(text.split()) > 15:
+        if len(text.split() > 15:
             importance += 0.1
         
         # Cap importance between 0 and 1
-        return min(1.0, max(0.0, importance))
+        return min(1.0, max(0.0, importance)
     
     def _adjust_context_size(self):
         """Dynamically adjust context window size based on conversation complexity"""
         # Calculate average importance
-        avg_importance = np.mean(list(self.importance_scores.values())) if self.importance_scores else 0.5
+        avg_importance = np.mean(list(self.importance_scores.values()) if self.importance_scores else 0.5
         
         # Calculate conversation complexity (higher importance = more complex)
         if avg_importance > 0.7:

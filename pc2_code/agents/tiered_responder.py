@@ -15,6 +15,7 @@ from typing import Dict, Any, Callable, List, Optional
 from datetime import datetime
 import asyncio
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 
 # ✅ MODERNIZED: Path management using standardized PathManager
@@ -26,7 +27,7 @@ from common.utils.path_manager import PathManager
 # Add project root to path using PathManager
 PROJECT_ROOT = PathManager.get_project_root()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
@@ -199,11 +200,10 @@ class TieredResponder(BaseAgent):
         ]
         
     def _setup_logging(self):
-        logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log")),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log"),
                 logging.StreamHandler()
             ]
         )
@@ -273,11 +273,11 @@ class TieredResponder(BaseAgent):
         # Check instant response patterns first
         for tier in self.tiers:
             if any(pattern in text for pattern in tier['patterns']):
-                asyncio.run(tier['handler'](query, tier['name']))
+                asyncio.run(tier['handler'](query, tier['name'])
                 return
         
         # If no pattern matches, default to deep analysis
-        asyncio.run(self._handle_deep_response(query, 'deep'))
+        asyncio.run(self._handle_deep_response(query, 'deep')
 
     async def _handle_instant_response(self, query: Dict[str, Any], tier_name: str):
         """Handle instant response queries"""
@@ -482,7 +482,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 if __name__ == "__main__":
@@ -494,10 +494,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
-
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

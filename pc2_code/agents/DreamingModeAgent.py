@@ -27,20 +27,18 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import random
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
@@ -68,15 +66,14 @@ def load_network_config():
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
-                "dreaming_mode": int(os.environ.get("DREAMING_MODE_PORT", 7127)),
-                "dreaming_health": int(os.environ.get("DREAMING_HEALTH_PORT", 7128)),
-                "dream_world": int(os.environ.get("DREAM_WORLD_PORT", 7104)),
-                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+                "dreaming_mode": int(os.environ.get("DREAMING_MODE_PORT", 7127),
+                "dreaming_health": int(os.environ.get("DREAMING_HEALTH_PORT", 7128),
+                "dream_world": int(os.environ.get("DREAM_WORLD_PORT", 7104),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150)
             }
         }
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
@@ -93,14 +90,14 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
-BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0")
 
 # Get port configuration
-DREAMING_MODE_PORT = network_config.get("ports", {}).get("dreaming_mode", int(os.environ.get("DREAMING_MODE_PORT", 7127)))
-DREAMING_MODE_HEALTH_PORT = network_config.get("ports", {}).get("dreaming_health", int(os.environ.get("DREAMING_HEALTH_PORT", 7128)))
-DREAM_WORLD_PORT = network_config.get("ports", {}).get("dream_world", int(os.environ.get("DREAM_WORLD_PORT", 7104)))
-ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+DREAMING_MODE_PORT = network_config.get("ports", {}).get("dreaming_mode", int(os.environ.get("DREAMING_MODE_PORT", 7127))
+DREAMING_MODE_HEALTH_PORT = network_config.get("ports", {}).get("dreaming_health", int(os.environ.get("DREAMING_HEALTH_PORT", 7128))
+DREAM_WORLD_PORT = network_config.get("ports", {}).get("dream_world", int(os.environ.get("DREAM_WORLD_PORT", 7104))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150))
 
 class DreamingModeAgent(BaseAgent):
     """Dreaming Mode Agent for coordinating system dreaming cycles."""
@@ -247,10 +244,10 @@ class DreamingModeAgent(BaseAgent):
                         response = self.dreamworld_socket.recv_json()
                         if response.get("status") == "success":
                             logger.info("Dream simulation completed successfully")
-                            self._record_dream_result(True, response.get("quality", 0.5))
+                            self._record_dream_result(True, response.get("quality", 0.5)
                         else:
                             logger.warning(f"Dream simulation failed: {response.get('error', 'Unknown error')}")
-                            self.report_error("DREAM_SIMULATION_ERROR", response.get('error', 'Unknown error'))
+                            self.report_error("DREAM_SIMULATION_ERROR", response.get('error', 'Unknown error')
                             self._record_dream_result(False, 0.0)
                     else:
                         logger.warning("Dream simulation timeout")
@@ -258,7 +255,7 @@ class DreamingModeAgent(BaseAgent):
                         self._record_dream_result(False, 0.0)
                 except Exception as e:
                     logger.error(f"Error communicating with DreamWorldAgent: {e}")
-                    self.report_error("DREAMWORLD_COMMUNICATION_ERROR", str(e))
+                    self.report_error("DREAMWORLD_COMMUNICATION_ERROR", str(e)
                     self._record_dream_result(False, 0.0)
             else:
                 logger.info("DreamWorldAgent not available, simulating dream cycle")
@@ -269,7 +266,7 @@ class DreamingModeAgent(BaseAgent):
             logger.info(f"Dream cycle completed in {dream_duration:.2f} seconds")
         except Exception as e:
             logger.error(f"Error in dream cycle: {e}")
-            self.report_error("DREAM_CYCLE_ERROR", str(e))
+            self.report_error("DREAM_CYCLE_ERROR", str(e)
             self._record_dream_result(False, 0.0)
         finally:
             self.is_dreaming = False
@@ -346,7 +343,7 @@ class DreamingModeAgent(BaseAgent):
                 return {'status': 'error', 'message': f'Unknown action: {action}'}
         except Exception as e:
             logger.error(f"Error handling request: {e}")
-            self.report_error("REQUEST_HANDLING_ERROR", str(e))
+            self.report_error("REQUEST_HANDLING_ERROR", str(e)
             return {'status': 'error', 'error': str(e)}
 
     def run(self):
@@ -369,7 +366,7 @@ class DreamingModeAgent(BaseAgent):
                     
                 except zmq.error.ZMQError as e:
                     logger.error(f"ZMQ error in main loop: {e}")
-                    self.report_error("ZMQ_ERROR", str(e))
+                    self.report_error("ZMQ_ERROR", str(e)
                     try:
                         self.socket.send_json({
                             'status': 'error',
@@ -381,7 +378,7 @@ class DreamingModeAgent(BaseAgent):
                     
                 except Exception as e:
                     logger.error(f"Unexpected error in main loop: {e}")
-                    self.report_error("RUNTIME_ERROR", str(e))
+                    self.report_error("RUNTIME_ERROR", str(e)
                     try:
                         self.socket.send_json({
                             'status': 'error',
@@ -395,7 +392,7 @@ class DreamingModeAgent(BaseAgent):
             logger.info("KeyboardInterrupt received, stopping DreamingModeAgent")
         except Exception as e:
             logger.error(f"Error in main loop: {e}")
-            self.report_error("FATAL_ERROR", str(e))
+            self.report_error("FATAL_ERROR", str(e)
         finally:
             self.running = False
             self.cleanup()
@@ -414,7 +411,7 @@ class DreamingModeAgent(BaseAgent):
                 time.sleep(60)  # Check every minute
             except Exception as e:
                 logger.error(f"Error in dream scheduler: {e}")
-                self.report_error("SCHEDULER_ERROR", str(e))
+                self.report_error("SCHEDULER_ERROR", str(e)
                 time.sleep(60)  # Sleep longer on error
 
     def cleanup(self):

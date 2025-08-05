@@ -23,7 +23,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "translator_service.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "translator_service.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -31,7 +31,7 @@ logger = logging.getLogger("translator_service")
 
 # Constants
 HEALTH_CHECK_INTERVAL = 30  # seconds
-ZMQ_PORT = int(os.getenv('TRANSLATOR_PORT', '5563'))
+ZMQ_PORT = int(os.getenv('TRANSLATOR_PORT', '5563')
 ZMQ_SERVER = "localhost"
 MAX_RESTART_ATTEMPTS = 5
 RESTART_COOLDOWN = 60  # seconds
@@ -134,7 +134,7 @@ class TranslatorService:
         current_time = time.time()
         if current_time - self.last_restart < RESTART_COOLDOWN:
             logger.warning("Attempting to restart too quickly. Enforcing cooldown.")
-            time.sleep(RESTART_COOLDOWN - (current_time - self.last_restart))
+            time.sleep(RESTART_COOLDOWN - (current_time - self.last_restart)
         
         # Update restart tracking
         self.restart_count += 1
@@ -161,7 +161,7 @@ class TranslatorService:
             
             # Send health check request
             request = {"action": "health_check"}
-            socket.send_string(json.dumps(request))
+            socket.send_string(json.dumps(request)
             
             # Wait for response
             response_json = socket.recv_string()

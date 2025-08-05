@@ -29,7 +29,7 @@ def check_primary_translator():
     import socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind(('0.0.0.0', 5563))
+        sock.bind(('0.0.0.0', 5563)
         print("Port 5563 is available.")
     except OSError as e: # More specific exception
         print(f"Port 5563 is already in use or not bindable. Error: {e}")

@@ -15,23 +15,30 @@ from pathlib import Path
 import asyncio
 from dataclasses import dataclass, field
 import heapq
+import threading
 
 
 # Import path manager for containerization-friendly paths
 import sys
 from pathlib import Path
 
-# Add project root to path
-project_root = Path(__file__).resolve().parent.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+# Canonical import stack (TODO 1 compliance) - NO sys.path hacks
+# project_root = Path(__file__).resolve().parent.parent.parent
 
+# Canonical import stack (TODO 1 compliance)
+from common.utils.env_standardizer import (
+    get_mainpc_ip, get_pc2_ip, get_env, get_current_machine
+)
+from common.utils.path_manager import PathManager
+from common.config_manager import get_service_url, get_redis_url
 from common.core.base_agent import BaseAgent
+from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
+from common.utils.log_setup import configure_logging
+
+# Additional required imports
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 # Migrated to unified config manager (replacing Pattern 5)
 from common.config.unified_config_manager import Config
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
 
@@ -196,20 +203,27 @@ class AsyncProcessor(BaseAgent):
     # Parse agent arguments
     _agent_args = parse_agent_args()
     
-    def __init__(self, port: int = 7101):
+    def __init__(self, port: int = 7101, health_port: int = 8101):
         super().__init__(name="AsyncProcessor", port=port)
+        self.logger = configure_logging(__name__)            # NEW (Δ-2) TODO 2 compliance
+        self.error_publisher = create_pc2_error_publisher("async_processor")
+
+        self._setup_sockets()
+        self._start_health_check()
+        self._init_thread = threading.Thread(
+            target=self._initialize_background, daemon=True
+        )
+        self._init_thread.start()
+        
+        # Initialize components with async queue
+        self.task_queue = AsyncTaskQueue()
+        self.resource_manager = ResourceManager()
         self.start_time = time.time()
         self.context = None  # Using pool
         self.pull_socket = None
         self.push_socket = None
         self.health_socket = None
         self.running = False
-        self.logger = logger
-        
-        # Initialize components with async queue
-        self.task_queue = AsyncTaskQueue()
-        self.resource_manager = ResourceManager()
-        self.error_publisher = create_pc2_error_publisher("async_processor")
         
         # Event loop for async operations
         self.event_loop = None
@@ -250,14 +264,8 @@ class AsyncProcessor(BaseAgent):
         logger.info(f"AsyncProcessor sockets initialized on ports: {pull_port}, {push_port}, {health_port}")
         
     def _setup_logging(self):
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "async_processor.log")),
-                logging.StreamHandler()
-            ]
-        )
+        """Setup logging - TODO 1/3 compliance: use configure_logging instead of basicConfig"""
+        # logging.basicConfig removed per canonical import requirements
         self.logger = logging.getLogger('AsyncProcessor')
         
     def _setup_health_monitoring(self):
@@ -277,7 +285,7 @@ class AsyncProcessor(BaseAgent):
                     time.sleep(HEALTH_CHECK_INTERVAL)
                 except Exception as e:
                     self.logger.error(f"Health monitoring error: {str(e)}")
-                    self.report_error("health_monitoring_error", str(e))
+                    self.report_error("health_monitoring_error", str(e)
                     time.sleep(5)
                     
         thread = threading.Thread(target=monitor_health, daemon=True)
@@ -292,11 +300,11 @@ class AsyncProcessor(BaseAgent):
             
             try:
                 # Start the async processor task
-                self.processor_task = self.event_loop.create_task(self._async_process_loop())
+                self.processor_task = self.event_loop.create_task(self._async_process_loop()
                 self.event_loop.run_until_complete(self.processor_task)
             except Exception as e:
                 self.logger.error(f"Async processor error: {str(e)}")
-                self.report_error("async_processor_error", str(e))
+                self.report_error("async_processor_error", str(e)
             finally:
                 self.event_loop.close()
                     
@@ -337,7 +345,7 @@ class AsyncProcessor(BaseAgent):
                 
             except Exception as e:
                 self.logger.error(f"Error in async process loop: {str(e)}")
-                self.report_error("async_loop_error", str(e))
+                self.report_error("async_loop_error", str(e)
                 await asyncio.sleep(1)
     
     async def _process_queued_tasks(self):
@@ -367,7 +375,7 @@ class AsyncProcessor(BaseAgent):
                 
             except Exception as e:
                 self.logger.error(f"Task processing error: {str(e)}")
-                self.report_error("task_processing_error", str(e))
+                self.report_error("task_processing_error", str(e)
                 
             # Update task statistics
             duration = time.time() - start_time
@@ -393,7 +401,7 @@ class AsyncProcessor(BaseAgent):
                 })
             except Exception as e:
                 self.logger.error(f"Task processing error: {str(e)}")
-                self.report_error("task_processing_error", str(e))
+                self.report_error("task_processing_error", str(e)
                 success = False
                 
                 # Send error response
@@ -513,7 +521,7 @@ class AsyncProcessor(BaseAgent):
             self.pull_socket.send_json(health_status)
         except Exception as e:
             self.logger.error(f"Error handling health check: {str(e)}")
-            self.report_error("health_check_error", str(e))
+            self.report_error("health_check_error", str(e)
             error_response = {
                 'status': 'error',
                 'error': str(e),
@@ -683,7 +691,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 if __name__ == "__main__":

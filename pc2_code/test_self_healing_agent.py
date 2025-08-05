@@ -15,7 +15,7 @@ from pathlib import Path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 def test_self_healing_agent():
     """Test the SelfHealingAgent"""

@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Import path manager for containerization-friendly paths
 import sys
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
@@ -96,9 +96,9 @@ class ServiceManager:
             self.archive_dir.mkdir(parents=True, exist_ok=True)
             
             # Move all log files
-            for log_file in self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log")):
+            for log_file in self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log"):
                 try:
-                    shutil.move(str(log_file), str(self.archive_dir / log_file.name))
+                    shutil.move(str(log_file), str(self.archive_dir / log_file.name)
                 except Exception as e:
                     logger.error(f"Error moving {log_file}: {str(e)}")
             
@@ -106,7 +106,7 @@ class ServiceManager:
             for json_file in self.logs_dir.glob("*.json"):
                 if not json_file.name.startswith("config_"):
                     try:
-                        shutil.move(str(json_file), str(self.archive_dir / json_file.name))
+                        shutil.move(str(json_file), str(self.archive_dir / json_file.name)
                     except Exception as e:
                         logger.error(f"Error moving {json_file}: {str(e)}")
             
@@ -130,7 +130,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]], 
-                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log")), "a"),
+                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log"), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)  # Give service time to initialize
@@ -148,7 +148,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]],
-                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log")), "a"),
+                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log"), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)
@@ -165,7 +165,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]],
-                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log")), "a"),
+                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log"), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)

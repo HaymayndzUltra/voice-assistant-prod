@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from common.core.base_agent import BaseAgent
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 import zmq
 import json
 import os
@@ -86,10 +86,10 @@ class LearningModeAgent(BaseAgent):
                 msg = self.socket.recv_string()
                 query = json.loads(msg)
                 resp = self.handle_query(query)
-                self.socket.send_string(json.dumps(resp))
+                self.socket.send_string(json.dumps(resp)
             except Exception as e:
                 logging.error(f"[LearningMode] Error: {e}")
-                self.socket.send_string(json.dumps({"status": "error", "reason": str(e)}))
+                self.socket.send_string(json.dumps({"status": "error", "reason": str(e)})
 
 if __name__ == "__main__":
     agent = LearningModeAgent()

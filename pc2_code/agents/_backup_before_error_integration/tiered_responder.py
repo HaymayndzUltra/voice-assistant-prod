@@ -26,7 +26,7 @@ from common.utils.path_manager import PathManager
 # Add project root to path using PathManager
 PROJECT_ROOT = PathManager.get_project_root()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
@@ -197,7 +197,6 @@ class TieredResponder(BaseAgent):
         ]
         
     def _setup_logging(self):
-        logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[

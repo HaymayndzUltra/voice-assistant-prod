@@ -32,7 +32,7 @@ def check_cuda_available():
             gpu_info = []
             for line in lines:
                 if "NVIDIA" in line and "%" in line:
-                    gpu_info.append(line.strip())
+                    gpu_info.append(line.strip()
             
             if gpu_info:
                 print_colored("✅ CUDA GPUs detected:", Fore.GREEN, Style.BRIGHT)

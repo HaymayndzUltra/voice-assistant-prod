@@ -24,13 +24,13 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(BASE_DIR))
+
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import necessary modules
 try:
@@ -45,7 +45,6 @@ except ImportError as e:
 # Configure logging
 log_directory = os.path.join('logs')
 os.makedirs(log_directory, exist_ok=True)
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
@@ -57,7 +56,7 @@ logger = logging.getLogger('ProactiveContextMonitor')
 # Load network configuration at the module level
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -66,13 +65,13 @@ def load_network_config():
         # Default fallback values
         return {
             "main_pc_ip": get_mainpc_ip(),
-            "pc2_ip": get_pc2_ip()),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
-                "proactive_monitor": int(os.environ.get("PROACTIVE_MONITOR_PORT", 7119)),
-                "proactive_health": int(os.environ.get("PROACTIVE_MONITOR_HEALTH_PORT", 8119)),
-                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+                "proactive_monitor": int(os.environ.get("PROACTIVE_MONITOR_PORT", 7119),
+                "proactive_health": int(os.environ.get("PROACTIVE_MONITOR_HEALTH_PORT", 8119),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150)
             }
         }
 
@@ -80,12 +79,12 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = get_mainpc_ip())
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
-BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
-PROACTIVE_MONITOR_PORT = network_config.get("ports", {}).get("proactive_monitor", int(os.environ.get("PROACTIVE_MONITOR_PORT", 7119)))
-PROACTIVE_MONITOR_HEALTH_PORT = network_config.get("ports", {}).get("proactive_health", int(os.environ.get("PROACTIVE_MONITOR_HEALTH_PORT", 8119)))
-ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+MAIN_PC_IP = get_mainpc_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0")
+PROACTIVE_MONITOR_PORT = network_config.get("ports", {}).get("proactive_monitor", int(os.environ.get("PROACTIVE_MONITOR_PORT", 7119))
+PROACTIVE_MONITOR_HEALTH_PORT = network_config.get("ports", {}).get("proactive_health", int(os.environ.get("PROACTIVE_MONITOR_HEALTH_PORT", 8119))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150))
 
 class ProactiveContextMonitor(BaseAgent):
     """Proactive Context Monitor Agent for analyzing context and triggering proactive actions."""
@@ -276,11 +275,11 @@ class ProactiveContextMonitor(BaseAgent):
                         
                 except zmq.error.ZMQError as e:
                     logger.error(f"ZMQ error: {e}")
-                    self.report_error("ZMQ_ERROR", str(e))
+                    self.report_error("ZMQ_ERROR", str(e)
                     time.sleep(1)  # Sleep to avoid tight loop on error
                 except Exception as e:
                     logger.error(f"Error processing message: {e}")
-                    self.report_error("PROCESSING_ERROR", str(e))
+                    self.report_error("PROCESSING_ERROR", str(e)
                     # Try to send error response
                     try:
                         self.socket.send_json({
@@ -379,8 +378,6 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

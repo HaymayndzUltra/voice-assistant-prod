@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import common utilities if available
 try:
@@ -41,7 +41,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "performance_logger.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "performance_logger.log"),
         logging.StreamHandler()
     ]
 )
@@ -230,7 +230,7 @@ class PerformanceLoggerAgent(BaseAgent):
                 metric['duration'],
                 metric['timestamp'],
                 json.dumps(metric['metadata'])
-            ))
+            )
             
             conn.commit()
             conn.close()
@@ -251,7 +251,7 @@ class PerformanceLoggerAgent(BaseAgent):
                 usage['memory_mb'],
                 usage['timestamp'],
                 json.dumps(usage['metadata'])
-            ))
+            )
             
             conn.commit()
             conn.close()
@@ -267,7 +267,7 @@ class PerformanceLoggerAgent(BaseAgent):
                 FROM metrics
                 WHERE agent = ? AND timestamp BETWEEN ? AND ?
                 ORDER BY timestamp
-            ''', (agent, start_time, end_time))
+            ''', (agent, start_time, end_time)
             
             metrics = []
             for row in cursor.fetchall():
@@ -292,7 +292,7 @@ class PerformanceLoggerAgent(BaseAgent):
                 FROM resource_usage
                 WHERE agent = ? AND timestamp BETWEEN ? AND ?
                 ORDER BY timestamp
-            ''', (agent, start_time, end_time))
+            ''', (agent, start_time, end_time)
             
             usage = []
             for row in cursor.fetchall():

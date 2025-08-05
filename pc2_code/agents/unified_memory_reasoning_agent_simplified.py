@@ -16,18 +16,17 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+
 from common.utils.path_manager import PathManager
 # Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent)
 from common.core.base_agent import BaseAgent
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log")), encoding="utf-8"),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log"), encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
@@ -68,7 +67,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
             self.initialization_error = str(e)
             logger.error(f"Initialization failed: {str(e)}")
             # Report error via BaseAgent's method
-            self.report_error("initialization_error", str(e))
+            self.report_error("initialization_error", str(e)
     
     def _load_store(self):
         """Load memory store from file"""
@@ -197,7 +196,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
                             logger.info(f"Received message on main socket: {message}")
                             
                             # Parse JSON
-                            request = json.loads(message.decode())
+                            request = json.loads(message.decode()
                             logger.info(f"Request: {request}")
                             
                             # Process the request

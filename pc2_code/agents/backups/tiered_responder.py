@@ -160,7 +160,7 @@ class TieredResponder:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log")),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log"),
                 logging.StreamHandler()
             ]
         )
@@ -226,11 +226,11 @@ class TieredResponder:
         # Check instant response patterns first
         for tier in self.tiers:
             if any(pattern in text for pattern in tier['patterns']):
-                asyncio.run(tier['handler'](query, tier['name']))
+                asyncio.run(tier['handler'](query, tier['name'])
                 return
         
         # If no pattern matches, default to deep analysis
-        asyncio.run(self._handle_deep_response(query, 'deep'))
+        asyncio.run(self._handle_deep_response(query, 'deep')
 
     async def _handle_instant_response(self, query: Dict[str, Any], tier_name: str):
         """Handle instant response queries"""

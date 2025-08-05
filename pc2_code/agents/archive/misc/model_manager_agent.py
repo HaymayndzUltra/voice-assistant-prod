@@ -20,7 +20,7 @@ import pickle
 from datetime import datetime, timedelta
 
 # Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 
 # Set up basic logging first in case config import fails
 logging.basicConfig(
@@ -39,15 +39,15 @@ from common.env_helpers import get_env
     
     # Configure logging with config settings
     log_level = config.get('system.log_level', 'INFO')
-    logs_dir = Path(config.get('system.logs_dir', 'logs'))
+    logs_dir = Path(config.get('system.logs_dir', 'logs')
     logs_dir.mkdir(exist_ok=True)
     log_file = logs_dir / str(PathManager.get_logs_dir() / "model_manager.log")
     
     # Add file handler to logger
     file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logger.addHandler(file_handler)
-    logger.setLevel(getattr(logging, log_level))
+    logger.setLevel(getattr(logging, log_level)
     
     logger.info("Logging configured successfully")
 except Exception as e:
@@ -156,7 +156,7 @@ class ModelManagerAgent:
         
         if not available_models:
             logger.warning("No models are online! Returning first model as fallback.")
-            return next(iter(self.models))
+            return next(iter(self.models)
         
         # Filter by context size if specified
         if context_size:
@@ -187,7 +187,7 @@ class ModelManagerAgent:
         else:
             # Fallback to any available model
             logger.warning(f"No models have capability '{task_type}'! Returning first available model.")
-            selected_model = next(iter(available_models))
+            selected_model = next(iter(available_models)
             logger.info(f"Fallback: selected model '{selected_model}' for task type '{task_type}'")
             return selected_model
     
@@ -280,10 +280,10 @@ class ModelManagerAgent:
                 
                 # Send health check request
                 health_request = {"action": "health_check"}
-                zmq_socket.send_string(json.dumps(health_request))
+                zmq_socket.send_string(json.dumps(health_request)
                 
                 # Wait for response with timeout
-                response = json.loads(zmq_socket.recv_string())
+                response = json.loads(zmq_socket.recv_string()
                 
                 # Update status based on response
                 if response.get("status") == "ok" and response.get("service") == "running":
@@ -418,7 +418,7 @@ class ModelManagerAgent:
                         self.socket.send_string(json.dumps({
                             'status': 'error',
                             'message': str(e)
-                        }))
+                        })
                     except:
                         pass
         finally:
@@ -448,5 +448,5 @@ if __name__ == "__main__":
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
-        logger.error(traceback.format_exc())
+        logger.error(traceback.format_exc()
         sys.exit(1)

@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "agent_trust_scorer.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "agent_trust_scorer.log"),
         logging.StreamHandler()
     ]
 )
@@ -102,7 +102,7 @@ class AgentTrustScorer(BaseAgent):
         base_score = successful_interactions / total_interactions
         
         # Adjust for response time (faster is better)
-        time_factor = max(0, 1 - (response_time / 5.0))  # 5 seconds as max threshold
+        time_factor = max(0, 1 - (response_time / 5.0)  # 5 seconds as max threshold
         
         # Combine factors
         new_trust_score = (base_score * 0.7) + (time_factor * 0.3)
@@ -112,14 +112,14 @@ class AgentTrustScorer(BaseAgent):
             INSERT OR REPLACE INTO model_scores 
             (model_id, trust_score, total_interactions, successful_interactions, last_updated)
             VALUES (?, ?, ?, ?, ?)
-        ''', (model_id, new_trust_score, total_interactions, successful_interactions, datetime.now()))
+        ''', (model_id, new_trust_score, total_interactions, successful_interactions, datetime.now())
         
         # Log performance
         cursor.execute('''
             INSERT INTO performance_logs 
             (model_id, success, response_time, timestamp)
             VALUES (?, ?, ?, ?)
-        ''', (model_id, success, response_time, datetime.now()))
+        ''', (model_id, success, response_time, datetime.now())
         
         conn.commit()
         conn.close()
@@ -151,7 +151,7 @@ class AgentTrustScorer(BaseAgent):
             WHERE model_id = ? 
             ORDER BY timestamp DESC 
             LIMIT ?
-        ''', (model_id, limit))
+        ''', (model_id, limit)
         
         history = cursor.fetchall()
         conn.close()

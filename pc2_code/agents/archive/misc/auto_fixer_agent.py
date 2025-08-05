@@ -54,8 +54,8 @@ class AutoFixerAgent(BaseAgent):
             "language": language,
             "save_to_file": False,
             "use_voting": True
-        }))
-        gen_response = json.loads(self.code_gen.recv_string())
+        })
+        gen_response = json.loads(self.code_gen.recv_string()
         code = gen_response.get("code")
         lang = gen_response.get("language")
         history.append({"attempt": 1, "code": code, "error": None})
@@ -68,8 +68,8 @@ class AutoFixerAgent(BaseAgent):
                 "code": code,
                 "language": lang,
                 "parameters": parameters or {}
-            }))
-            exec_response = json.loads(self.executor.recv_string())
+            })
+            exec_response = json.loads(self.executor.recv_string()
             if exec_response.get("status") == "success":
                 logger.info(f"[AutoFix] Code executed successfully on attempt {attempt}.")
                 return {
@@ -94,8 +94,8 @@ class AutoFixerAgent(BaseAgent):
                     "error": error,
                     "language": lang,
                     "use_voting": True
-                }))
-                fix_response = json.loads(self.code_gen.recv_string())
+                })
+                fix_response = json.loads(self.code_gen.recv_string()
                 # Handle both response formats (with or without voting)
                 code = fix_response.get("fixed_code") or fix_response.get("code")
                 lang = fix_response.get("language")
@@ -133,6 +133,6 @@ if __name__ == "__main__":
     elif args.description:
         # Run the auto-fix loop with the provided description
         result = agent.auto_fix_loop(args.description, args.language)
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2)
     else:
         parser.print_help()

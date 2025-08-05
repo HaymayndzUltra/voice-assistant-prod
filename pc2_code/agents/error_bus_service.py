@@ -24,17 +24,17 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+
 from common.utils.path_manager import PathManager
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+    
 
 # Add the project's root directory to the Python path
 ROOT_DIR = PC2_CODE_DIR.parent
 if ROOT_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, ROOT_DIR.as_posix())
+    
 
 from common.core.base_agent import BaseAgent
 
@@ -44,11 +44,10 @@ from pc2_code.agents.error_bus_template import setup_error_reporting, report_err
 
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "error_bus.log"))),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "error_bus.log")),
         logging.StreamHandler()
     ]
 )
@@ -71,7 +70,7 @@ class ErrorBusService(BaseAgent):
         self.config = self._load_config()
         
         # Initialize database
-        self.db_path = self.config.get('error_management', {}).get('db_path', PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db")))
+        self.db_path = self.config.get('error_management', {}).get('db_path', PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db"))
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         
@@ -116,7 +115,7 @@ class ErrorBusService(BaseAgent):
                         "bind_address": "0.0.0.0",
                     },
                     "error_management": {
-                        "db_path": PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db")),
+                        "db_path": PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db"),
                         "logs_dir": "logs",
                         "scan_interval": 300,
                     }
@@ -267,12 +266,12 @@ class ErrorBusService(BaseAgent):
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            timestamp = error_data.get('timestamp', time.time())
+            timestamp = error_data.get('timestamp', time.time()
             agent = error_data.get('agent', 'unknown')
             error_type = error_data.get('error_type', 'unknown')
             message = error_data.get('message', '')
             severity = error_data.get('severity', 'ERROR')
-            context = json.dumps(error_data.get('details', {}))
+            context = json.dumps(error_data.get('details', {})
             
             cursor.execute(
                 "INSERT INTO errors (timestamp, agent, error_type, message, severity, context) VALUES (?, ?, ?, ?, ?, ?)",
@@ -280,7 +279,7 @@ class ErrorBusService(BaseAgent):
             )
             
             # Update agent health status
-            cursor.execute("SELECT error_count FROM agent_health WHERE agent = ?", (agent,))
+            cursor.execute("SELECT error_count FROM agent_health WHERE agent = ?", (agent,)
             row = cursor.fetchone()
             if row:
                 error_count = row[0] + 1
@@ -323,7 +322,7 @@ class ErrorBusService(BaseAgent):
                 logger.warning(f"Log directory not found: {log_dir}")
                 return
                 
-            for log_file in log_dir.glob(str(PathManager.get_logs_dir() / "*.log")):
+            for log_file in log_dir.glob(str(PathManager.get_logs_dir() / "*.log"):
                 self._scan_log_file(log_file)
         except Exception as e:
             logger.error(f"Error scanning logs: {e}")
@@ -394,7 +393,7 @@ class ErrorBusService(BaseAgent):
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM errors ORDER BY timestamp DESC LIMIT ?", (limit,))
+            cursor.execute("SELECT * FROM errors ORDER BY timestamp DESC LIMIT ?", (limit,)
             rows = cursor.fetchall()
             errors = [dict(row) for row in rows]
             conn.close()
@@ -468,7 +467,7 @@ class ErrorBusService(BaseAgent):
             "version": getattr(self, "version", "1.0.0"),
             "port": self.port,
             "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
+            "error_reporting": bool(getattr(self, "error_bus", None)
         }
 if __name__ == "__main__":
     # Parse command line arguments

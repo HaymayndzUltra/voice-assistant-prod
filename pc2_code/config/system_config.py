@@ -3,8 +3,6 @@
 import os
 from typing import Any
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 
 def get_env_override(key: str, default: Any) -> Any:
     """
@@ -396,7 +394,7 @@ def get_service_port(service_name: str, default_port: int) -> int:
         Port number for the service
     """
     env_key = f"{service_name.upper()}_PORT"
-    port_str = get_env_override(env_key, str(default_port))
+    port_str = get_env_override(env_key, str(default_port)
     try:
         return int(port_str)
     except ValueError:

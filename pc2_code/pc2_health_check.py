@@ -32,7 +32,7 @@ def check_port_open(host, port):
     """Check if a port is open on the given host."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(2)
-    result = sock.connect_ex((host, port))
+    result = sock.connect_ex((host, port)
     sock.close()
     return result == 0
 
@@ -184,7 +184,7 @@ def display_results(results):
             details
         ])
     
-    print(tabulate(summary_rows, headers=["Service", "Address", "Status", "Details"], tablefmt="grid"))
+    print(tabulate(summary_rows, headers=["Service", "Address", "Status", "Details"], tablefmt="grid")
     
     # Overall status
     all_active = all(service["port_status"] for service in results)
@@ -207,11 +207,11 @@ def display_results(results):
         
         if service["health_check"]:
             print(f"\n{Fore.CYAN}Health Check Response:{Style.RESET_ALL}")
-            print(json.dumps(service["health_check"], indent=2))
+            print(json.dumps(service["health_check"], indent=2)
         
         if service.get("translation_test"):
             print(f"\n{Fore.CYAN}Translation Test Response:{Style.RESET_ALL}")
-            print(json.dumps(service["translation_test"], indent=2))
+            print(json.dumps(service["translation_test"], indent=2)
 
 def main():
     parser = argparse.ArgumentParser(description="PC2 Health Check Tool")
@@ -226,13 +226,13 @@ def main():
         
         # Check all services
         print(f"\n{Fore.YELLOW}Checking Translator Agent...{Style.RESET_ALL}")
-        results.append(check_translator_agent(args.host))
+        results.append(check_translator_agent(args.host)
         
         print(f"\n{Fore.YELLOW}Checking NLLB Translation Adapter...{Style.RESET_ALL}")
-        results.append(check_nllb_adapter(args.host))
+        results.append(check_nllb_adapter(args.host)
         
         print(f"\n{Fore.YELLOW}Checking TinyLlama Service...{Style.RESET_ALL}")
-        results.append(check_tinyllama_service(args.host))
+        results.append(check_tinyllama_service(args.host)
         
         # Display results
         display_results(results)

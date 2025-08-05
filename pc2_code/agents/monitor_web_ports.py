@@ -11,11 +11,10 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "web_ports_monitor.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "web_ports_monitor.log"),
         logging.StreamHandler()
     ]
 )

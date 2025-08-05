@@ -119,7 +119,7 @@ class PC2ErrorPublisher:
             "source_machine": "PC2",
             "timestamp": datetime.utcnow().isoformat(),
             "error_data": {
-                "error_id": str(uuid.uuid4()),
+                "error_id": str(uuid.uuid4(),
                 "error_type": error_type,
                 "severity": severity,
                 "category": category,
@@ -215,15 +215,15 @@ class PC2ErrorPublisher:
     @staticmethod
     def _build_default_endpoint() -> str:
         """Build PC2 local error bus endpoint."""
-        host = os.environ.get("PC2_ERROR_BUS_HOST", get_pc2_ip())
-        port = int(os.environ.get("PC2_ERROR_BUS_PORT", 7150))
+        host = os.environ.get("PC2_ERROR_BUS_HOST", get_pc2_ip()
+        port = int(os.environ.get("PC2_ERROR_BUS_PORT", 7150)
         return f"tcp://{host}:{port}"
 
     @staticmethod
     def _build_mainpc_endpoint() -> str:
         """Build Main PC error bus endpoint for cross-machine propagation."""
-        host = os.environ.get("MAINPC_ERROR_BUS_HOST", get_mainpc_ip())
-        port = int(os.environ.get("MAINPC_ERROR_BUS_PORT", 7150))
+        host = os.environ.get("MAINPC_ERROR_BUS_HOST", get_mainpc_ip()
+        port = int(os.environ.get("MAINPC_ERROR_BUS_PORT", 7150)
         return f"tcp://{host}:{port}"
 
     # Context manager support

@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import common utilities if available
 try:
@@ -199,7 +199,7 @@ from common.env_helpers import get_env
 # Load configuration at the module level
 config = load_config()= re.search(r'({.*})', response["content"], re.DOTALL)
                             if json_match:
-                                lesson_data = json.loads(json_match.group(1))
+                                lesson_data = json.loads(json_match.group(1)
                             else:
                                 lesson_data = json.loads(response["content"])
                         else:
@@ -315,7 +315,7 @@ config = load_config()= re.search(r'({.*})', response["content"], re.DOTALL)
                     'status': 'error',
                     'message': 'Missing engagement_score parameter'
                 }
-            return self.submit_feedback(float(engagement_score))
+            return self.submit_feedback(float(engagement_score)
         
         if action == 'get_history':
             return self.get_history()
@@ -350,7 +350,7 @@ config = load_config()= re.search(r'({.*})', response["content"], re.DOTALL)
                     poller.register(self.socket, zmq.POLLIN)
                     
                     # Poll with timeout to allow for clean shutdown
-                    if dict(poller.poll(1000)):
+                    if dict(poller.poll(1000):
                         # Receive and process message
                         message_data = self.socket.recv()
                         

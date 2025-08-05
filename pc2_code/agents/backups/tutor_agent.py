@@ -22,12 +22,12 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import BaseAgent
 from main_pc_code.src.core.base_agent import BaseAgent
@@ -159,7 +159,7 @@ class AdaptiveLearningEngine:
         
         # Predict difficulty adjustment
         with torch.no_grad():
-            adjustment = self.difficulty_model(torch.FloatTensor(features_scaled))
+            adjustment = self.difficulty_model(torch.FloatTensor(features_scaled)
             
         return float(adjustment[0])
         
@@ -431,7 +431,7 @@ class TutorAgent(BaseAgent):
     def _load_lessons(self):
         """Load lesson data from storage"""
         try:
-            lessons_path = TUTOR_CONFIG.get("lessons_path", PathManager.join_path("data", "lessons.json"))
+            lessons_path = TUTOR_CONFIG.get("lessons_path", PathManager.join_path("data", "lessons.json")
             if os.path.exists(lessons_path):
                 with open(lessons_path, "r") as f:
                     lessons_data = json.load(f)
@@ -564,7 +564,7 @@ class TutorAgent(BaseAgent):
         if self.students[student_id].performance_history:
             prev_perf_data = self.students[student_id].performance_history[-1]
             if prev_perf_data.get("lesson_id") == lesson_id:
-                previous_performance = PerformanceMetrics(**prev_perf_data.get("performance", {}))
+                previous_performance = PerformanceMetrics(**prev_perf_data.get("performance", {})
                 
         feedback = self.feedback_generator.generate_feedback(performance, previous_performance)
         

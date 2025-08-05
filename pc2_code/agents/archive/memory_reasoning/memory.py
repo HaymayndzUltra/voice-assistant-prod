@@ -9,7 +9,7 @@ import logging
 from typing import List, Dict, Any
 
 # Add the parent directory to sys.path to allow importing from sibling modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 
 # Import system config
 try:
@@ -282,7 +282,7 @@ class MemoryAgent:
                 request = json.loads(request_str)
             except json.JSONDecodeError:
                 logging.warning("[Memory] Invalid JSON in health check request")
-                self.health_socket.send_string(json.dumps({"status": "error", "message": "Invalid JSON"}))
+                self.health_socket.send_string(json.dumps({"status": "error", "message": "Invalid JSON"})
                 return True
             
             # Check if it's a health check request
@@ -294,12 +294,12 @@ class MemoryAgent:
                     "agent": "memory",
                     "timestamp": time.time()
                 }
-                self.health_socket.send_string(json.dumps(response))
+                self.health_socket.send_string(json.dumps(response)
                 return True
             else:
                 # Unknown request type
                 logging.warning(f"[Memory] Unknown request type: {request.get('request_type')}")
-                self.health_socket.send_string(json.dumps({"status": "error", "message": "Unknown request type"}))
+                self.health_socket.send_string(json.dumps({"status": "error", "message": "Unknown request type"})
                 return True
             
         except zmq.Again:
@@ -308,7 +308,7 @@ class MemoryAgent:
         except Exception as e:
             logging.error(f"[Memory] Error handling health check: {str(e)}")
             try:
-                self.health_socket.send_string(json.dumps({"status": "error", "message": str(e)}))
+                self.health_socket.send_string(json.dumps({"status": "error", "message": str(e)})
             except Exception:
                 pass  # Ignore errors in sending error response
             return True
@@ -359,7 +359,7 @@ class MemoryAgent:
                     
                     # Send the response
                     try:
-                        self.socket.send_string(json.dumps(response))
+                        self.socket.send_string(json.dumps(response)
                         logging.info(f"[Memory] Processed request: {query.get('action', 'unknown')}")
                     except Exception as e:
                         logging.error(f"[Memory] Error sending response: {e}")

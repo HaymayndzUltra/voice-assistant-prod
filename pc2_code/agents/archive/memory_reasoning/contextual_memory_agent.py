@@ -19,10 +19,10 @@ from datetime import datetime
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
-LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "contextual_memory_agent.log"))
+LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "contextual_memory_agent.log")
 CONTEXT_STORE_PATH = "contextual_memory_store.json"
 ZMQ_CONTEXTUAL_MEMORY_PORT = 5596  # Updated to match expected port
 MODEL_MANAGER_HOST = "192.168.1.27"  # Main PC's IP address
@@ -220,7 +220,7 @@ class ContextualMemoryAgent:
             return summary
         except Exception as e:
             logging.error(f"[ContextualMemory] Error updating session summary: {str(e)}")
-            logging.error(traceback.format_exc())
+            logging.error(traceback.format_exc()
             return None
     
     def _summarize_code(self, code_snippets):
@@ -232,7 +232,7 @@ class ContextualMemoryAgent:
             # Basic code summarization
             summary = f"Code Summary:\n"
             summary += f"Total snippets: {len(code_snippets)}\n"
-            summary += f"Total lines: {len(all_code.splitlines())}\n"
+            summary += f"Total lines: {len(all_code.splitlines()}\n"
 
             # Add domain-specific summaries
             if "database" in all_code.lower():
@@ -250,7 +250,7 @@ class ContextualMemoryAgent:
             return summary
         except Exception as e:
             logging.error(f"[ContextualMemory] Error summarizing code: {str(e)}")
-            logging.error(traceback.format_exc())
+            logging.error(traceback.format_exc()
             return "Error summarizing code"
     
     def _summarize_conversation(self, user_queries, system_responses):
@@ -269,7 +269,7 @@ class ContextualMemoryAgent:
             return summary
         except Exception as e:
             logging.error(f"[ContextualMemory] Error summarizing conversation: {str(e)}")
-            logging.error(traceback.format_exc())
+            logging.error(traceback.format_exc()
             return "Error summarizing conversation"
     
     def _extract_key_errors(self, errors):
@@ -282,7 +282,7 @@ class ContextualMemoryAgent:
             return key_errors
         except Exception as e:
             logging.error(f"[ContextualMemory] Error extracting key errors: {str(e)}")
-            logging.error(traceback.format_exc())
+            logging.error(traceback.format_exc()
             return []
         
     def _compress_text(self, text, target_tokens):
@@ -294,7 +294,7 @@ class ContextualMemoryAgent:
             return text
         except Exception as e:
             logging.error(f"[ContextualMemory] Error compressing text: {str(e)}")
-            logging.error(traceback.format_exc())
+            logging.error(traceback.format_exc()
             return text
     
     def get_context_summary(self, session_id, max_tokens=None):
@@ -317,7 +317,7 @@ class ContextualMemoryAgent:
                 return summary
         except Exception as e:
             logging.error(f"[ContextualMemory] Error getting context summary: {str(e)}")
-            logging.error(traceback.format_exc())
+            logging.error(traceback.format_exc()
             return None
     
     def record_key_decision(self, session_id, decision):
@@ -344,7 +344,7 @@ class ContextualMemoryAgent:
                 return True
         except Exception as e:
             logging.error(f"[ContextualMemory] Error recording key decision: {str(e)}")
-            logging.error(traceback.format_exc())
+            logging.error(traceback.format_exc()
             return False
     
     def handle_query(self, query):
@@ -373,7 +373,7 @@ class ContextualMemoryAgent:
                 return {"status": "error", "message": f"Unknown action: {action}"}
         except Exception as e:
             logging.error(f"[ContextualMemory] Error handling query: {str(e)}")
-            logging.error(traceback.format_exc())
+            logging.error(traceback.format_exc()
             return {"status": "error", "message": str(e)}
     
     def _handle_health_check(self):
@@ -413,7 +413,7 @@ class ContextualMemoryAgent:
                 
             except Exception as e:
                 logging.error(f"[ContextualMemory] Error in service loop: {str(e)}")
-                logging.error(traceback.format_exc())
+                logging.error(traceback.format_exc()
                 self.failed_requests += 1
                 self.socket.send_json({"status": "error", "message": str(e)})
     
@@ -504,7 +504,7 @@ def main():
         agent.stop()
     except Exception as e:
         logging.error(f"[ContextualMemory] Unhandled exception: {str(e)}")
-        logging.error(traceback.format_exc())
+        logging.error(traceback.format_exc()
         sys.exit(1)
 
 if __name__ == "__main__":

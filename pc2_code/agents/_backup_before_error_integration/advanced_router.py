@@ -28,12 +28,12 @@ from pathlib import Path
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
@@ -68,7 +68,6 @@ def load_network_config():
         }
 
 # Setup logging
-logging.basicConfig(
     level=logging.INFO, 
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[logging.StreamHandler(sys.stdout)]

@@ -37,13 +37,13 @@ import hashlib
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import config parser utility with fallback
 try:
@@ -58,7 +58,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "alert_manager_agent.log"))
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "alert_manager_agent.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 
@@ -154,9 +154,9 @@ class AlertManagerAgent:
             self.alert_rules: Dict[str, Dict[str, Any]] = {}
             
             # Database setup
-            self.db_path = Path(PathManager.join_path("data", str(PathManager.get_data_dir() / "alerts.db")))
+            self.db_path = Path(PathManager.join_path("data", str(PathManager.get_data_dir() / "alerts.db"))
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
-            self.conn = sqlite3.connect(str(self.db_path))
+            self.conn = sqlite3.connect(str(self.db_path)
             self._create_tables()
             
             # Alert settings
@@ -234,7 +234,7 @@ class AlertManagerAgent:
         """Create a new alert"""
         try:
             # Generate alert ID
-            alert_hash = hashlib.md5(f"{title}:{message}:{source}:{time.time()}".encode()).hexdigest()
+            alert_hash = hashlib.md5(f"{title}:{message}:{source}:{time.time()}".encode().hexdigest()
             alert_id = f"alert_{alert_hash[:8]}"
             
             # Check for duplicate alerts
@@ -252,7 +252,7 @@ class AlertManagerAgent:
             INSERT INTO alerts (alert_id, title, message, severity, source, tags, timestamp, status, notes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (alert_id, title, message, severity, source, json.dumps(tags or {}), 
-                  alert.timestamp, alert.status, json.dumps(alert.notes)))
+                  alert.timestamp, alert.status, json.dumps(alert.notes))
             self.conn.commit()
             
             # Publish alert notification
@@ -308,7 +308,7 @@ class AlertManagerAgent:
             UPDATE alerts SET status = ?, acknowledged_by = ?, acknowledged_at = ?, notes = ?
             WHERE alert_id = ?
             ''', (alert.status, acknowledged_by, alert.acknowledged_at, 
-                  json.dumps(alert.notes), alert_id))
+                  json.dumps(alert.notes), alert_id)
             self.conn.commit()
             
             # Publish acknowledgment notification
@@ -349,7 +349,7 @@ class AlertManagerAgent:
             UPDATE alerts SET status = ?, resolved_by = ?, resolved_at = ?, notes = ?
             WHERE alert_id = ?
             ''', (alert.status, resolved_by, alert.resolved_at, 
-                  json.dumps(alert.notes), alert_id))
+                  json.dumps(alert.notes), alert_id)
             self.conn.commit()
             
             # Remove from active alerts
@@ -422,7 +422,7 @@ class AlertManagerAgent:
             cursor.execute('''
             INSERT INTO alert_rules (rule_id, rule_name, conditions, actions, enabled)
             VALUES (?, ?, ?, ?, ?)
-            ''', (rule_id, rule_name, json.dumps(conditions), json.dumps(actions), True))
+            ''', (rule_id, rule_name, json.dumps(conditions), json.dumps(actions), True)
             self.conn.commit()
             
             logger.info(f"Added alert rule: {rule_id} - {rule_name}")
@@ -458,9 +458,9 @@ class AlertManagerAgent:
                 request.get('notes')
             )
         elif action == 'get_active_alerts':
-            return self.get_active_alerts(request.get('severity'))
+            return self.get_active_alerts(request.get('severity')
         elif action == 'get_alert_history':
-            return self.get_alert_history(request.get('hours', 24))
+            return self.get_alert_history(request.get('hours', 24)
         elif action == 'add_alert_rule':
             return self.add_alert_rule(
                 request.get('rule_id'),
@@ -531,7 +531,7 @@ class AlertManagerAgent:
         while self.running:
             try:
                 current_time = time.time()
-                for alert_id, alert in list(self.active_alerts.items()):
+                for alert_id, alert in list(self.active_alerts.items():
                     # Check if alert needs escalation
                     if (alert.status == ALERT_STATUS_ACTIVE and 
                         current_time - alert.timestamp > self.escalation_delay):
@@ -571,7 +571,7 @@ class AlertManagerAgent:
                 cutoff_time = time.time() - (30 * 24 * 3600)
                 cursor = self.conn.cursor()
                 cursor.execute('DELETE FROM alerts WHERE timestamp < ? AND status = ?', 
-                             (cutoff_time, ALERT_STATUS_RESOLVED))
+                             (cutoff_time, ALERT_STATUS_RESOLVED)
                 deleted_count = cursor.rowcount
                 self.conn.commit()
                 

@@ -18,7 +18,7 @@ import traceback
 from common.core.base_agent import BaseAgent
 
 # Add the parent directory to sys.path to import the config
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 from pc2_code.config.system_config import config
 from common.env_helpers import get_env
 
@@ -26,7 +26,7 @@ from common.env_helpers import get_env
 from common.utils.path_manager import PathManager
 
 # Configure log directory
-logs_dir = Path(config.get('system.logs_dir', 'logs'))
+logs_dir = Path(config.get('system.logs_dir', 'logs')
 logs_dir.mkdir(exist_ok=True)
 LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.log")
 ZMQ_CHAIN_OF_THOUGHT_PORT = 5612  # Chain of Thought port
@@ -105,7 +105,7 @@ class ChainOfThoughtAgent(BaseAgent):
         
         try:
             logger.info(f"[ChainOfThought] Sending request to Remote Connector for model {request['model']}")
-            self.llm_router_socket.send_string(json.dumps(request))
+            self.llm_router_socket.send_string(json.dumps(request)
             
             # Use a longer timeout for inference
             poller = zmq.Poller()
@@ -154,8 +154,8 @@ class ChainOfThoughtAgent(BaseAgent):
         steps = []
         for line in response.split('\n'):
             # Look for lines that start with a number followed by a period or parenthesis
-            if re.match(r'^\d+[\.\)]', line.strip()):
-                step = re.sub(r'^\d+[\.\)]\s*', '', line.strip())
+            if re.match(r'^\d+[\.\)]', line.strip():
+                step = re.sub(r'^\d+[\.\)]\s*', '', line.strip()
                 if step:
                     steps.append(step)
         
@@ -405,7 +405,7 @@ class ChainOfThoughtAgent(BaseAgent):
         except Exception as e:
             error_msg = f"Error processing request: {str(e)}"
             logger.error(error_msg)
-            logger.error(traceback.format_exc())
+            logger.error(traceback.format_exc()
             self.failed_requests += 1
             return {"status": "error", "message": error_msg}
     
@@ -430,7 +430,7 @@ class ChainOfThoughtAgent(BaseAgent):
                     self.socket.send_string(json.dumps({
                         "status": "error",
                         "message": error_msg
-                    }))
+                    })
                     continue
                 
                 # Process request
@@ -438,7 +438,7 @@ class ChainOfThoughtAgent(BaseAgent):
                 
                 # Send response
                 logger.debug(f"Sending response: {json.dumps(response)}")
-                self.socket.send_string(json.dumps(response))
+                self.socket.send_string(json.dumps(response)
                 
             except zmq.error.Again:
                 # Socket timeout, continue
@@ -446,12 +446,12 @@ class ChainOfThoughtAgent(BaseAgent):
             except Exception as e:
                 error_msg = f"Error in main loop: {str(e)}"
                 logger.error(error_msg)
-                logger.error(traceback.format_exc())
+                logger.error(traceback.format_exc()
                 try:
                     self.socket.send_string(json.dumps({
                         "status": "error",
                         "message": error_msg
-                    }))
+                    })
                 except:
                     pass
     
@@ -478,7 +478,7 @@ def send_cot_request(request, port=ZMQ_CHAIN_OF_THOUGHT_PORT):
     socket = context.socket(zmq.REQ)
     socket.connect(f"tcp://127.0.0.1:{port}")
     
-    socket.send_string(json.dumps(request))
+    socket.send_string(json.dumps(request)
     response = socket.recv_string()
     
     socket.close()

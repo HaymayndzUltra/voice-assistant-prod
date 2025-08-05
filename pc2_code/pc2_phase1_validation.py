@@ -59,7 +59,7 @@ def main():
     # Test each agent
     for agent_name, test_script in agents:
         success, stdout, stderr = run_agent_test(agent_name, test_script)
-        results.append((agent_name, success, stdout, stderr))
+        results.append((agent_name, success, stdout, stderr)
         
         if not success:
             all_passed = False

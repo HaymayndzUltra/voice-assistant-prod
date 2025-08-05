@@ -20,9 +20,9 @@ from common.env_helpers import get_env
 from common.utils.path_manager import PathManager
 
 # Setup logging
-LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / str(PathManager.get_logs_dir() / "error_pattern_memory.log")
+LOG_PATH = Path(os.path.dirname(__file__).parent / "logs" / str(PathManager.get_logs_dir() / "error_pattern_memory.log")
 LOG_PATH.parent.mkdir(exist_ok=True)
-ERROR_STORE_PATH = Path(os.path.dirname(__file__)).parent / "data" / "error_pattern_store.json"
+ERROR_STORE_PATH = Path(os.path.dirname(__file__).parent / "data" / "error_pattern_store.json"
 ERROR_STORE_PATH.parent.mkdir(exist_ok=True)
 ZMQ_ERROR_PATTERN_PORT = 5611  # Port for error pattern memory agent
 MODEL_MANAGER_HOST = "192.168.1.27"  # Main PC's IP address
@@ -200,12 +200,12 @@ class ErrorPatternMemory:
                 msg = self.socket.recv_string()
                 query = json.loads(msg)
                 resp = self.handle_query(query)
-                self.socket.send_string(json.dumps(resp))
+                self.socket.send_string(json.dumps(resp)
             except Exception as e:
                 logger.error(f"[ErrorPatternMemory] Error in service loop: {e}")
                 with self.lock:
                     self.error_count += 1
-                self.socket.send_string(json.dumps({"status": "error", "reason": str(e)}))
+                self.socket.send_string(json.dumps({"status": "error", "reason": str(e)})
     
     def stop(self):
         """Stop the Error Pattern Memory agent"""
@@ -224,7 +224,7 @@ def send_error_pattern_request(request, port=ZMQ_ERROR_PATTERN_PORT):
     socket = context.socket(zmq.REQ)
     socket.connect(f"tcp://127.0.0.1:{port}")
     
-    socket.send_string(json.dumps(request))
+    socket.send_string(json.dumps(request)
     response = socket.recv_string()
     
     socket.close()

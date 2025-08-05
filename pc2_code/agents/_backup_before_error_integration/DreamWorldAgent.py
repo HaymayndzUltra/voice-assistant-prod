@@ -28,7 +28,7 @@ from pc2_code.agents.utils.config_loader import Config
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
@@ -38,7 +38,6 @@ from common.env_helpers import get_env
 
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[

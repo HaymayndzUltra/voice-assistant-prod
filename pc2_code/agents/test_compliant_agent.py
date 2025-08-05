@@ -26,7 +26,6 @@ from pc2_code.agents.error_bus_template import setup_error_reporting, report_err
 config = Config().get_config()
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )

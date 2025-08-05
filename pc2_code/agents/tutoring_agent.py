@@ -16,11 +16,11 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import common modules
 from common.core.base_agent import BaseAgent
@@ -40,7 +40,7 @@ config = Config().get_config()
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = str(Path(PathManager.get_project_root()) / "config" / "network_config.yaml")
+    config_path = str(Path(PathManager.get_project_root() / "config" / "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -49,19 +49,18 @@ def load_network_config():
         # Default fallback values
         return {
             "main_pc_ip": get_mainpc_ip(),
-            "pc2_ip": get_pc2_ip()),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
-                "tutoring_agent": int(os.environ.get("TUTORING_AGENT_PORT", 5650)),
-                "tutoring_health": int(os.environ.get("TUTORING_HEALTH_PORT", 5651)),
-                "model_orchestrator": int(os.environ.get("MODEL_ORCHESTRATOR_PORT", 5500)),
-                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+                "tutoring_agent": int(os.environ.get("TUTORING_AGENT_PORT", 5650),
+                "tutoring_health": int(os.environ.get("TUTORING_HEALTH_PORT", 5651),
+                "model_orchestrator": int(os.environ.get("MODEL_ORCHESTRATOR_PORT", 5500),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150)
             }
         }
     
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
                    handlers=[logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger("TutoringAgent")
 
@@ -69,15 +68,15 @@ logger = logging.getLogger("TutoringAgent")
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = get_mainpc_ip())
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
-BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+MAIN_PC_IP = get_mainpc_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0")
 
 # Get port configuration
-TUTORING_AGENT_PORT = network_config.get("ports", {}).get("tutoring_agent", int(os.environ.get("TUTORING_AGENT_PORT", 5650)))
-TUTORING_HEALTH_PORT = network_config.get("ports", {}).get("tutoring_health", int(os.environ.get("TUTORING_HEALTH_PORT", 5651)))
-MODEL_ORCHESTRATOR_PORT = network_config.get("ports", {}).get("model_orchestrator", int(os.environ.get("MODEL_ORCHESTRATOR_PORT", 5500)))
-ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+TUTORING_AGENT_PORT = network_config.get("ports", {}).get("tutoring_agent", int(os.environ.get("TUTORING_AGENT_PORT", 5650))
+TUTORING_HEALTH_PORT = network_config.get("ports", {}).get("tutoring_health", int(os.environ.get("TUTORING_HEALTH_PORT", 5651))
+MODEL_ORCHESTRATOR_PORT = network_config.get("ports", {}).get("model_orchestrator", int(os.environ.get("MODEL_ORCHESTRATOR_PORT", 5500))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150))
 
 # Set request timeout
 ZMQ_REQUEST_TIMEOUT = 15000  # 15 seconds in milliseconds
@@ -197,7 +196,7 @@ class AdvancedTutoringAgent(BaseAgent):
                             import re
                             json_match = re.search(r'({.*})', response["content"], re.DOTALL)
                             if json_match:
-                                lesson_json = json.loads(json_match.group(1))
+                                lesson_json = json.loads(json_match.group(1)
                                 # Cache the result
                                 self.lesson_cache[cache_key] = lesson_json
                                 return lesson_json
@@ -322,7 +321,7 @@ class AdvancedTutoringAgent(BaseAgent):
                 
             except zmq.error.ZMQError as e:
                 logger.error(f"ZMQ error in main loop: {e}")
-                self.report_error("ZMQ_ERROR", str(e))
+                self.report_error("ZMQ_ERROR", str(e)
                 try:
                     self.socket.send_json({
                         'status': 'error',
@@ -334,7 +333,7 @@ class AdvancedTutoringAgent(BaseAgent):
                 
             except Exception as e:
                 logger.error(f"Unexpected error in main loop: {e}")
-                self.report_error("RUNTIME_ERROR", str(e))
+                self.report_error("RUNTIME_ERROR", str(e)
                 try:
                     self.socket.send_json({
                         'status': 'error',
@@ -403,8 +402,6 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

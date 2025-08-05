@@ -37,21 +37,19 @@ from typing import Dict, Any
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
     except ImportError as e:
         print(f"Import error: {e}")
     USE_COMMON_UTILS = True
@@ -67,7 +65,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "rca_agent.log")))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "rca_agent.log"))
     ]
 )
 logger = logging.getLogger("RCA_Agent")
@@ -138,7 +136,7 @@ class ErrorPattern:
 
     def matches(self, line: str) -> bool:
         """Check if a log line matches this error pattern"""
-        return bool(self.compiled_regex.search(line))
+        return bool(self.compiled_regex.search(line)
 
 class ErrorOccurrence:
     """Class to track occurrences of an error pattern"""
@@ -314,7 +312,7 @@ class RCA_Agent:
             return
         
         # Get all log files
-        log_files = list(self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log")))
+        log_files = list(self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log"))
         logger.debug(f"Found {len(log_files)} log files")
         
         # Process each log file
@@ -376,7 +374,7 @@ class RCA_Agent:
             self.error_occurrences.popleft()
         
         # Count errors by agent and pattern within the time window
-        error_counts = defaultdict(lambda: defaultdict(int))
+        error_counts = defaultdict(lambda: defaultdict(int)
         for occurrence in self.error_occurrences:
             error_counts[occurrence.agent_name][occurrence.error_pattern.name] += 1
         

@@ -24,7 +24,7 @@ from common.core.base_agent import BaseAgent
 from common.utils.logger_util import get_json_logger
 
 # Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 
 try:
     from pc2_code.config.system_config import config
@@ -55,7 +55,7 @@ class ZMQClient:
         """Send a request and wait for response"""
         try:
             # Send request
-            self.socket.send_string(json.dumps(request))
+            self.socket.send_string(json.dumps(request)
             
             # Wait for response with timeout
             poller = zmq.Poller()
@@ -127,7 +127,7 @@ class ZMQServer:
     def send_response(self, response: Dict[str, Any]):
         """Send a response"""
         try:
-            self.socket.send_string(json.dumps(response))
+            self.socket.send_string(json.dumps(response)
         except Exception as e:
             logger.error("Error sending response", extra={
                 "error": str(e),
@@ -218,7 +218,7 @@ class AgentBase:
                 "agent_id": self.agent_id,
                 "endpoint": f"tcp://localhost:{self.port}",
                 "capabilities": self.capabilities
-            }))
+            })
             
             # Wait for response
             response_str = self.framework.recv_string()
@@ -242,7 +242,7 @@ class AgentBase:
             self.framework.send_string(json.dumps({
                 "request_type": "unregister_agent",
                 "agent_id": self.agent_id
-            }))
+            })
             
             # Wait for response
             response_str = self.framework.recv_string()
@@ -289,7 +289,7 @@ class AgentBase:
                         response = {"status": "error", "error": str(e)}
                     
                     # Send response
-                    self.receiver.send_string(json.dumps(response))
+                    self.receiver.send_string(json.dumps(response)
             
             except zmq.Again:
                 # Timeout, continue loop
@@ -408,7 +408,7 @@ def is_port_in_use(port: int, host: str = "localhost") -> bool:
     """Check if a port is in use"""
     import socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex((host, port)) == 0
+        return s.connect_ex((host, port) == 0
 
 def find_available_port(start_port: int = 5600, max_attempts: int = 100) -> int:
     """Find an available port starting from start_port"""

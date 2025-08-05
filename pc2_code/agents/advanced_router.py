@@ -28,12 +28,12 @@ from pathlib import Path
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
@@ -47,7 +47,7 @@ from pc2_code.utils.config_loader import load_config, parse_agent_args
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             import yaml
@@ -57,18 +57,17 @@ def load_network_config():
         # Default fallback values
         return {
             "main_pc_ip": get_mainpc_ip(),
-            "pc2_ip": get_pc2_ip()),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
-                "advanced_router": int(os.environ.get("ADVANCED_ROUTER_PORT", 5555)),
-                "advanced_router_health": int(os.environ.get("ADVANCED_ROUTER_HEALTH_PORT", 5556)),
-                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+                "advanced_router": int(os.environ.get("ADVANCED_ROUTER_PORT", 5555),
+                "advanced_router_health": int(os.environ.get("ADVANCED_ROUTER_HEALTH_PORT", 5556),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150)
             }
         }
 
 # Setup logging
-logging.basicConfig(
     level=logging.INFO, 
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[logging.StreamHandler(sys.stdout)]
@@ -82,14 +81,14 @@ config = Config().get_config()
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = get_mainpc_ip())
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
-BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+MAIN_PC_IP = get_mainpc_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0")
 
 # Get port configuration
-ADVANCED_ROUTER_PORT = network_config.get("ports", {}).get("advanced_router", int(os.environ.get("ADVANCED_ROUTER_PORT", 5555)))
-ADVANCED_ROUTER_HEALTH_PORT = network_config.get("ports", {}).get("advanced_router_health", int(os.environ.get("ADVANCED_ROUTER_HEALTH_PORT", 5556)))
-ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+ADVANCED_ROUTER_PORT = network_config.get("ports", {}).get("advanced_router", int(os.environ.get("ADVANCED_ROUTER_PORT", 5555))
+ADVANCED_ROUTER_HEALTH_PORT = network_config.get("ports", {}).get("advanced_router_health", int(os.environ.get("ADVANCED_ROUTER_HEALTH_PORT", 5556))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150))
 
 # Task type constants
 TASK_TYPE_CODE = "code"
@@ -141,7 +140,7 @@ TASK_KEYWORDS = {
 CODE_PATTERNS = [
     r"```[\w]*\n[\s\S]*?\n```",  # Code blocks
     r"def\s+\w+\s*\(.*?\):",     # Python function definitions
-    r"class\s+\w+(\s*\(.*?\))?:", # Python class definitions
+    r"class\s+\w+(\s*\(.*?\)?:", # Python class definitions
     r"import\s+[\w\.,\s]+",      # Import statements
     r"from\s+[\w\.]+\s+import",  # From import statements
     r"function\s+\w+\s*\(.*?\)", # JavaScript function
@@ -221,7 +220,7 @@ def detect_task_type(prompt: str) -> str:
             scores[task_type] += 3
     
     # Get the task type with the highest score
-    max_score = max(scores.values())
+    max_score = max(scores.values()
     
     # If no clear signal, default to general
     if max_score == 0:
@@ -443,7 +442,7 @@ class AdvancedRouterAgent(BaseAgent):
                 
         except Exception as e:
             logger.error(f"Error handling request: {e}")
-            self.report_error("REQUEST_HANDLING_ERROR", str(e))
+            self.report_error("REQUEST_HANDLING_ERROR", str(e)
             return {
                 "status": "error",
                 "error": str(e),
@@ -472,7 +471,7 @@ class AdvancedRouterAgent(BaseAgent):
                     
                 except zmq.error.ZMQError as e:
                     logger.error(f"ZMQ error in main loop: {e}")
-                    self.report_error("ZMQ_ERROR", str(e))
+                    self.report_error("ZMQ_ERROR", str(e)
                     try:
                         self.socket.send_json({
                             'status': 'error',
@@ -484,7 +483,7 @@ class AdvancedRouterAgent(BaseAgent):
                     
                 except Exception as e:
                     logger.error(f"Unexpected error in main loop: {e}")
-                    self.report_error("RUNTIME_ERROR", str(e))
+                    self.report_error("RUNTIME_ERROR", str(e)
                     try:
                         self.socket.send_json({
                             'status': 'error',
@@ -498,7 +497,7 @@ class AdvancedRouterAgent(BaseAgent):
             logger.info("KeyboardInterrupt received, stopping AdvancedRouterAgent")
         except Exception as e:
             logger.error(f"Error in main loop: {e}")
-            self.report_error("FATAL_ERROR", str(e))
+            self.report_error("FATAL_ERROR", str(e)
         finally:
             self.running = False
             self.cleanup()
@@ -551,9 +550,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

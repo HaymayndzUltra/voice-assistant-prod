@@ -18,7 +18,8 @@ from enum import Enum
 import sys
 from pathlib import Path
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-sys.path.append(str(Path(__file__).parent.parent))
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+sys.path.append(str(Path(__file__).parent.parent)
 from pc2_code.config.system_config import get_service_host, get_service_port
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
@@ -28,7 +29,8 @@ from pc2_code.agents.utils.config_loader import Config
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Canonical import stack (TODO 1 compliance) - NO sys.path hacks
+# 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
@@ -38,11 +40,10 @@ from common.env_helpers import get_env
 
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / str(PathManager.get_logs_dir() / "dream_world_agent.log")),
+        logging.FileHandler(Path(PathManager.get_project_root() / "logs" / str(PathManager.get_logs_dir() / "dream_world_agent.log"),
         logging.StreamHandler()
     ]
 )
@@ -353,7 +354,7 @@ class DreamWorldAgent(BaseAgent):
             json.dumps(causal_analysis),
             json.dumps(counterfactuals),
             json.dumps(metadata)
-        ))
+        )
 
         simulation_id = cursor.lastrowid
         conn.commit()
@@ -381,7 +382,7 @@ class DreamWorldAgent(BaseAgent):
             value,
             uncertainty,
             json.dumps(metadata)
-        ))
+        )
 
         conn.commit()
         conn.close()
@@ -398,7 +399,7 @@ class DreamWorldAgent(BaseAgent):
             response = self.model_socket.recv_json()
             if response['status'] == 'success':
                 # Calculate uncertainty based on state complexity and model confidence
-                uncertainty = self._calculate_uncertainty(state, response.get('confidence', 0.5))
+                uncertainty = self._calculate_uncertainty(state, response.get('confidence', 0.5)
                 return response['evaluation'], uncertainty
             else:
                 logger.error(f"Error evaluating state: {response['message']}")
@@ -414,7 +415,7 @@ class DreamWorldAgent(BaseAgent):
         uncertainty = 1.0 - model_confidence
 
         # Increase uncertainty for complex states
-        state_complexity = len(str(state)) / 1000  # Simple complexity metric
+        state_complexity = len(str(state) / 1000  # Simple complexity metric
         uncertainty += min(0.3, state_complexity)
 
         return min(1.0, uncertainty)
@@ -508,7 +509,7 @@ class DreamWorldAgent(BaseAgent):
             if len(node.children) < len(self.scenario_templates[scenario].actions):
                 return self._expand_node(node, scenario)
 
-            node = max(node.children, key=lambda n: n.get_ucb())
+            node = max(node.children, key=lambda n: n.get_ucb()
 
         return node
 
@@ -659,7 +660,7 @@ class DreamWorldAgent(BaseAgent):
             UPDATE simulation_states
             SET simulation_id = ?
             WHERE simulation_id = 0
-        ''', (simulation_id,))
+        ''', (simulation_id,)
 
         conn.commit()
         conn.close()
@@ -770,10 +771,10 @@ class DreamWorldAgent(BaseAgent):
             json.dumps(template['actions']),
             json.dumps(template['constraints']),
             json.dumps(template['evaluation_metrics']),
-            json.dumps(template.get('metadata', {})),
+            json.dumps(template.get('metadata', {}),
             datetime.now(),
             datetime.now()
-        ))
+        )
 
         scenario_id = cursor.lastrowid
         conn.commit()
@@ -801,7 +802,7 @@ class DreamWorldAgent(BaseAgent):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM scenarios WHERE scenario_id = ?', (scenario_id,))
+        cursor.execute('SELECT * FROM scenarios WHERE scenario_id = ?', (scenario_id,)
         scenario = cursor.fetchone()
 
         conn.close()
@@ -835,7 +836,7 @@ class DreamWorldAgent(BaseAgent):
         cursor = conn.cursor()
 
         # Get current scenario
-        cursor.execute('SELECT * FROM scenarios WHERE scenario_id = ?', (scenario_id,))
+        cursor.execute('SELECT * FROM scenarios WHERE scenario_id = ?', (scenario_id,)
         scenario = cursor.fetchone()
 
         if not scenario:
@@ -855,13 +856,13 @@ class DreamWorldAgent(BaseAgent):
                 update_fields.append(f'{field} = ?')
                 if field in ['initial_state', 'actions', 'constraints',
                            'evaluation_metrics', 'metadata']:
-                    params.append(json.dumps(value))
+                    params.append(json.dumps(value)
                 else:
                     params.append(value)
 
         if update_fields:
             update_fields.append('updated_at = ?')
-            params.append(datetime.now())
+            params.append(datetime.now()
             params.append(scenario_id)
 
             query = f'''
@@ -895,7 +896,7 @@ class DreamWorldAgent(BaseAgent):
             while True:
                 # Receive message
                 identity, _, message = self.socket.recv_multipart()
-                message = json.loads(message.decode())
+                message = json.loads(message.decode()
 
                 # Process message
                 response = self.handle_request(message)
@@ -955,9 +956,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
@@ -968,7 +966,7 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -987,7 +985,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 config = Config().get_config()

@@ -1,277 +1,104 @@
-# ✅ GUI Implementation Checklist
+UPDATED ENDORSEMENT DOCUMENT
+For: Successor Automation-AI
+Scope: Finish hardening all PC-2 Docker service groups and keep Main-PC compatibility
+Baseline: repo state after 2025-08-05 07:00 UTC (post-fixes in pc2_infra_core)
+──────────────────────────────── 0. SUCCESS CRITERIA ───────────────────────────────
+Every directory docker/pc2_* builds and its container passes HEALTHCHECK.
+docker compose --profile pc2 up -d starts all PC-2 services → STATUS = healthy.
+python -m py_compile $(git ls-files 'pc2_code/**/*.py') returns 0.
+scripts/generate_requirements_<group>.py output matches each requirements.txt.
+All agents use the canonical helper stack (§1) and never hard-code localhost for inter-container calls.
+──────────────────────────────── 1. CANONICAL IMPORT STACK ─────────────────────────
+Every active agent must import only these helpers (remove sys.path hacks):
 
-## 🎯 CURRENT STATUS OVERVIEW
+from common.utils.env_standardizer import (
+    get_mainpc_ip, get_pc2_ip, get_env, get_current_machine
+)
+from common.utils.path_manager    import PathManager
+from common.config_manager        import get_service_url, get_redis_url
+from common.core.base_agent       import BaseAgent
+from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
+from common.utils.log_setup       import configure_logging        # NEW (Δ-1)
 
-### ✅ COMPLETED (Framework Ready)
-- [x] Modern GUI framework with MVP architecture
-- [x] All 6 main view interfaces created
-- [x] Navigation system working
-- [x] Professional dark theme styling
-- [x] Responsive layout and sidebar
-- [x] Basic button structure in place
-- [x] Error-free GUI startup
+Guaranteed external packages (keep versions in requirements.txt):
+pyzmq, psutil, redis, nats-py, fastapi, uvicorn, prometheus-client, aiohttp, asyncio-mqtt, pydantic, python-dotenv, PyJWT, requests, httpx, aiofiles, starlette, numpy, scipy, scikit-learn, torch==2.1.0
+──────────────────────────────── 2. AGENT BOILERPLATE PATTERN ─────────────────────
 
-### 🔄 IN PROGRESS (Needs Integration)
-- [ ] Real data integration 
-- [ ] Button functionality implementation
-- [ ] Background monitoring systems
-- [ ] Real-time data refresh
+class <AgentName>(BaseAgent):
+    def __init__(self, port=7xxx, health_port=8xxx):
+        super().__init__(name="<AgentName>", port=port)
+        self.logger = configure_logging(__name__)            # NEW (Δ-2)
+        self.error_publisher = create_pc2_error_publisher("<agent_name>")
 
----
+        self._setup_sockets()
+        self._start_health_check()
+        self._init_thread = threading.Thread(
+            target=self._initialize_background, daemon=True
+        )
+        self._init_thread.start()
 
-## 📋 DETAILED IMPLEMENTATION CHECKLIST
+No sys.path.insert().
+Cross-machine sockets use get_pc2_ip() / get_mainpc_ip() or compose DNS names.
+──────────────────────────────── 3. WORKFLOW PER DOCKER GROUP ─────────────────────
+(Replace <group> with directory name, e.g. pc2_infra_core)
+Step 1 Static scan & fix
 
-### 🏠 DASHBOARD VIEW
-**Priority: HIGH** ⭐⭐⭐
-- [ ] **System Stats Cards**
-  - [ ] Connect to `todo_manager.py` for task counts
-  - [ ] Connect to `agent_scan_results.json` for agent stats
-  - [ ] Connect to memory system for memory stats
-  - [ ] Implement health check aggregation
-- [ ] **Quick Action Buttons**
-  - [ ] New Task → `todo_manager.py add_task()`
-  - [ ] Start Queue → `queue_cli.py start`
-  - [ ] Pause Queue → `queue_cli.py pause`
-  - [ ] Health Check → system health scripts
-- [ ] **Real-time Updates**
-  - [ ] Auto-refresh every 30 seconds
-  - [ ] Background thread for data loading
-  - [ ] Live task status updates
+/usr/bin/python3 scripts/generate_requirements_<group>.py
+# If AST fails → open file, fix syntax/import/indent; rerun until exit-0
+# Remove any logging.basicConfig(…) or sys.path.insert(…)
 
-### 📋 TASK MANAGEMENT VIEW  
-**Priority: HIGH** ⭐⭐⭐
-- [ ] **Task Queue Integration**
-  - [ ] Load `tasks_active.json` → Active tab
-  - [ ] Load `tasks_queue.json` → Queue tab  
-  - [ ] Load `tasks_done.json` → Completed tab
-  - [ ] Real-time file monitoring with watchdog
-- [ ] **Task Operations**
-  - [ ] New Task → `todo_manager.py add_task()`
-  - [ ] Edit Task → `todo_manager.py edit_task()`
-  - [ ] Delete Task → `todo_manager.py delete_task()`
-  - [ ] Start Task → Queue engine integration
-  - [ ] Complete Task → Move to done queue
-- [ ] **Data Display**
-  - [ ] Task details panel
-  - [ ] TODO items list
-  - [ ] Progress calculation
-  - [ ] Timestamps formatting
+Step 2 Requirements alignment
+Compare docker/<group>/requirements.auto.txt to existing requirements.txt;
+remove unused packages, keep all auto-detected ones; add torch only if imported.
+Step 3 Image build
 
-### 🤖 AGENT CONTROL VIEW
-**Priority: MEDIUM** ⭐⭐
-- [ ] **Agent Data Loading**
-  - [ ] Parse `agent_scan_results.json`
-  - [ ] Display 294 agents in tree view
-  - [ ] Show agent categories and types
-  - [ ] Port conflict detection
-- [ ] **Agent Status Monitoring**
-  - [ ] Health check implementation
-  - [ ] Real-time status updates
-  - [ ] Performance metrics
-  - [ ] Error state detection
-- [ ] **Agent Control Operations**
-  - [ ] Start Agent scripts
-  - [ ] Stop Agent scripts
-  - [ ] Restart Agent scripts
-  - [ ] Configuration management
-  - [ ] Log viewing
+Must finish with Successfully tagged.
+Step 4 Compose up & validation
 
-### 🧠 MEMORY INTELLIGENCE VIEW
-**Priority: MEDIUM** ⭐⭐
-- [ ] **Memory System Integration**
-  - [ ] Connect to MCP memory server
-  - [ ] Load `memory-bank/` directory structure
-  - [ ] Memory categorization system
-  - [ ] Recent memories tracking
-- [ ] **Search & Navigation**
-  - [ ] Memory search functionality
-  - [ ] Knowledge graph integration
-  - [ ] Content filtering
-  - [ ] Navigation tree
-- [ ] **Memory Operations**
-  - [ ] Create new memories
-  - [ ] Edit existing memories
-  - [ ] Memory export/import
-  - [ ] Cleanup operations
+docker compose --profile pc2 up -d <services_in_group>
+docker compose ps                    # ensure HEALTHY
+docker exec <container> python /app/docker/<group>/test_imports.py   # exit-0
 
-### 📊 MONITORING VIEW
-**Priority: MEDIUM** ⭐⭐
-- [ ] **System Metrics**
-  - [ ] CPU monitoring with psutil
-  - [ ] Memory monitoring with psutil
-  - [ ] Disk usage monitoring
-  - [ ] Network I/O monitoring
-- [ ] **Performance Charts**
-  - [ ] Matplotlib integration
-  - [ ] Real-time chart updates
-  - [ ] Historical data storage
-  - [ ] Chart export functionality
-- [ ] **System Logs**
-  - [ ] Real-time log monitoring
-  - [ ] Log filtering and search
-  - [ ] Log export functionality
-  - [ ] Log rotation management
+Step 5 Repeat fixes if container unhealthy or tests fail.
+Step 6 Commit artifacts
+updated requirements.txt
+patched agent files
+docker/<group>/requirements.auto.txt (audit)
+validation logs (optional)
+Process groups in this order (dependency-safe):
+pc2_infra_core (≈ 90 % done)
+pc2_async_pipeline
+pc2_memory_stack
+pc2_utility_suite
+pc2_tutoring_cpu
+pc2_vision_dream_gpu
+pc2_web_interface
+──────────────────────────────── 4. TOOLING SCRIPTS ───────────────────────────────
+Located in /workspace/scripts (edit if needed):
+generate_requirements_<group>.py → AST scan → auto requirements.
+build_all_pc2_groups.sh      → iterate docker/pc2_*, run Steps 1-3.
+deploy_to_pc2.sh          → pull images to host & docker compose --profile pc2 up -d.
+rollback_pc2.sh          → docker compose down & image tag rollback.
+──────────────────────────────── 5. LOGGING, ERROR, HEALTH ─────────────────────────
+Use configure_logging(__name__); remove stray logging.basicConfig(...).
+Errors go through pc2_error_publisher only.
+Every Dockerfile ends with
+HEALTHCHECK CMD curl -f http://localhost:${HEALTH_PORT}/health || exit 1
+──────────────────────────────── 6. MAIN-PC COMPATIBILITY ─────────────────────────
+Do not touch code under docker/<main_pc_group> during this pass.
+Compose must export:
 
-### 🔄 AUTOMATION CONTROL VIEW
-**Priority: HIGH** ⭐⭐⭐
-- [ ] **Queue Engine Control**
-  - [ ] `queue_cli.py` integration
-  - [ ] Start/stop/restart operations
-  - [ ] Status monitoring
-  - [ ] Error handling
-- [ ] **Auto-Sync Management**
-  - [ ] `auto_sync_manager.py` integration
-  - [ ] Sync interval configuration
-  - [ ] Manual sync triggers
-  - [ ] Sync status monitoring
-- [ ] **System Control**
-  - [ ] Automation level settings
-  - [ ] Emergency stop functionality
-  - [ ] System restart operations
-  - [ ] Configuration persistence
+MAINPC_IP=mainpc-service
+PC2_IP=pc2-service
 
----
+(or matching DNS names).
+──────────────────────────────── 7. ACCEPTANCE CHECKLIST ──────────────────────────
+☐ python -m py_compile $(git ls-files 'pc2_code/**/*.py') passes.
+☐ grep -R "sys.path.insert" pc2_code/agents | wc -l == 0 (Δ-3)
+☐ grep -R "logging.basicConfig" pc2_code/agents | wc -l == 0 (Δ-3)
+☐ docker compose --profile pc2 ps shows all HEALTHY.
+☐ No localhost: literals in PC-2 agents except loopback health endpoints.
+☐ requirements.txt sorted, unique, matches auto list.
+☐ Build & deploy scripts run without manual edits.
+Follow these steps verbatim; defer architectural overhauls (Poetry, PEP-420 namespaces) until after production hardening is complete.
 
-## 🔧 TECHNICAL IMPLEMENTATION TASKS
-
-### 📁 File System Integration
-- [ ] **Real-time File Monitoring**
-  - [ ] Implement watchdog file watchers
-  - [ ] Monitor `tasks_*.json` changes
-  - [ ] Monitor `agent_scan_results.json`
-  - [ ] Monitor memory-bank directory
-- [ ] **Data Loading & Parsing**
-  - [ ] JSON file reading with error handling
-  - [ ] Data validation and sanitization
-  - [ ] Caching mechanisms
-  - [ ] Performance optimization
-
-### 🖥️ CLI Integration
-- [ ] **Command Execution**
-  - [ ] Subprocess wrapper functions
-  - [ ] Error handling and logging
-  - [ ] Timeout management
-  - [ ] Output parsing
-- [ ] **CLI Tool Integration**
-  - [ ] `todo_manager.py` operations
-  - [ ] `queue_cli.py` commands
-  - [ ] `memory_system/cli.py` functions
-  - [ ] `auto_sync_manager.py` controls
-
-### 📊 Background Processing
-- [ ] **Threading Implementation**
-  - [ ] Background data refresh threads
-  - [ ] Non-blocking UI updates
-  - [ ] Thread safety measures
-  - [ ] Resource management
-- [ ] **Auto-Refresh System**
-  - [ ] Configurable refresh intervals
-  - [ ] Selective data updates
-  - [ ] Performance monitoring
-  - [ ] User preference settings
-
-### 🎨 UI/UX Enhancements
-- [ ] **Data Visualization**
-  - [ ] Progress bars and indicators
-  - [ ] Status color coding
-  - [ ] Interactive charts
-  - [ ] Real-time animations
-- [ ] **User Experience**
-  - [ ] Loading states
-  - [ ] Error message handling
-  - [ ] Confirmation dialogs
-  - [ ] Keyboard shortcuts
-
----
-
-## 🚀 IMPLEMENTATION PHASES
-
-### 🔥 PHASE 1: Core Data Integration (Week 1)
-**Focus: Get real data showing in GUI**
-1. Task queue file integration
-2. Agent scan results display
-3. Basic system health checks
-4. Real-time data refresh
-
-### ⚡ PHASE 2: Essential Operations (Week 2)  
-**Focus: Make buttons work**
-1. Task CRUD operations
-2. Queue engine controls
-3. Basic agent operations
-4. Auto-sync management
-
-### 📊 PHASE 3: Monitoring & Analytics (Week 3)
-**Focus: System monitoring**
-1. Performance metrics integration
-2. Chart visualization
-3. Log monitoring
-4. Alert system
-
-### 🎯 PHASE 4: Advanced Features (Week 4)
-**Focus: Polish and optimization**
-1. Advanced visualizations
-2. Export/import functionality
-3. Configuration management
-4. Performance optimization
-
----
-
-## 📋 DEVELOPMENT CHECKLIST
-
-### 🛠️ Setup & Dependencies
-- [ ] Install additional Python packages
-- [ ] Set up development environment
-- [ ] Create test data files
-- [ ] Configure development settings
-
-### 🧪 Testing Strategy
-- [ ] Unit tests for integration functions
-- [ ] GUI testing procedures
-- [ ] Error handling verification
-- [ ] Performance testing
-
-### 📚 Documentation
-- [ ] Update installation guide
-- [ ] Create user manual
-- [ ] Document integration points
-- [ ] Add troubleshooting guide
-
-### 🚀 Deployment
-- [ ] Production deployment guide
-- [ ] Configuration templates
-- [ ] Backup procedures
-- [ ] Monitoring setup
-
----
-
-## 🎯 SUCCESS CRITERIA
-
-### ✅ Minimum Viable Product (MVP)
-- All buttons perform intended actions
-- Real task data displayed
-- Basic queue operations working
-- Agent status monitoring
-- No placeholder content
-
-### 🌟 Full Production Ready
-- Real-time data updates
-- Complete monitoring dashboard
-- Advanced automation controls
-- Professional user experience
-- Comprehensive error handling
-
-### 🏆 Excellence Standard
-- Beautiful data visualizations
-- Responsive performance
-- Advanced automation features
-- Comprehensive documentation
-- User-friendly interface
-
----
-
-**NEXT STEPS:**
-1. Start with PHASE 1 - Core Data Integration
-2. Focus on high-priority items first
-3. Test each integration thoroughly
-4. Document progress and issues
-5. Maintain quality standards throughout

@@ -18,7 +18,7 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+
 from common.utils.path_manager import PathManager
 # Import the BaseAgent from main_pc_code
 from common.core.base_agent import BaseAgent
@@ -48,10 +48,9 @@ def setup_pc2_logging(agent_name: str, log_level=logging.INFO):
     # Create logs directory if it doesn't exist
     log_dir = get_path("logs")
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, fstr(PathManager.get_logs_dir() / "{agent_name.lower()}.log"))
+    log_file = os.path.join(log_dir, fstr(PathManager.get_logs_dir() / "{agent_name.lower()}.log")
     
     # Configure logging
-    logging.basicConfig(
         level=log_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
@@ -108,7 +107,7 @@ def setup_zmq_socket(port, socket_type=zmq.REP, bind=True):
     if bind:
         socket.bind(f"tcp://*:{port}")
     else:
-        socket.connect(get_zmq_connection_string({port}, "localhost")))
+        socket.connect(get_zmq_connection_string({port}, "localhost"))
     
     return context, socket
 
@@ -144,7 +143,7 @@ def standard_cleanup(agent_instance, logger=None):
             log.error(f"Error terminating ZMQ context: {e}")
     
     # Call parent cleanup if available
-    if hasattr(agent_instance, 'cleanup') and callable(getattr(agent_instance, 'cleanup')):
+    if hasattr(agent_instance, 'cleanup') and callable(getattr(agent_instance, 'cleanup'):
         try:
             agent_instance.cleanup()
         except Exception as e:

@@ -157,5 +157,5 @@ def list_pc2_agents():
 
 # Example usage
 if __name__ == "__main__":
-    print(list_pc2_agents())
+    print(list_pc2_agents()
     print(f"Example connection string: {get_connection_string('translator')}")

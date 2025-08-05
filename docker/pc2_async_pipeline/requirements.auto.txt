@@ -1,0 +1,7 @@
+PyYAML
+dataclasses
+pc2_code
+psutil
+pyzmq
+sqlite3
+torch==2.1.0

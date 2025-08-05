@@ -29,19 +29,18 @@ import sys
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, str(PathManager.get_project_root()))
+
 # Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent)
 from common.core.base_agent import BaseAgent
 from pc2_code.config.system_config import config
 from common.env_helpers import get_env
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
-        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log"), encoding="utf-8"),
+        logging.FileHandler(Path(PathManager.get_project_root() / "logs" / str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log"), encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
@@ -193,21 +192,21 @@ class ContextManager:
         ]
         
         for pattern in command_patterns:
-            if re.search(pattern, text.lower()):
+            if re.search(pattern, text.lower():
                 importance += 0.1
                 break
         
         # Longer texts might contain more information
-        if len(text.split()) > 15:
+        if len(text.split() > 15:
             importance += 0.1
         
         # Cap importance between 0 and 1
-        return min(1.0, max(0.0, importance))
+        return min(1.0, max(0.0, importance)
     
     def _adjust_context_size(self):
         """Dynamically adjust context window size based on conversation complexity"""
         # Calculate average importance
-        avg_importance = np.mean(list(self.importance_scores.values())) if self.importance_scores else 0.5
+        avg_importance = np.mean(list(self.importance_scores.values()) if self.importance_scores else 0.5
         
         # Calculate conversation complexity (higher importance = more complex)
         if avg_importance > 0.7:
@@ -542,11 +541,11 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
             
             # Detect domains
             domains = []
-            if re.search(r"database|sql|sqlite", all_code.lower()):
+            if re.search(r"database|sql|sqlite", all_code.lower():
                 domains.append("database operations")
-            if re.search(r"web|http|flask|api|route", all_code.lower()):
+            if re.search(r"web|http|flask|api|route", all_code.lower():
                 domains.append("web functionality")
-            if re.search(r"concurrency|thread|async", all_code.lower()):
+            if re.search(r"concurrency|thread|async", all_code.lower():
                 domains.append("concurrency features")
             
             # Create summary
@@ -570,7 +569,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
             # Add recent exchanges
             if user_queries:
                 summary += "\nRecent exchanges:\n"
-                for i in range(min(3, len(user_queries))):
+                for i in range(min(3, len(user_queries)):
                     summary += f"User: {user_queries[i][:100]}...\n"
                     if i < len(system_responses):
                         summary += f"System: {system_responses[i][:100]}...\n"
@@ -701,7 +700,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
             'data': data,
             'priority': priority
         }
-        self.memory_agent_sockets[agent_name].send_string(json.dumps(req))
+        self.memory_agent_sockets[agent_name].send_string(json.dumps(req)
         poller = zmq.Poller()
         poller.register(self.memory_agent_sockets[agent_name], zmq.POLLIN)
         if poller.poll(5000):
@@ -846,8 +845,8 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
             if self.initialized:
                 agent_status.update({
                     "total_twins": len(self.twins) if hasattr(self, 'twins') else 0,
-                    "total_sessions": len(self.context_store.get("sessions", {})) if hasattr(self, 'context_store') else 0,
-                    "total_error_patterns": len(self.error_patterns.get("patterns", {})) if hasattr(self, 'error_patterns') else 0
+                    "total_sessions": len(self.context_store.get("sessions", {}) if hasattr(self, 'context_store') else 0,
+                    "total_error_patterns": len(self.error_patterns.get("patterns", {}) if hasattr(self, 'error_patterns') else 0
                 })
         
         # Update base status with our metrics

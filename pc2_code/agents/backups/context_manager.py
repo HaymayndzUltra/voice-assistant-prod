@@ -14,9 +14,9 @@ from datetime import datetime
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))
 
 logging.basicConfig
 from main_pc_code.src.core.base_agent import BaseAgent
@@ -32,7 +32,7 @@ config = load_config()(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "context_manager.log"))),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "context_manager.log")),
         logging.StreamHandler()
     ]
 )
@@ -120,15 +120,15 @@ self.min_size = min_size
             r'\b(gusto ko|kailangan ko)\b'
         ]
         for pattern in command_patterns:
-            if re.search(pattern, text.lower()):
+            if re.search(pattern, text.lower():
                 importance += 0.1
                 break
-        if len(text.split()) > 15:
+        if len(text.split() > 15:
             importance += 0.1
-        return min(1.0, max(0.0, importance))
+        return min(1.0, max(0.0, importance)
 
     def _adjust_context_size(self):
-        avg_importance = np.mean(list(self.importance_scores.values())) if self.importance_scores else 0.5
+        avg_importance = np.mean(list(self.importance_scores.values()) if self.importance_scores else 0.5
         if avg_importance > 0.7:
             target_size = min(self.max_size, self.current_size + 2)
         elif avg_importance < 0.3:
@@ -246,7 +246,7 @@ class ContextManagerAgent:
             )
             return {'status': 'success', 'context_text': text}
         elif action == 'clear_context':
-            self.manager.clear_context(speaker=request.get('speaker'))
+            self.manager.clear_context(speaker=request.get('speaker')
             return {'status': 'success', 'message': 'Context cleared'}
         elif action == 'prune_context':
             self.manager.prune_context()

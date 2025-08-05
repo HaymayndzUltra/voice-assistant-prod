@@ -18,7 +18,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import PC2 configuration system
 from pc2_code.config.system_config import get_service_host, get_service_port
@@ -46,7 +46,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log")))
+        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log"))
     ]
 )
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ MAX_MEMORY_STRENGTH = 5.0  # Maximum strength a memory can have
 
 # Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
-INTERRUPT_PORT = int(os.environ.get('INTERRUPT_PORT', 5576))  # Interrupt handler port
+INTERRUPT_PORT = int(os.environ.get('INTERRUPT_PORT', 5576)  # Interrupt handler port
 
 class UnifiedMemoryReasoningAgent(BaseAgent):
 
@@ -78,9 +78,9 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
         self.socket = self.context.socket(zmq.ROUTER)
         
         # Get host and port from environment or config
-        self.host = get_env('MEMORY_HOST', get_service_host('unified_memory', BIND_ADDRESS))
-        self.port = int(get_env('MEMORY_PORT', get_service_port('unified_memory', 5596)))
-        self.health_port = int(get_env('MEMORY_HEALTH_PORT', get_service_port('unified_memory_health', 5597)))
+        self.host = get_env('MEMORY_HOST', get_service_host('unified_memory', BIND_ADDRESS)
+        self.port = int(get_env('MEMORY_PORT', get_service_port('unified_memory', 5596))
+        self.health_port = int(get_env('MEMORY_HEALTH_PORT', get_service_port('unified_memory_health', 5597))
         
         # Apply ZMQ security if enabled
         self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -189,7 +189,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
             # Get IP address for registration
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                s.connect(("8.8.8.8", 80))  # Doesn't have to be reachable
+                s.connect(("8.8.8.8", 80)  # Doesn't have to be reachable
                 my_ip = s.getsockname()[0]
                 s.close()
             except Exception as e:
@@ -333,7 +333,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
         logger.info(f"Starting memory decay cycle. Current memory count: {len(self.memory_store)}")
         
         # Create a list of memories to process to avoid modifying during iteration
-        memory_ids = list(self.memory_store.keys())
+        memory_ids = list(self.memory_store.keys()
         
         for memory_id in memory_ids:
             try:
@@ -417,7 +417,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
     
     def _generate_memory_id(self) -> str:
         """Generate a unique memory ID"""
-        return f"mem_{int(time.time())}_{uuid.uuid4().hex[:8]}"
+        return f"mem_{int(time.time()}_{uuid.uuid4().hex[:8]}"
     
     def _handle_store_memory(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -575,7 +575,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
                         continue
                     
                     # Check if any keyword matches
-                    content = str(memory.get("content", "")).lower()
+                    content = str(memory.get("content", "").lower()
                     if any(keyword.lower() in content for keyword in keywords):
                         # Update last_accessed timestamp
                         memory["last_accessed"] = time.time()
@@ -689,7 +689,7 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
         """
         try:
             # Count active (non-forgotten) memories
-            active_memories = sum(1 for m in self.memory_store.values() if not m.get("forgotten", False))
+            active_memories = sum(1 for m in self.memory_store.values() if not m.get("forgotten", False)
             
             # Get memory stats
             status = {
@@ -1180,7 +1180,7 @@ from common.utils.path_manager import PathManager
 
 
 # Load configuration at the module level
-config = load_config()(traceback.format_exc())
+config = load_config()(traceback.format_exc()
     finally:
         # Make sure we clean up even if there's an error
         if 'agent' in locals():

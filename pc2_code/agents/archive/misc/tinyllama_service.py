@@ -29,7 +29,7 @@ from pathlib import Path
 import torch
 
 # Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+sys.path.append(str(Path(__file__).resolve().parent.parent)
 
 try:
 from pc2_code.config.system_config import get_config_for_service, get_config_for_machine
@@ -41,7 +41,7 @@ from common.env_helpers import get_env
     pc2_general_config = get_config_for_machine("pc2")
 
     LOG_LEVEL = pc2_general_config.get('log_level', 'INFO')
-    LOGS_DIR = Path(pc2_general_config.get('logs_dir', 'logs'))
+    LOGS_DIR = Path(pc2_general_config.get('logs_dir', 'logs')
     CONFIG_ZMQ_PORT = service_config.get('zmq_port', 5615)
     CONFIG_ZMQ_BIND_ADDRESS = service_config.get('zmq_bind_address', "0.0.0.0")
     CONFIG_MODEL_PATH_OR_NAME = service_config.get('model_path_or_name', "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
@@ -183,7 +183,7 @@ from common.utils.path_manager import PathManager
             return True
         except Exception as e:
             logger.error(f"Error unloading TinyLlama model: {e}")
-            logger.error(traceback.format_exc())
+            logger.error(traceback.format_exc()
             return False
     
     def generate_text(self, prompt, max_tokens=100):
@@ -225,7 +225,7 @@ from common.utils.path_manager import PathManager
             return {"status": "success", "text": assistant_response}
         except Exception as e:
             logger.error(f"Error generating text: {e}")
-            logger.error(traceback.format_exc())
+            logger.error(traceback.format_exc()
             return {"status": "error", "message": str(e)}
     
     def _check_idle_timeout(self):
@@ -279,7 +279,7 @@ from common.utils.path_manager import PathManager
                     self.socket.send_string(json.dumps({
                         "status": "error",
                         "message": "Invalid JSON in request"
-                    }))
+                    })
                     continue
                 
                 # Process request based on action
@@ -288,10 +288,10 @@ from common.utils.path_manager import PathManager
                 if action == "generate":
                     # Handle text generation request
                     prompt = request.get("prompt", "")
-                    max_tokens = int(request.get("max_tokens", 100))
+                    max_tokens = int(request.get("max_tokens", 100)
                     
                     response = self.generate_text(prompt, max_tokens)
-                    self.socket.send_string(json.dumps(response))
+                    self.socket.send_string(json.dumps(response)
                 
                 elif action == "ensure_loaded":
                     # Handle model loading request
@@ -318,7 +318,7 @@ from common.utils.path_manager import PathManager
                             "success": True
                         }
                     
-                    self.socket.send_string(json.dumps(response))
+                    self.socket.send_string(json.dumps(response)
                 
                 elif action == "request_unload":
                     # Handle model unloading request
@@ -344,7 +344,7 @@ from common.utils.path_manager import PathManager
                             "success": True
                         }
                     
-                    self.socket.send_string(json.dumps(response))
+                    self.socket.send_string(json.dumps(response)
                 
                 elif action == "health_check":
                     # Enhanced health check with accurate model status for Main PC MMA
@@ -367,28 +367,28 @@ from common.utils.path_manager import PathManager
                     
                     logger.info(f"HEALTH CHECK RESPONSE: {json.dumps(response)}")
                     
-                    self.socket.send_string(json.dumps(response))
+                    self.socket.send_string(json.dumps(response)
                 
                 else:
                     # Unknown action
                     self.socket.send_string(json.dumps({
                         "status": "error",
                         "message": f"Unknown action: {action}"
-                    }))
+                    })
             
             except zmq.error.Again:
                 # Socket timeout, continue
                 continue
             except Exception as e:
                 logger.error(f"Error handling request: {e}")
-                logger.error(traceback.format_exc())
+                logger.error(traceback.format_exc()
                 
                 # Try to send error response
                 try:
                     self.socket.send_string(json.dumps({
                         "status": "error",
                         "message": f"Internal server error: {str(e)}"
-                    }))
+                    })
                 except:
                     pass
     
@@ -408,7 +408,7 @@ from common.utils.path_manager import PathManager
             logger.info("Received keyboard interrupt, shutting down")
         except Exception as e:
             logger.error(f"Error in TinyLlama service: {e}")
-            logger.error(traceback.format_exc())
+            logger.error(traceback.format_exc()
         finally:
             self.cleanup()
     
@@ -440,5 +440,5 @@ if __name__ == "__main__":
         logger.info("Interrupted by user")
     except Exception as e:
         logger.error(f"Fatal error: {e}")
-        logger.error(traceback.format_exc())
+        logger.error(traceback.format_exc()
         sys.exit(1)

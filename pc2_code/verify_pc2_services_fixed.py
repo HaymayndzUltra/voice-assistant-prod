@@ -38,7 +38,7 @@ PC2_SERVICES = [
     {
         "name": "Primary Translator",
         "script": "translator_simple.py", 
-        "port": int(os.getenv('TRANSLATOR_PORT', '5563')),
+        "port": int(os.getenv('TRANSLATOR_PORT', '5563'),
         "health_check_payload": {"action": "health_check"},
         "expected_pattern": "ok",
         "category": "TRANSLATION"
@@ -54,7 +54,7 @@ PC2_SERVICES = [
     {
         "name": "NLLB Translation Adapter",
         "script": "nllb_translation_adapter.py",
-        "port": int(os.getenv('NLLB_ADAPTER_PORT', '5581')),
+        "port": int(os.getenv('NLLB_ADAPTER_PORT', '5581'),
         "health_check_payload": {"action": "health_check"},
         "expected_pattern": "ok",
         "category": "TRANSLATION"
@@ -78,7 +78,7 @@ PC2_SERVICES = [
     {
         "name": "Memory Agent Health Port",
         "script": "agents/memory.py", 
-        "port": int(os.getenv('EMR_PORT', '5598')),
+        "port": int(os.getenv('EMR_PORT', '5598'),
         "health_check_payload": {"request_type": "health_check"},  # UPDATED FORMAT
         "expected_pattern": "success",
         "category": "MEMORY"
@@ -126,7 +126,7 @@ PC2_SERVICES = [
     {
         "name": "Remote Connector Agent",
         "script": "agents/remote_connector_agent.py",
-        "port": int(os.getenv('REMOTE_CONNECTOR_PORT', '5557')),
+        "port": int(os.getenv('REMOTE_CONNECTOR_PORT', '5557'),
         "health_check_payload": {"request_type": "check_status", "model": "phi3"},
         "expected_pattern": "success",
         "category": "CONNECTOR"
@@ -137,7 +137,7 @@ PC2_SERVICES = [
 def check_port_in_use(port):
     """Check if a port is already in use on this system"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
+        return s.connect_ex(('localhost', port) == 0
 
 # Verify a specific ZMQ service
 def verify_service(service, context):
@@ -159,7 +159,7 @@ def verify_service(service, context):
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.LINGER, 0)
     socket.setsockopt(zmq.RCVTIMEO, REQUEST_TIMEOUT)
-    socket.connect(get_zmq_connection_string({service[, "localhost"))port']}")
+    socket.connect(get_zmq_connection_string({service[, "localhost")port']}")
     
     # Measure response time
     start_time = time.time()
@@ -312,7 +312,7 @@ def main():
         
         result = verify_service(service, context)
         results.append(result)
-        results_by_category[category].append((service, result))
+        results_by_category[category].append((service, result)
         
         if result["status"] == "HEALTHY":
             healthy_services += 1

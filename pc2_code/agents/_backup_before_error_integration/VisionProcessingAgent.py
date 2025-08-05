@@ -26,7 +26,7 @@ from common.utils.path_manager import PathManager
 # Add project root to path using PathManager (standardized approach)
 PROJECT_ROOT = PathManager.get_project_root()
 if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+    
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import parse_agent_args
@@ -39,7 +39,6 @@ import psutil
 
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[

@@ -20,9 +20,8 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from common.utils.path_manager import PathManager
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-logging.basicConfig
+
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 

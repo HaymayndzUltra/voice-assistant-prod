@@ -4,7 +4,7 @@ import yaml
 import os
 from pathlib import Path
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 import zmq
 import json
 import logging
@@ -26,7 +26,7 @@ from common.env_helpers import get_env
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import common utilities if available
 try:
@@ -40,11 +40,10 @@ except ImportError as e:
     USE_COMMON_UTILS = False
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_adjuster.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_adjuster.log"),
         logging.StreamHandler()
     ]
 )
@@ -238,7 +237,7 @@ class LearningAdjusterAgent(BaseAgent):
             if isinstance(response, dict) and response.get('status') == 'success':
                 scores = response.get('scores', {})
                 if isinstance(scores, dict):
-                    return {k: float(v) for k, v in scores.items() if isinstance(k, str) and isinstance(v, (int, float))}
+                    return {k: float(v) for k, v in scores.items() if isinstance(k, str) and isinstance(v, (int, float)}
                 else:
                     return {}
             else:
@@ -272,7 +271,7 @@ class LearningAdjusterAgent(BaseAgent):
             suggestions = []
             
             # Check response times
-            response_times = [m.get('response_time', 0) for m in metrics if isinstance(m.get('response_time'), (int, float))]
+            response_times = [m.get('response_time', 0) for m in metrics if isinstance(m.get('response_time'), (int, float)]
             if response_times:
                 avg_response_time = sum(response_times) / len(response_times)
                 if avg_response_time > 1.0:  # More than 1 second
@@ -303,7 +302,7 @@ class LearningAdjusterAgent(BaseAgent):
                 
             # Check resource usage
             if usage:
-                cpu_usage = [u.get('cpu_percent', 0) for u in usage if isinstance(u.get('cpu_percent'), (int, float))]
+                cpu_usage = [u.get('cpu_percent', 0) for u in usage if isinstance(u.get('cpu_percent'), (int, float)]
                 if cpu_usage and sum(cpu_usage) / len(cpu_usage) > 80:  # More than 80% CPU
                     suggestions.append({
                         'type': 'resource',
@@ -316,7 +315,7 @@ class LearningAdjusterAgent(BaseAgent):
                         }
                     })
                     
-                memory_usage = [u.get('memory_percent', 0) for u in usage if isinstance(u.get('memory_percent'), (int, float))]
+                memory_usage = [u.get('memory_percent', 0) for u in usage if isinstance(u.get('memory_percent'), (int, float)]
                 if memory_usage and sum(memory_usage) / len(memory_usage) > 80:  # More than 80% memory
                     suggestions.append({
                         'type': 'resource',
@@ -331,7 +330,7 @@ class LearningAdjusterAgent(BaseAgent):
                     
             # Check trust scores
             if trust_scores:
-                avg_trust = sum(trust_scores.values()) / len(trust_scores)
+                avg_trust = sum(trust_scores.values() / len(trust_scores)
                 if avg_trust < 0.7:  # Less than 70% trust
                     suggestions.append({
                         'type': 'trust',

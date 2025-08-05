@@ -29,11 +29,10 @@ from common.utils.path_manager import PathManager
 )
 
 # Configure logging
-logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "port_health.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "port_health.log"),
         logging.StreamHandler()
     ]
 )
@@ -145,7 +144,7 @@ def main():
     logger.info("\n" + report)
     
     # Exit with error if any ports are unhealthy
-    if any(not status for status, _ in results.values()):
+    if any(not status for status, _ in results.values():
         exit(1)
 
 if __name__ == "__main__":

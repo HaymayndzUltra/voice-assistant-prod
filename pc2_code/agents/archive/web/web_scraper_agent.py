@@ -22,12 +22,12 @@ import pandas as pd
 import re
 
 # Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent)
 from pc2_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "web_scraper_agent.log")
+log_file = Path(config.get('system.logs_dir', 'logs') / str(PathManager.get_logs_dir() / "web_scraper_agent.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -74,11 +74,11 @@ class WebScraperAgent:
         logger.info(f"Connected to Executor Agent on port {EXECUTOR_PORT}")
         
         # Setup cache directory
-        self.cache_dir = Path(config.get('system.cache_dir', 'cache')) / "web_scraper"
+        self.cache_dir = Path(config.get('system.cache_dir', 'cache') / "web_scraper"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
         # Setup output directory
-        self.output_dir = Path(config.get('system.output_dir', 'output'))
+        self.output_dir = Path(config.get('system.output_dir', 'output')
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Running flag
@@ -118,7 +118,7 @@ class WebScraperAgent:
                 request["system_prompt"] = system_prompt
             
             # Send request to model manager
-            self.model_manager.send_string(json.dumps(request))
+            self.model_manager.send_string(json.dumps(request)
             
             # Wait for response with timeout
             poller = zmq.Poller()
@@ -132,7 +132,7 @@ class WebScraperAgent:
                     return response["text"]
                 else:
                     logger.error(f"Error from model manager: {response.get('error', 'Unknown error')}")
-                    raise Exception(response.get("error", "Unknown error"))
+                    raise Exception(response.get("error", "Unknown error")
             else:
                 logger.error("Timeout waiting for response from model manager")
                 raise Exception("Timeout waiting for response from model manager")
@@ -152,7 +152,7 @@ class WebScraperAgent:
             }
             
             # Send request to executor agent
-            self.executor.send_string(json.dumps(request))
+            self.executor.send_string(json.dumps(request)
             
             # Wait for response with timeout
             poller = zmq.Poller()
@@ -166,7 +166,7 @@ class WebScraperAgent:
                     return response["result"]
                 else:
                     logger.error(f"Error from executor agent: {response.get('error', 'Unknown error')}")
-                    raise Exception(response.get("error", "Unknown error"))
+                    raise Exception(response.get("error", "Unknown error")
             else:
                 logger.error("Timeout waiting for response from executor agent")
                 raise Exception("Timeout waiting for response from executor agent")
@@ -291,7 +291,7 @@ def main(url="{url}", output_format="{output_format}"):
 # Call the main function if this script is run directly
 if __name__ == "__main__":
     result = main()
-    print(json.dumps(result))
+    print(json.dumps(result)
 """
         
         # Combine the code
@@ -325,7 +325,7 @@ if __name__ == "__main__":
                 df = pd.DataFrame(data, columns=columns)
                 
                 # Save the data to a file
-                timestamp = int(time.time())
+                timestamp = int(time.time()
                 filename = f"scraped_{data_type}_{timestamp}.{output_format}"
                 file_path = self.output_dir / filename
                 
@@ -347,7 +347,7 @@ if __name__ == "__main__":
                 }
             else:
                 logger.error(f"Error executing scraper code: {result.get('error', 'Unknown error')}")
-                raise Exception(result.get("error", "Unknown error"))
+                raise Exception(result.get("error", "Unknown error")
         
         except Exception as e:
             logger.error(f"Error scraping website: {str(e)}")
@@ -476,7 +476,7 @@ if __name__ == "__main__":
                         }
                     
                     # Send response
-                    self.receiver.send_string(json.dumps(response))
+                    self.receiver.send_string(json.dumps(response)
             
             except zmq.Again:
                 # Timeout, continue loop
@@ -494,7 +494,7 @@ if __name__ == "__main__":
                 "agent_id": "web_scraper",
                 "endpoint": f"tcp://localhost:{WEB_SCRAPER_PORT}",
                 "capabilities": ["web_scraping", "data_extraction", "web_automation"]
-            }))
+            })
             
             # Wait for response
             response_str = self.framework.recv_string()
@@ -525,7 +525,7 @@ if __name__ == "__main__":
             self.framework.send_string(json.dumps({
                 "request_type": "unregister_agent",
                 "agent_id": "web_scraper"
-            }))
+            })
             
             # Wait for response
             response_str = self.framework.recv_string()

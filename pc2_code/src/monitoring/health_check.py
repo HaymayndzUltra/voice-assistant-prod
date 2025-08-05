@@ -36,13 +36,13 @@ import socket
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(project_root)
 
 # Import config parser utility with fallback
 try:
@@ -57,7 +57,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_check_agent.log"))
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_check_agent.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 
@@ -209,7 +209,7 @@ class HealthCheckAgent:
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.settimeout(self.timeout)
-                result = sock.connect_ex((service.host, service.port))
+                result = sock.connect_ex((service.host, service.port)
                 sock.close()
                 
                 if result == 0:
@@ -318,9 +318,9 @@ class HealthCheckAgent:
                 request.get('health_check_payload')
             )
         elif action == 'unregister_service':
-            return self.unregister_service(request.get('service_id'))
+            return self.unregister_service(request.get('service_id')
         elif action == 'check_service':
-            return self.check_service_health(request.get('service_id'))
+            return self.check_service_health(request.get('service_id')
         elif action == 'get_all_services':
             return self.get_all_services_health()
         else:
@@ -363,7 +363,7 @@ class HealthCheckAgent:
         logger.info("Starting service monitoring loop")
         while self.running:
             try:
-                for service_id in list(self.services.keys()):
+                for service_id in list(self.services.keys():
                     self.check_service_health(service_id)
                 time.sleep(self.check_interval)
             except Exception as e:

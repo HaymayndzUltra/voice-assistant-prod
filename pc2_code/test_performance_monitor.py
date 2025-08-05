@@ -10,7 +10,7 @@ import threading
 from pathlib import Path
 
 # Add agents directory to path
-sys.path.insert(0, str(Path(__file__).parent / 'agents'))
+sys.path.insert(0, str(Path(__file__).parent / 'agents')
 
 def test_performance_monitor():
     """Test PerformanceMonitor agent for stability"""

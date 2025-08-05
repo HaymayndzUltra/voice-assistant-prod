@@ -18,7 +18,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Add project root to path for imports
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent)
 from common_utils.error_handling import SafeExecutor
 
 # Setup logging
@@ -111,7 +111,7 @@ class ZMQBridge:
     def _process_message(self, message):
         """Process incoming message and generate response"""
         # Extract message type/action
-        action = message.get("action", message.get("type", "unknown"))
+        action = message.get("action", message.get("type", "unknown")
         
         if action == "health_check":
             # Health check request

@@ -41,7 +41,7 @@ from selenium.common.exceptions import (
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+    
 
 # Import service discovery and network utilities
 from main_pc_code.utils.service_discovery_client import register_service, discover_service, get_service_address
@@ -73,7 +73,6 @@ config = Config().get_config() # This seems to be pc2_code.agents.utils.config_l
 log_file_path = project_root / 'logs' / str(PathManager.get_logs_dir() / "unified_web_agent.log") # Use project_root
 os.makedirs(log_file_path.parent, exist_ok=True) # Use .parent for directory
 
-logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
@@ -86,7 +85,7 @@ logger = logging.getLogger("UnifiedWebAgent")
 # Default ZMQ port configuration
 UNIFIED_WEB_PORT = 7126  # Main port
 HEALTH_CHECK_PORT = 7127  # Health check port
-INTERRUPT_PORT = int(os.environ.get('INTERRUPT_PORT', 5576))  # Interrupt handler port
+INTERRUPT_PORT = int(os.environ.get('INTERRUPT_PORT', 5576)  # Interrupt handler port
 
 # Browser automation settings
 MIN_DELAY_BETWEEN_REQUESTS = 2  # seconds
@@ -203,7 +202,7 @@ class UnifiedWebAgent(BaseAgent):
 
         # Initialize database
         self.db_path = self.cache_dir / "web_agent_cache.sqlite"
-        self.conn = sqlite3.connect(str(self.db_path))
+        self.conn = sqlite3.connect(str(self.db_path)
         self._create_tables()
 
         # Initialize web driver
@@ -444,7 +443,7 @@ class UnifiedWebAgent(BaseAgent):
 
                     # Wait for page to load
                     WebDriverWait(self.driver, TIMEOUT).until(
-                        EC.presence_of_element_located((By.TAG_NAME, "body"))
+                        EC.presence_of_element_located((By.TAG_NAME, "body")
                     )
 
                     # Get page content
@@ -538,7 +537,7 @@ class UnifiedWebAgent(BaseAgent):
             cursor.execute('''
             INSERT INTO form_history (url, form_data, timestamp, success, error)
             VALUES (?, ?, ?, ?, ?)
-            ''', (url, json.dumps(form_data), time.time(), True, None))
+            ''', (url, json.dumps(form_data), time.time(), True, None)
             self.conn.commit()
 
             return {
@@ -593,7 +592,7 @@ class UnifiedWebAgent(BaseAgent):
                     url,
                     content,
                     time.time(),
-                    json.dumps(dict(headers)), # Ensure headers dict is JSON serializable
+                    json.dumps(dict(headers), # Ensure headers dict is JSON serializable
                     status_code
                 )
             )
@@ -687,7 +686,7 @@ class UnifiedWebAgent(BaseAgent):
         """Extract topics from conversation history"""
         # Simple topic extraction based on common words
         all_text = " ".join([msg["content"] for msg in conversation_history])
-        words = re.findall(r'\b\w+\b', all_text.lower())
+        words = re.findall(r'\b\w+\b', all_text.lower()
 
         # Remove common stop words
         stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'}
@@ -710,7 +709,7 @@ class UnifiedWebAgent(BaseAgent):
             for query in queries:
                 search_result = self.search_web(query)
                 if search_result["status"] == "success":
-                    results.extend(search_result.get("results", [])) # Ensure results key exists
+                    results.extend(search_result.get("results", []) # Ensure results key exists
 
             # Summarize findings
             if results:
@@ -753,8 +752,8 @@ class UnifiedWebAgent(BaseAgent):
         queries = []
 
         # Extract potential search terms
-        for i in range(len(words)):
-            for j in range(i + 1, min(i + 4, len(words) + 1)):
+        for i in range(len(words):
+            for j in range(i + 1, min(i + 4, len(words) + 1):
                 query = " ".join(words[i:j])
                 if len(query) > 3:
                     queries.append(query)
@@ -986,7 +985,7 @@ class UnifiedWebAgent(BaseAgent):
 
                 # Initialize with automatic driver management
                 logger.info("Initializing Chrome WebDriver with webdriver-manager")
-                service = ChromeService(ChromeDriverManager().install())
+                service = ChromeService(ChromeDriverManager().install()
                 self.driver = webdriver.Chrome(service=service, options=chrome_options)
                 self.driver.set_page_load_timeout(TIMEOUT)
                 logger.info("WebDriver initialized successfully with webdriver-manager")
@@ -1037,7 +1036,7 @@ class UnifiedWebAgent(BaseAgent):
             # Get IP address for registration
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                s.connect(("8.8.8.8", 80))  # Doesn't have to be reachable
+                s.connect(("8.8.8.8", 80)  # Doesn't have to be reachable
                 my_ip = s.getsockname()[0]
                 s.close()
             except Exception as e:
@@ -1164,7 +1163,7 @@ class UnifiedWebAgent(BaseAgent):
                 try:
                     # Wait for links to be available
                     WebDriverWait(self.driver, 5).until(
-                        EC.presence_of_element_located((By.TAG_NAME, "a"))
+                        EC.presence_of_element_located((By.TAG_NAME, "a")
                     )
 
                     # Get all link elements
@@ -1204,7 +1203,7 @@ class UnifiedWebAgent(BaseAgent):
                         href = f"{base_url.scheme}://{base_url.netloc}{href}"
                     elif href.startswith('./') and self.current_url: # Handle relative paths like ./page.html
                          href = urllib.parse.urljoin(self.current_url, href)
-                    elif not href.startswith(('http://', 'https://', '//')): # Handle protocol-relative //example.com/
+                    elif not href.startswith(('http://', 'https://', '//'): # Handle protocol-relative //example.com/
                          if href.startswith('//'):
                              href = f"{urllib.parse.urlparse(self.current_url).scheme}:{href}"
                          else: # Assume relative to current path
@@ -1278,7 +1277,7 @@ class UnifiedWebAgent(BaseAgent):
                 try:
                     # Wait for results to load
                     WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, "div.g"))
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "div.g")
                     )
 
                     # Extract result elements (Google format)
@@ -1354,7 +1353,7 @@ class UnifiedWebAgent(BaseAgent):
                     time.time(),
                     success,
                     "" if success else "Failed to get results",
-                    hashlib.md5(query.encode()).hexdigest()
+                    hashlib.md5(query.encode().hexdigest()
                 )
             )
             self.conn.commit()
@@ -1377,7 +1376,7 @@ class UnifiedWebAgent(BaseAgent):
                 "source": self.name,
                 "timestamp": time.time(),
                 "data": {
-                    "content": data.get("summary", data.get("extracted_data", "")),
+                    "content": data.get("summary", data.get("extracted_data", ""),
                     "type": data.get("type", "web_data"),
                     "url": data.get("url", ""),
                     "title": data.get("title", ""),
@@ -1803,7 +1802,7 @@ class UnifiedWebAgent(BaseAgent):
 
         # Extract key information based on query context
         main_query = context.get("query", "").lower()
-        query_terms = set(main_query.split())
+        query_terms = set(main_query.split()
 
         # Find paragraphs most relevant to the query
         paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
@@ -1839,7 +1838,7 @@ class UnifiedWebAgent(BaseAgent):
             # Store each context key-value pair
             for key, value in context.items():
                 # Skip complex nested structures that can't be easily stored as TEXT
-                if isinstance(value, (dict, list)):
+                if isinstance(value, (dict, list):
                     try:
                         value_str = json.dumps(value)
                     except TypeError:
@@ -1855,7 +1854,7 @@ class UnifiedWebAgent(BaseAgent):
                     INSERT INTO browsing_context (context_key, context_value, timestamp)
                     VALUES (?, ?, ?)
                     ''',
-                    (key, value_str, time.time())
+                    (key, value_str, time.time()
                 )
 
             self.conn.commit()

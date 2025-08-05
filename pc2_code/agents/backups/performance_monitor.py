@@ -88,7 +88,7 @@ class PerformanceMonitor:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "performance_monitor.log")),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "performance_monitor.log"),
                 logging.StreamHandler()
             ]
         )
@@ -217,7 +217,7 @@ class PerformanceMonitor:
             
         return {
             'timestamp': datetime.now().isoformat(),
-            'status': 'ok' if resources_ok and all(s['status'] == 'ok' for s in services_health.values()) else 'degraded',
+            'status': 'ok' if resources_ok and all(s['status'] == 'ok' for s in services_health.values() else 'degraded',
             'resources': {
                 'status': 'ok' if resources_ok else 'degraded',
                 'stats': metrics['resources']

@@ -11,8 +11,6 @@ import logging
 from typing import Dict, Any
 import argparse
 
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +23,7 @@ class Config:
         else:
             # Use default location
             self.config_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)),
                 'config',
                 'config.json'
             )
@@ -143,7 +141,7 @@ def load_config(config_path=None):
     if config_path is None:
         # Default to the startup config in the project root
         config_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)),
             "config", 
             "startup_config.yaml"
         )
@@ -184,7 +182,7 @@ def load_network_config():
         dict: Network configuration dictionary
     """
     config_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)),
         "config", 
         "network_config.yaml"
     )

@@ -22,7 +22,7 @@ from datetime import datetime
 from collections import deque
 
 # Add parent directory to path
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+sys.path.append(str(Path(__file__).resolve().parent.parent)
 
 # Configure logging
 LOG_LEVEL = 'INFO'
@@ -69,7 +69,7 @@ def process_memory_usage() -> float:
 from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
-        process = psutil.Process(os.getpid())
+        process = psutil.Process(os.getpid()
         mem_info = process.memory_info()
         return mem_info.rss / (1024 * 1024)  # Convert to MB
     except ImportError:
@@ -264,7 +264,7 @@ class TranslatorAgent:
                     response = self._process_request(message)
                     
                     # Send response
-                    self.socket.send_string(json.dumps(response))
+                    self.socket.send_string(json.dumps(response)
                     
                     # Log performance metrics
                     response_time = (time.time() - start_time) * 1000  # ms
@@ -275,13 +275,13 @@ class TranslatorAgent:
                     self.socket.send_string(json.dumps({
                         "status": "error",
                         "error": "Invalid JSON format"
-                    }))
+                    })
                 except Exception as e:
                     logger.error(f"Error in main loop: {str(e)}", exc_info=True)
                     self.socket.send_string(json.dumps({
                         "status": "error",
                         "error": "Internal server error"
-                    }))
+                    })
         except KeyboardInterrupt:
             logger.info("Received shutdown signal")
         except Exception as e:
@@ -416,7 +416,7 @@ class TranslatorAgent:
                 
                 # Track response time for performance monitoring
                 response_time = (time.time() - start_time) * 1000  # ms
-                self.stats["performance"]["response_times"].append((time.time(), response_time))
+                self.stats["performance"]["response_times"].append((time.time(), response_time)
                 if len(self.stats["performance"]["response_times"]) > 100:
                     self.stats["performance"]["response_times"] = self.stats["performance"]["response_times"][-100:]
                 
@@ -487,7 +487,7 @@ class TranslatorAgent:
             
             # Track response time for performance monitoring
             response_time = (time.time() - start_time) * 1000  # ms
-            self.stats["performance"]["response_times"].append((time.time(), response_time))
+            self.stats["performance"]["response_times"].append((time.time(), response_time)
             if len(self.stats["performance"]["response_times"]) > 100:
                 self.stats["performance"]["response_times"] = self.stats["performance"]["response_times"][-100:]
         except Exception as e:
@@ -536,7 +536,7 @@ class TranslatorAgent:
             
         # Get current memory usage
         current_usage = process_memory_usage()
-        self.stats["performance"]["memory_usage"].append((time.time(), current_usage))
+        self.stats["performance"]["memory_usage"].append((time.time(), current_usage)
         
         # Keep only recent memory measurements
         if len(self.stats["performance"]["memory_usage"]) > 100:
@@ -644,7 +644,7 @@ class TranslatorAgent:
         current_time = time.time()
         compressed = 0
         
-        for session_id, session_data in list(self.sessions.items()):
+        for session_id, session_data in list(self.sessions.items():
             # Skip already compressed sessions
             if session_data.get('compressed', False):
                 continue
@@ -735,7 +735,7 @@ class TranslatorAgent:
             
             # Check for pronoun resolution in follow-up questions
             # Add safety check before calling lower()
-            if text and ('ito' in text.lower() or 'iyon' in text.lower()):
+            if text and ('ito' in text.lower() or 'iyon' in text.lower():
                 # Look for previous objects in context
                 last_action = None
                 for action, details in context.get('actions', {}).items():
@@ -782,7 +782,7 @@ class TranslatorAgent:
         
         # Check if text is in special cases - with safety checks
         try:
-            normalized_input = normalize_text_for_cache(text.lower())
+            normalized_input = normalize_text_for_cache(text.lower()
             for key, value in special_cases.items():
                 if normalized_input in normalize_text_for_cache(key) or normalize_text_for_cache(key) in normalized_input:
                     logger.debug(f"Found special case match: '{text}' -> '{value}'")
@@ -986,7 +986,7 @@ class TranslatorAgent:
         recent_hit_rate = sum(self.recent_hits) / len(self.recent_hits)
         
         # Track this for analytics
-        self.stats["performance"]["cache_hit_rates"].append((time.time(), recent_hit_rate))
+        self.stats["performance"]["cache_hit_rates"].append((time.time(), recent_hit_rate)
         if len(self.stats["performance"]["cache_hit_rates"]) > 100:
             self.stats["performance"]["cache_hit_rates"] = self.stats["performance"]["cache_hit_rates"][-100:]
         
@@ -1069,7 +1069,7 @@ class TranslatorAgent:
     
     def _generate_session_id(self):
         """Generate a unique session ID"""
-        return f"session_{int(time.time())}_{random.randint(1000, 9999)}"
+        return f"session_{int(time.time()}_{random.randint(1000, 9999)}"
     
     def _update_session(self, session_id, original_text, translated_text):
         """Update session history with translation using memory-efficient storage"""
@@ -1244,7 +1244,7 @@ class TranslatorAgent:
             self._update_session_summary(session_id, session["translations"])
         
         # Keep only the most recent translations
-        keep_count = min(5, len(session["translations"]))
+        keep_count = min(5, len(session["translations"])
         if keep_count < len(session["translations"]):
             # Calculate memory to be freed
             to_remove = session["translations"][:-keep_count]
@@ -1289,12 +1289,12 @@ class TranslatorAgent:
         """Estimate memory usage of an object in bytes"""
         # Simple estimation based on string lengths
         if isinstance(obj, dict):
-            return sum(self._estimate_object_size(k) + self._estimate_object_size(v) for k, v in obj.items())
+            return sum(self._estimate_object_size(k) + self._estimate_object_size(v) for k, v in obj.items()
         elif isinstance(obj, list):
             return sum(self._estimate_object_size(item) for item in obj)
         elif isinstance(obj, str):
             return len(obj) * 2  # Unicode strings use ~2 bytes per char
-        elif isinstance(obj, (int, float, bool)):
+        elif isinstance(obj, (int, float, bool):
             return 8  # Approximation for numeric types
         else:
             return 32  # Default estimate for other types
@@ -1312,7 +1312,7 @@ class TranslatorAgent:
             logger.debug(f"Current session memory usage: {total_memory} bytes, {len(self.sessions)} active sessions")
             
             # Store in performance stats
-            self.stats["performance"]["memory_usage"].append((time.time(), total_memory))
+            self.stats["performance"]["memory_usage"].append((time.time(), total_memory)
             if len(self.stats["performance"]["memory_usage"]) > 100:
                 self.stats["performance"]["memory_usage"] = self.stats["performance"]["memory_usage"][-100:]
     
@@ -1336,7 +1336,7 @@ class TranslatorAgent:
             return context
         
         # Get recent translations (newest first)
-        recent_translations = list(reversed(self.sessions[session_id]["translations"][-max_history:]))
+        recent_translations = list(reversed(self.sessions[session_id]["translations"][-max_history:])
         
         # Extract conversation history and build rich context
         for i, item in enumerate(recent_translations):

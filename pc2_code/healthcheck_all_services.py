@@ -39,7 +39,7 @@ for entry in SOT:
     sock.setsockopt(zmq.SNDTIMEO, 2000)
     try:
         sock.connect(addr)
-        sock.send_string(json.dumps(payload))
+        sock.send_string(json.dumps(payload)
         resp = sock.recv_string()
         try:
             resp_json = json.loads(resp)
