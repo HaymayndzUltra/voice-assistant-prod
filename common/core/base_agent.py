@@ -48,10 +48,8 @@ class BaseAgent:
     """Base class for all agents with proper initialization and health check patterns."""
     
     def __init__(self, *args, **kwargs):
-        # Set up project root using PathManager
+        # Project root setup (sys.path.insert removed for Docker environment)
         project_root = str(PathManager.get_project_root())
-        if project_root not in sys.path:
-            sys.path.insert(0, project_root)
             
         self.args = parse_agent_args()
         self.name = kwargs.get('name') or self.__class__.__name__

@@ -39,6 +39,8 @@ from common.utils.path_manager import PathManager
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common_utils.error_handling import SafeExecutor
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 # Parse agent arguments
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -1228,9 +1230,6 @@ class VramOptimizerAgent(BaseAgent):
                 # Register with SystemDigitalTwin
         try:
             from main_pc_code.utils.service_discovery_client import register_service
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
             register_service(
                 name="VRAMOptimizerAgent",
                 location="MainPC",

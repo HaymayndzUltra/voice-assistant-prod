@@ -11,9 +11,7 @@ Extends the custom command handler with advanced features:
 from common.utils.path_manager import PathManager
 import sys
 import os
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 import json
 import logging
 import time

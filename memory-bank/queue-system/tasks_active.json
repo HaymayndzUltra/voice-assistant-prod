@@ -21,11 +21,11 @@
       },
       {
         "text": "E. DONE DEFINITION\n☑ Zero sys.path.insert left in main_pc_code/agents.\n☑ logging.basicConfig removed / replaced.\n☑ python -m py_compile $(git ls-files 'main_pc_code/**/*.py') passes.\n☑ docker compose --profile main ps → all HEALTHY.\n☑ GPU images build and run with --gpus all.\n☑ Root compose (profiles main+pc2) starts full system with no unhealthy services.\nEstimated effort ≈ 12-14 engineer-hours (parallel build stages speed GPU images).\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ito ang huling checklist para sa acceptance. Ang buong gawain ay ituturing lamang na tapos kapag ang lahat ng item dito ay na-check at na-verify na. Huwag magpatuloy hangga't hindi tapos ang kasalukuyang hakbang. Bago sumulong, i-review ang natapos at ang susunod na gagawin. Ulitin ang review kung ang confidence score ay mababa sa 95%.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-21T12:00:00Z",
-    "updated": "2025-08-05T23:30:18.452314+08:00"
+    "updated": "2025-08-05T23:34:39.232884+08:00"
   }
 ]
