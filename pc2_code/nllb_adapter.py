@@ -94,9 +94,7 @@ class NLLBTranslationAdapter:
             
             # Try to use GPU if available
             import torch
-
-# Containerization-friendly paths (Blueprint.md Step 5)
-from common.utils.path_manager import PathManager
+            
             if torch.cuda.is_available():
                 self.model = self.model.to("cuda")
                 self.device = "cuda"
@@ -109,7 +107,7 @@ from common.utils.path_manager import PathManager
             logger.info(f"Model loaded in {elapsed:.2f} seconds")
         except Exception as e:
             logger.error(f"Error loading NLLB model: {e}")
-            logger.error(traceback.format_exc()
+            logger.error(traceback.format_exc())
             raise
         
     def translate(self, text, src_lang="tl", tgt_lang="en"):
@@ -133,8 +131,8 @@ from common.utils.path_manager import PathManager
         
         try:
             # Convert language codes to NLLB format
-            nllb_src_lang = LANG_MAPPING.get(src_lang, LANG_MAPPING.get("en")
-            nllb_tgt_lang = LANG_MAPPING.get(tgt_lang, LANG_MAPPING.get("en")
+            nllb_src_lang = LANG_MAPPING.get(src_lang, LANG_MAPPING.get("en"))
+            nllb_tgt_lang = LANG_MAPPING.get(tgt_lang, LANG_MAPPING.get("en"))
             
             logger.debug(f"Using NLLB language codes - Source: {nllb_src_lang}, Target: {nllb_tgt_lang}")
             
@@ -169,7 +167,7 @@ from common.utils.path_manager import PathManager
                 self.stats["avg_translation_time"] = elapsed
             else:
                 self.stats["avg_translation_time"] = (
-                    (self.stats["avg_translation_time"] * (self.stats["successful"] - 1) + elapsed
+                    (self.stats["avg_translation_time"] * (self.stats["successful"] - 1) + elapsed)
                 ) / self.stats["successful"]
             
             logger.info(f"Translation completed in {elapsed:.2f} seconds")
@@ -192,7 +190,7 @@ from common.utils.path_manager import PathManager
             self.stats["last_error"] = str(e)
             
             logger.error(f"Translation error: {e}")
-            logger.error(traceback.format_exc()
+            logger.error(traceback.format_exc())
             
             return {
                 "original": text,
@@ -278,7 +276,7 @@ from common.utils.path_manager import PathManager
             except Exception as e:
                 error_msg = f"Error processing request: {str(e)}"
                 logger.error(error_msg)
-                logger.error(traceback.format_exc()
+                logger.error(traceback.format_exc())
                 try:
                     self.socket.send_json({
                         "success": False,
