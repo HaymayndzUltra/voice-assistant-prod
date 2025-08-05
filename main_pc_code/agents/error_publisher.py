@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 # Import the missing function
-from common.utils.env_standardizer import get_pc2_ip
+from common.utils.env_standardizer import get_pc2_ip, get_mainpc_ip
 
 from common.pools.zmq_pool import get_pub_socket
 
@@ -128,3 +128,26 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
 
     def __exit__(self, exc_type, exc_val, exc_tb):  # noqa: D401, D403
         self.close()
+
+
+def create_mainpc_error_publisher(agent_name: str) -> ErrorPublisher:
+    """
+    Create a standardized ErrorPublisher for Main-PC agents.
+    
+    This is the canonical function that should be used by all Main-PC agents
+    to create their error publisher instance, following the pattern:
+    
+        self.error_publisher = create_mainpc_error_publisher("agent_name")
+    
+    Args:
+        agent_name: Name of the agent (e.g., "service_registry")
+        
+    Returns:
+        Configured ErrorPublisher instance for Main-PC error bus
+    """
+    # Use Main-PC error bus endpoint with get_mainpc_ip()
+    host = os.environ.get("MAINPC_ERROR_BUS_HOST", get_mainpc_ip())
+    port = int(os.environ.get("MAINPC_ERROR_BUS_PORT", 7150))
+    endpoint = f"tcp://{host}:{port}"
+    
+    return ErrorPublisher(source=f"MainPC.{agent_name}", endpoint=endpoint)
