@@ -47,6 +47,9 @@ try:
     
     import fastapi
     print("   ✓ fastapi imported")
+
+    import torch
+    print("   ✓ torch imported")
     
     print("\n🎉 All imports successful!")
     
