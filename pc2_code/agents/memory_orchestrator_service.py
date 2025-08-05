@@ -44,11 +44,11 @@ logger = logging.getLogger('MemoryOrchestratorService')
 
 # --- Constants with Port Registry Integration ---
 # Port registry removed - using environment variables with startup_config.yaml defaults
-DEFAULT_PORT = int(os.getenv("MEMORY_ORCHESTRATOR_PORT", 7140)  # Port para sa Orchestrator
+DEFAULT_PORT = int(os.getenv("MEMORY_ORCHESTRATOR_PORT", 7140))  # Port para sa Orchestrator
     
-DB_PATH = Path(PathManager.get_project_root() / "data" / str(PathManager.get_data_dir() / "unified_memory.db")
+DB_PATH = Path(PathManager.get_project_root() / "data" / str(PathManager.get_data_dir() / "unified_memory.db"))
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379)
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 LIFECYCLE_INTERVAL = 3600 # 1 oras para sa decay/consolidation
 
 # ===================================================================

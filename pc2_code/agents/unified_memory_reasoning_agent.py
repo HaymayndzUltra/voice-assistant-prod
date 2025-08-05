@@ -30,21 +30,14 @@ import sys
 import os
 from common.utils.path_manager import PathManager
 
-# Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent.parent)
+# Removed sys.path.append - rely on PYTHONPATH=/app in Docker environment
 from common.core.base_agent import BaseAgent
 from pc2_code.config.system_config import config
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
-# Configure logging
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-    handlers=[
-        logging.FileHandler(Path(PathManager.get_project_root() / "logs" / str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log")), encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("UnifiedMemoryReasoning")
+# Setup canonical logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Define default constants (will be overridden by config)
 DEFAULT_CONTEXT_STORE_PATH = "memory_store.json"
@@ -192,21 +185,21 @@ class ContextManager:
         ]
         
         for pattern in command_patterns:
-            if re.search(pattern, text.lower():
+            if re.search(pattern, text.lower()):
                 importance += 0.1
                 break
         
         # Longer texts might contain more information
-        if len(text.split() > 15:
+        if len(text.split()) > 15:
             importance += 0.1
         
         # Cap importance between 0 and 1
-        return min(1.0, max(0.0, importance)
+        return min(1.0, max(0.0, importance))
     
     def _adjust_context_size(self):
         """Dynamically adjust context window size based on conversation complexity"""
         # Calculate average importance
-        avg_importance = np.mean(list(self.importance_scores.values()) if self.importance_scores else 0.5
+        avg_importance = np.mean(list(self.importance_scores.values())) if self.importance_scores else 0.5
         
         # Calculate conversation complexity (higher importance = more complex)
         if avg_importance > 0.7:
@@ -845,8 +838,8 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
             if self.initialized:
                 agent_status.update({
                     "total_twins": len(self.twins) if hasattr(self, 'twins') else 0,
-                    "total_sessions": len(self.context_store.get("sessions", {}) if hasattr(self, 'context_store') else 0,
-                    "total_error_patterns": len(self.error_patterns.get("patterns", {}) if hasattr(self, 'error_patterns') else 0
+                    "total_sessions": len(self.context_store.get("sessions", {})) if hasattr(self, 'context_store') else 0,
+                    "total_error_patterns": len(self.error_patterns.get("patterns", {})) if hasattr(self, 'error_patterns') else 0
                 })
         
         # Update base status with our metrics
