@@ -4,7 +4,7 @@ services:
     image: redis:7.2-alpine
     container_name: redis_coordination
     ports:
-      - "6379:6379"
+      - "6400:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -15,7 +15,7 @@ services:
     image: nats:2.10-alpine
     container_name: nats_coordination
     ports:
-      - "4222:4222"
+      - "4231:4222"
     command: ["--jetstream"]
     healthcheck:
       test: ["CMD", "sh", "-c", "nc -z localhost 4222"]
@@ -63,9 +63,9 @@ services:
       start_period: 40s
 
   # Model Manager Suite (GPU-accelerated model management)
-  model_manager_suite:
+  model_manager_suite_coordination:
     image: coordination:latest
-    container_name: model_manager_suite
+    container_name: model_manager_suite_coordination
     command: ["python", "-m", "main_pc_code.model_manager_suite"]
     environment:
       LOG_LEVEL: "INFO" 

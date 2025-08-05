@@ -4,7 +4,7 @@ services:
   # Backend services
   redis:
     image: redis:7.2-alpine
-    container_name: redis
+    container_name: redis_infra
     ports:
       - "6379:6379"
     networks:
@@ -13,7 +13,7 @@ services:
 
   nats:
     image: nats:2.10-alpine
-    container_name: nats
+    container_name: nats_infra
     ports:
       - "4222:4222"
     networks:

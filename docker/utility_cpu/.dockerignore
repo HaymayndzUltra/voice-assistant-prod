@@ -1,0 +1,68 @@
+# Docker optimization .dockerignore for utility_cpu
+# Reduces build context size by excluding unnecessary files
+
+# Development & version control
+.git
+.gitignore
+.gitmodules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+.env
+.env.*
+.vscode/
+.idea/
+
+# Documentation & configuration
+*.md
+README*
+LICENSE
+*.txt
+*.yml
+*.yaml
+!docker/utility_cpu/minimal-requirements.txt
+
+# Build artifacts & logs
+*.log
+logs/
+build/
+dist/
+*.egg-info
+.pytest_cache/
+.coverage
+
+# OS & system files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Exclude other service groups to minimize build context
+docker/coordination/
+docker/speech_gpu/
+docker/vision_gpu/
+docker/learning_gpu/
+docker/reasoning_gpu/
+docker/translation_services/
+docker/emotion_system/
+docker/memory_stack/
+docker/observability/
+docker/infra_core/
+docker/language_stack/
+
+# PC2 directories
+pc2_code/
+docker/pc2_*/
+
+# Additional utilities not needed for runtime
+scripts/
+tests/
+models/
+data/
+temp/
+tmp/

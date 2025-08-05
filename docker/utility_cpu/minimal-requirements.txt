@@ -1,0 +1,30 @@
+# Minimal requirements.txt for utility_cpu service group
+# Based on STRICT line-by-line code analysis of all 5 agents
+# NO ASSUMPTIONS - Only actual imports found
+
+# === AGENT ANALYSIS RESULTS ===
+# code_generator_agent.py: zmq, requests (dynamic import line 191)
+# executor.py: zmq
+# predictive_health_monitor.py: psutil, yaml  
+# translation_service.py: zmq
+# smart_home_agent.py: plugp100
+
+# === ACTUAL EXTERNAL DEPENDENCIES ===
+# Direct agent imports:
+pyzmq>=25.1.0,<26.0          # ZMQ messaging (all agents)
+requests>=2.31.0,<3.0        # HTTP requests (code_generator for Ollama)
+psutil>=5.9.0,<6.0          # System monitoring (predictive_health_monitor)
+PyYAML>=6.0,<7.0            # YAML parsing (predictive_health_monitor)
+plugp100>=1.0.0             # Tapo devices (smart_home_agent)
+
+# Common module dependencies:
+pydantic>=2.0.0,<3.0        # Data models (BaseAgent -> data_models.py)
+redis>=4.0.0,<5.0           # Redis connections (various common modules)
+nats-py>=2.0.0,<3.0         # NATS messaging (error_bus)
+
+# === BUILT-IN MODULES EXCLUDED ===
+# sqlite3, pickle, logging, json, threading, concurrent.futures,
+# subprocess, traceback, hashlib, uuid, time, os, sys, re, random,
+# socket, collections, typing, datetime, platform, pathlib
+
+# TOTAL EXTERNAL DEPENDENCIES: 8 packages (5 direct + 3 common module deps)
