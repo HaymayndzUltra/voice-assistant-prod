@@ -1,0 +1,400 @@
+{
+  "migration_plan": {
+    "total_agents": 25,
+    "extraction_timestamp": "2025-01-10T12:00:00Z",
+    "source_files_validated": [
+      "/workspace/docker/pc2_infra_core/docker-compose.yml",
+      "/workspace/docker/pc2_async_pipeline/docker-compose.yml",
+      "/workspace/docker/pc2_memory_stack/docker-compose.yml",
+      "/workspace/docker/pc2_utility_suite/docker-compose.yml",
+      "/workspace/docker/pc2_tutoring_cpu/docker-compose.yml",
+      "/workspace/docker/pc2_vision_dream_gpu/docker-compose.yml",
+      "/workspace/docker/pc2_web_interface/docker-compose.yml"
+    ]
+  },
+  "agents": {
+    "resource_manager": {
+      "source_file": "/workspace/docker/pc2_infra_core/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/resource_manager.py"],
+      "ports": ["7213:7113", "8213:8113"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_infra:6379/0",
+        "NATS_SERVERS": "nats://nats_pc2_infra:4222",
+        "HEALTH_PORT": "8113",
+        "SERVICE_PORT": "7113",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "async_processor": {
+      "source_file": "/workspace/docker/pc2_async_pipeline/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/async_processor.py"],
+      "ports": ["7301:7101", "8301:8101"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_async:6379/0",
+        "NATS_SERVERS": "nats://nats_pc2_async:4222",
+        "HEALTH_PORT": "8101",
+        "PORT": "7101",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "tiered_responder": {
+      "source_file": "/workspace/docker/pc2_async_pipeline/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/tiered_responder.py"],
+      "ports": ["7300:7100", "8300:8100"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_async:6379/1",
+        "NATS_SERVERS": "nats://nats_pc2_async:4222",
+        "HEALTH_PORT": "8100",
+        "PORT": "7100",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "task_scheduler": {
+      "source_file": "/workspace/docker/pc2_async_pipeline/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/task_scheduler.py"],
+      "ports": ["7315:7115", "8315:8115"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_async:6379/2",
+        "NATS_SERVERS": "nats://nats_pc2_async:4222",
+        "HEALTH_PORT": "8115",
+        "PORT": "7115",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "advanced_router": {
+      "source_file": "/workspace/docker/pc2_async_pipeline/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/advanced_router.py"],
+      "ports": ["7320:7120", "8320:8120"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_async:6379/3",
+        "NATS_SERVERS": "nats://nats_pc2_async:4222",
+        "HEALTH_PORT": "8120",
+        "PORT": "7120",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "memory_orchestrator_service": {
+      "source_file": "/workspace/docker/pc2_memory_stack/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/memory_orchestrator_service.py"],
+      "ports": ["7240:7140", "8240:8140"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_HOST": "redis_pc2_memory",
+        "REDIS_PORT": "6379",
+        "NATS_SERVERS": "nats://nats_pc2_memory:4222",
+        "HEALTH_PORT": "8140",
+        "PORT": "7140",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "cache_manager": {
+      "source_file": "/workspace/docker/pc2_memory_stack/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/cache_manager.py"],
+      "ports": ["7202:7102", "8202:8102"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_HOST": "redis_pc2_memory",
+        "REDIS_PORT": "6379",
+        "NATS_SERVERS": "nats://nats_pc2_memory:4222",
+        "HEALTH_PORT": "8102",
+        "PORT": "7102",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "unified_memory_reasoning_agent": {
+      "source_file": "/workspace/docker/pc2_memory_stack/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/unified_memory_reasoning_agent.py"],
+      "ports": ["7220:7120", "8220:8120"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_HOST": "redis_pc2_memory",
+        "REDIS_PORT": "6379",
+        "NATS_SERVERS": "nats://nats_pc2_memory:4222",
+        "HEALTH_PORT": "8120",
+        "PORT": "7120",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "context_manager": {
+      "source_file": "/workspace/docker/pc2_memory_stack/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/context_manager.py"],
+      "ports": ["7250:7150", "8250:8150"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_HOST": "redis_pc2_memory",
+        "REDIS_PORT": "6379",
+        "NATS_SERVERS": "nats://nats_pc2_memory:4222",
+        "HEALTH_PORT": "8150",
+        "PORT": "7150",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "experience_tracker": {
+      "source_file": "/workspace/docker/pc2_memory_stack/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/experience_tracker.py"],
+      "ports": ["7260:7160", "8260:8160"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_HOST": "redis_pc2_memory",
+        "REDIS_PORT": "6379",
+        "NATS_SERVERS": "nats://nats_pc2_memory:4222",
+        "HEALTH_PORT": "8160",
+        "PORT": "7160",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "memory_scheduler": {
+      "source_file": "/workspace/docker/pc2_memory_stack/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/memory_scheduler.py"],
+      "ports": ["7242:7142", "8242:8142"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_HOST": "redis_pc2_memory",
+        "REDIS_PORT": "6379",
+        "NATS_SERVERS": "nats://nats_pc2_memory:4222",
+        "HEALTH_PORT": "8142",
+        "PORT": "7142",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "filesystem_assistant_agent": {
+      "source_file": "/workspace/docker/pc2_utility_suite/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/filesystem_assistant_agent.py"],
+      "ports": ["7423:7123", "8423:8123"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_utility:6379/1",
+        "NATS_SERVERS": "nats://nats_pc2_utility:4222",
+        "HEALTH_PORT": "8123",
+        "PORT": "7123",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "remote_connector_agent": {
+      "source_file": "/workspace/docker/pc2_utility_suite/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/remote_connector_agent.py"],
+      "ports": ["7424:7124", "8424:8124"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_utility:6379/2",
+        "NATS_SERVERS": "nats://nats_pc2_utility:4222",
+        "HEALTH_PORT": "8124",
+        "PORT": "7124",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "tutor_agent": {
+      "source_file": "/workspace/docker/pc2_tutoring_cpu/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/tutor_agent.py"],
+      "ports": ["7408:7108", "8408:8108"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_tutoring:6379/0",
+        "NATS_SERVERS": "nats://nats_pc2_tutoring:4222",
+        "HEALTH_PORT": "8108",
+        "PORT": "7108",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "tutoring_agent": {
+      "source_file": "/workspace/docker/pc2_tutoring_cpu/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/tutoring_agent.py"],
+      "ports": ["7431:7131", "8431:8131"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_tutoring:6379/1",
+        "NATS_SERVERS": "nats://nats_pc2_tutoring:4222",
+        "HEALTH_PORT": "8131",
+        "PORT": "7131",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "vision_processing_agent": {
+      "source_file": "/workspace/docker/pc2_vision_dream_gpu/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/VisionProcessingAgent.py"],
+      "ports": ["7450:7150", "8450:8150"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_vision:6379/0",
+        "NATS_SERVERS": "nats://nats_pc2_vision:4222",
+        "HEALTH_PORT": "8150",
+        "PORT": "7150",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "dream_world_agent": {
+      "source_file": "/workspace/docker/pc2_vision_dream_gpu/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/DreamWorldAgent.py"],
+      "ports": ["7404:7104", "8404:8104"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_vision:6379/1",
+        "NATS_SERVERS": "nats://nats_pc2_vision:4222",
+        "HEALTH_PORT": "8104",
+        "PORT": "7104",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "dreaming_mode_agent": {
+      "source_file": "/workspace/docker/pc2_vision_dream_gpu/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/DreamingModeAgent.py"],
+      "ports": ["7427:7127", "8427:8127"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_vision:6379/2",
+        "NATS_SERVERS": "nats://nats_pc2_vision:4222",
+        "HEALTH_PORT": "8127",
+        "PORT": "7127",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "unified_web_agent": {
+      "source_file": "/workspace/docker/pc2_web_interface/docker-compose.yml",
+      "command": ["python", "pc2_code/agents/unified_web_agent.py"],
+      "ports": ["7426:7126", "8426:8126", "3000:3000", "8080:8080"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis_pc2_web:6379/0",
+        "NATS_SERVERS": "nats://nats_pc2_web:4222",
+        "HEALTH_PORT": "8126",
+        "PORT": "7126",
+        "WEB_PORT": "8080",
+        "DEV_PORT": "3000",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "tutoring_service_agent": {
+      "source_file": "/workspace/pc2_code/agents/tutoring_service_agent.py",
+      "command": ["python", "pc2_code/agents/tutoring_service_agent.py"],
+      "ports": ["8032:8032", "9032:9032"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis:6379/0",
+        "NATS_SERVERS": "nats://nats:4222",
+        "HEALTH_PORT": "9032",
+        "PORT": "8032",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "custom_tutoring_test": {
+      "source_file": "/workspace/pc2_code/agents/custom_tutoring_test.py",
+      "command": ["python", "pc2_code/agents/custom_tutoring_test.py"],
+      "ports": ["8033:8033", "9033:9033"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis:6379/0",
+        "NATS_SERVERS": "nats://nats:4222",
+        "HEALTH_PORT": "9033",
+        "PORT": "8033",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "test_tutoring_feature": {
+      "source_file": "/workspace/pc2_code/agents/test_tutoring_feature.py",
+      "command": ["python", "pc2_code/agents/test_tutoring_feature.py"],
+      "ports": ["8034:8034", "9034:9034"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis:6379/0",
+        "NATS_SERVERS": "nats://nats:4222",
+        "HEALTH_PORT": "9034",
+        "PORT": "8034",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "health_monitor": {
+      "source_file": "/workspace/pc2_code/agents/health_monitor.py",
+      "command": ["python", "pc2_code/agents/health_monitor.py"],
+      "ports": ["8035:8035", "9035:9035"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis:6379/0",
+        "NATS_SERVERS": "nats://nats:4222",
+        "HEALTH_PORT": "9035",
+        "PORT": "8035",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "performance_monitor": {
+      "source_file": "/workspace/pc2_code/agents/performance_monitor.py",
+      "command": ["python", "pc2_code/agents/performance_monitor.py"],
+      "ports": ["8036:8036", "9036:9036"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis:6379/0",
+        "NATS_SERVERS": "nats://nats:4222",
+        "HEALTH_PORT": "9036",
+        "PORT": "8036",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "monitor_web_ports": {
+      "source_file": "/workspace/pc2_code/agents/monitor_web_ports.py",
+      "command": ["python", "pc2_code/agents/monitor_web_ports.py"],
+      "ports": ["8037:8037", "9037:9037"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "REDIS_URL": "redis://redis:6379/0",
+        "NATS_SERVERS": "nats://nats:4222",
+        "HEALTH_PORT": "9037",
+        "PORT": "8037",
+        "PC2_ENVIRONMENT": "true"
+      },
+      "depends_on": ["redis", "nats"]
+    }
+  }
+}

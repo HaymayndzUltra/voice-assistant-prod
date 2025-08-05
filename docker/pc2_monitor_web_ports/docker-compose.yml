@@ -1,0 +1,41 @@
+networks:
+  pc2_monitor_web_ports_net:
+    driver: bridge
+services:
+  pc2_monitor_web_ports:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_monitor_web_ports/Dockerfile
+    command:
+    - python
+    - pc2_code/agents/monitor_web_ports.py
+    container_name: pc2_monitor_web_ports
+    depends_on:
+    - redis
+    - nats
+    environment:
+      HEALTH_PORT: '9037'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats:4222
+      PC2_ENVIRONMENT: 'true'
+      PORT: '8037'
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:9037/health
+      timeout: 10s
+    image: pc2_monitor_web_ports:latest
+    networks:
+    - pc2_monitor_web_ports_net
+    ports:
+    - 8037:8037
+    - 8037:9037
+    restart: unless-stopped
+version: '3.8'

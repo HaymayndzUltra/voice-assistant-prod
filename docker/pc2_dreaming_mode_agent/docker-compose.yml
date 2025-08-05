@@ -1,0 +1,41 @@
+networks:
+  pc2_dreaming_mode_agent_net:
+    driver: bridge
+services:
+  pc2_dreaming_mode_agent:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_dreaming_mode_agent/Dockerfile
+    command:
+    - python
+    - pc2_code/agents/DreamingModeAgent.py
+    container_name: pc2_dreaming_mode_agent
+    depends_on:
+    - redis
+    - nats
+    environment:
+      HEALTH_PORT: '8127'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_pc2_vision:4222
+      PC2_ENVIRONMENT: 'true'
+      PORT: '7127'
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis_pc2_vision:6379/2
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8127/health
+      timeout: 10s
+    image: pc2_dreaming_mode_agent:latest
+    networks:
+    - pc2_dreaming_mode_agent_net
+    ports:
+    - 8427:7127
+    - 8427:8127
+    restart: unless-stopped
+version: '3.8'

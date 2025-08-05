@@ -1,0 +1,42 @@
+networks:
+  pc2_unified_memory_reasoning_agent_net:
+    driver: bridge
+services:
+  pc2_unified_memory_reasoning_agent:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_unified_memory_reasoning_agent/Dockerfile
+    command:
+    - python
+    - pc2_code/agents/unified_memory_reasoning_agent.py
+    container_name: pc2_unified_memory_reasoning_agent
+    depends_on:
+    - redis
+    - nats
+    environment:
+      HEALTH_PORT: '8120'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_pc2_memory:4222
+      PC2_ENVIRONMENT: 'true'
+      PORT: '7120'
+      PYTHONPATH: /app
+      REDIS_HOST: redis_pc2_memory
+      REDIS_PORT: '6379'
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8120/health
+      timeout: 10s
+    image: pc2_unified_memory_reasoning_agent:latest
+    networks:
+    - pc2_unified_memory_reasoning_agent_net
+    ports:
+    - 8220:7120
+    - 8220:8120
+    restart: unless-stopped
+version: '3.8'

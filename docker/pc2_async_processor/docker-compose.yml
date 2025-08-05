@@ -1,0 +1,41 @@
+networks:
+  pc2_async_processor_net:
+    driver: bridge
+services:
+  pc2_async_processor:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_async_processor/Dockerfile
+    command:
+    - python
+    - pc2_code/agents/async_processor.py
+    container_name: pc2_async_processor
+    depends_on:
+    - redis
+    - nats
+    environment:
+      HEALTH_PORT: '8101'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_pc2_async:4222
+      PC2_ENVIRONMENT: 'true'
+      PORT: '7101'
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis_pc2_async:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8101/health
+      timeout: 10s
+    image: pc2_async_processor:latest
+    networks:
+    - pc2_async_processor_net
+    ports:
+    - 8301:7101
+    - 8301:8101
+    restart: unless-stopped
+version: '3.8'

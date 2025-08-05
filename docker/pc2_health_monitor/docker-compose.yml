@@ -1,0 +1,41 @@
+networks:
+  pc2_health_monitor_net:
+    driver: bridge
+services:
+  pc2_health_monitor:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_health_monitor/Dockerfile
+    command:
+    - python
+    - pc2_code/agents/health_monitor.py
+    container_name: pc2_health_monitor
+    depends_on:
+    - redis
+    - nats
+    environment:
+      HEALTH_PORT: '9035'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats:4222
+      PC2_ENVIRONMENT: 'true'
+      PORT: '8035'
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:9035/health
+      timeout: 10s
+    image: pc2_health_monitor:latest
+    networks:
+    - pc2_health_monitor_net
+    ports:
+    - 8035:8035
+    - 8035:9035
+    restart: unless-stopped
+version: '3.8'

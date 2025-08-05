@@ -1,0 +1,41 @@
+networks:
+  pc2_tutoring_agent_net:
+    driver: bridge
+services:
+  pc2_tutoring_agent:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_tutoring_agent/Dockerfile
+    command:
+    - python
+    - pc2_code/agents/tutoring_agent.py
+    container_name: pc2_tutoring_agent
+    depends_on:
+    - redis
+    - nats
+    environment:
+      HEALTH_PORT: '8131'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_pc2_tutoring:4222
+      PC2_ENVIRONMENT: 'true'
+      PORT: '7131'
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis_pc2_tutoring:6379/1
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8131/health
+      timeout: 10s
+    image: pc2_tutoring_agent:latest
+    networks:
+    - pc2_tutoring_agent_net
+    ports:
+    - 8431:7131
+    - 8431:8131
+    restart: unless-stopped
+version: '3.8'

@@ -1,8 +1,8 @@
 {
-  "current_task_id": "20240524_agent_migration_plan",
-  "current_task_description": "Action plan to migrate monolithic Docker Compose services into individual, containerized agent services.",
+  "current_task_id": "migrate_pc2_agents_to_individual_containers",
+  "current_task_description": "Action plan to migrate PC-2 agents from grouped Docker Compose files to individual, containerized services, enhancing the existing migration framework.",
   "status": "completed",
-  "last_updated": "2025-08-06T02:59:31.665888+08:00",
+  "last_updated": "2025-08-06T03:49:34.429414+08:00",
   "todos_count": 6,
   "completed_todos": 6
 }

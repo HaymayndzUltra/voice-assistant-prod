@@ -1,0 +1,42 @@
+networks:
+  pc2_memory_orchestrator_service_net:
+    driver: bridge
+services:
+  pc2_memory_orchestrator_service:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_memory_orchestrator_service/Dockerfile
+    command:
+    - python
+    - pc2_code/agents/memory_orchestrator_service.py
+    container_name: pc2_memory_orchestrator_service
+    depends_on:
+    - redis
+    - nats
+    environment:
+      HEALTH_PORT: '8140'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_pc2_memory:4222
+      PC2_ENVIRONMENT: 'true'
+      PORT: '7140'
+      PYTHONPATH: /app
+      REDIS_HOST: redis_pc2_memory
+      REDIS_PORT: '6379'
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8140/health
+      timeout: 10s
+    image: pc2_memory_orchestrator_service:latest
+    networks:
+    - pc2_memory_orchestrator_service_net
+    ports:
+    - 8240:7140
+    - 8240:8140
+    restart: unless-stopped
+version: '3.8'
