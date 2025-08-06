@@ -58,8 +58,8 @@ async def test_local_stt_cloud_tts():
         print("   Fallback: OpenAI Whisper (cloud)")
         print()
         print("🔊 TTS: CLOUD FIRST") 
-        print("   Primary: ElevenLabs (need API key)")
-        print("   Fallback: OpenAI TTS-HD (working)")
+        print("   Primary: OpenAI TTS-1-HD (working)")
+        print("   Fallback: Google Cloud TTS")
         
         # Check if Whisper models are downloaded
         print("\n💾 Local Whisper Models:")

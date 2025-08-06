@@ -67,8 +67,8 @@ class HybridAPIManager:
             
             # TTS Configuration (Cloud First)
             'tts': {
-                'primary_provider': os.getenv('TTS_PRIMARY_PROVIDER', 'elevenlabs'),
-                'fallback_provider': os.getenv('TTS_FALLBACK_PROVIDER', 'openai'),
+                'primary_provider': os.getenv('TTS_PRIMARY_PROVIDER', 'openai'),
+                'fallback_provider': os.getenv('TTS_FALLBACK_PROVIDER', 'google'),
                 'use_local_fallback': os.getenv('TTS_USE_LOCAL_FALLBACK', 'true').lower() == 'true'
             },
             
@@ -95,7 +95,7 @@ class HybridAPIManager:
                 'api_base': os.getenv('OPENAI_API_BASE', 'https://api.openai.com/v1'),
                 'organization': os.getenv('OPENAI_ORGANIZATION'),
                 'stt_model': os.getenv('OPENAI_STT_MODEL', 'whisper-1'),
-                'tts_model': os.getenv('OPENAI_TTS_MODEL', 'tts-1'),
+                'tts_model': os.getenv('OPENAI_TTS_MODEL', 'tts-1-hd'),
                 'tts_voice': os.getenv('OPENAI_TTS_VOICE', 'alloy')
             },
             'google': {
@@ -116,11 +116,12 @@ class HybridAPIManager:
                 'secret_access_key': os.getenv('AWS_SECRET_ACCESS_KEY'),
                 'region': os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
             },
-            'elevenlabs': {
-                'api_key': os.getenv('ELEVENLABS_API_KEY'),
-                'voice_id': os.getenv('ELEVENLABS_VOICE_ID'),
-                'model_id': os.getenv('ELEVENLABS_MODEL_ID', 'eleven_monolingual_v1')
-            }
+            # ElevenLabs removed - user doesn't have API key
+            # 'elevenlabs': {
+            #     'api_key': os.getenv('ELEVENLABS_API_KEY'),
+            #     'voice_id': os.getenv('ELEVENLABS_VOICE_ID'),
+            #     'model_id': os.getenv('ELEVENLABS_MODEL_ID', 'eleven_monolingual_v1')
+            # }
         }
         
     def initialize_clients(self):
@@ -309,9 +310,7 @@ class HybridAPIManager:
             
     async def _tts_with_provider(self, text: str, voice: str, language: str, provider: str) -> bytes:
         """TTS implementation for specific provider"""
-        if provider == 'elevenlabs':
-            return await self._elevenlabs_tts(text, voice)
-        elif provider == 'openai':
+        if provider == 'openai':
             return await self._openai_tts(text, voice)
         elif provider == 'google':
             return await self._google_tts(text, voice, language)
@@ -319,6 +318,9 @@ class HybridAPIManager:
             return await self._azure_tts(text, voice, language)
         elif provider == 'aws':
             return await self._aws_tts(text, voice, language)
+        # ElevenLabs removed - user doesn't have API key
+        # elif provider == 'elevenlabs':
+        #     return await self._elevenlabs_tts(text, voice)
         else:
             raise ValueError(f"Unknown TTS provider: {provider}")
             
@@ -377,23 +379,23 @@ class HybridAPIManager:
         )
         return response.choices[0].message.content
         
-    # ElevenLabs implementation
-    async def _elevenlabs_tts(self, text: str, voice: str) -> bytes:
-        """ElevenLabs TTS"""
-        voice_id = voice or self.credentials['elevenlabs']['voice_id']
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
-                headers={"xi-api-key": self.credentials['elevenlabs']['api_key']},
-                json={
-                    "text": text,
-                    "model_id": self.credentials['elevenlabs']['model_id'],
-                    "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
-                }
-            )
-            response.raise_for_status()
-            return response.content
+    # ElevenLabs implementation removed - user doesn't have API key
+    # async def _elevenlabs_tts(self, text: str, voice: str) -> bytes:
+    #     """ElevenLabs TTS"""
+    #     voice_id = voice or self.credentials['elevenlabs']['voice_id']
+    #     
+    #     async with httpx.AsyncClient() as client:
+    #         response = await client.post(
+    #             f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+    #             headers={"xi-api-key": self.credentials['elevenlabs']['api_key']},
+    #             json={
+    #                 "text": text,
+    #                 "model_id": self.credentials['elevenlabs']['model_id'],
+    #                 "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
+    #             }
+    #         )
+    #         response.raise_for_status()
+    #         return response.content
             
     # Local fallback implementations
     async def _stt_local_fallback(self, audio_data: bytes, language: str) -> str:
