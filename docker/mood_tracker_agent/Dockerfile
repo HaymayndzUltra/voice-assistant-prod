@@ -1,11 +1,13 @@
-FROM python:3.11-slim
+# Optimized Dockerfile - slim base image with pip cache disabled
+FROM python:3.10-slim-bullseye
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install \
+    && rm -rf /var/lib/apt/lists/* -y curl && rm -rf /var/lib/apt/lists/*
 
 COPY docker/mood_tracker_agent/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
 
 COPY . .
 

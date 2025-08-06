@@ -1,0 +1,745 @@
+{
+  "pc2": [
+    {
+      "name": "pc2_advanced_router",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_agent_trust_scorer",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_async_processor",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_authentication_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_cache_manager",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_context_manager",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_dream_world_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_dreaming_mode_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_experience_tracker",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_filesystem_assistant_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_memory_orchestrator_service",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_observability_hub",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_proactive_context_monitor",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_remote_connector_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_resource_manager",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_task_scheduler",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_tiered_responder",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_tutor_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_tutoring_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_unified_memory_reasoning_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_unified_utils_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_unified_web_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "pc2_vision_processing_agent",
+      "type": "PC2",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    }
+  ],
+  "mainpc": [
+    {
+      "name": "active_learning_monitor",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "advanced_command_handler",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "audio_capture",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "chain_of_thought_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "chitchat_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "cloud_translation_service",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "code_generator",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "cognitive_model_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "dynamic_identity_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "emotion_engine",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "emotion_synthesis_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "empathy_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "executor",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "face_recognition_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "feedback_handler",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "fused_audio_preprocessor",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "go_t_to_t_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "goal_manager",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "human_awareness",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "human_awareness_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "intention_validator",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "intention_validator_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "knowledge_base",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "learning_manager",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "learning_opportunity_detector",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "learning_orchestration_service",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "memory_client",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "model_manager_suite",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "model_orchestrator",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "mood_tracker",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "mood_tracker_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "nlu_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "observability_hub",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "predictive_health_monitor",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "proactive_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "request_coordinator",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "responder",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "scripts",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "service_registry",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "session_memory_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "shared",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "smart_home_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "streaming_interrupt_handler",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "streaming_language_analyzer",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "streaming_speech_recognition",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "streaming_tts_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "stt_service",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "system_digital_twin",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "tiny_llama_service_enhanced",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "tone_detector",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "translation_services",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "tts_service",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "unified_system_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "voice_profiling",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "voice_profiling_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "vram_optimizer",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "vram_optimizer_agent",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    },
+    {
+      "name": "wake_word_detector",
+      "type": "MAIN-PC",
+      "dockerfile_exists": true,
+      "compose_exists": true,
+      "healthcheck_exists": true,
+      "pinned_versions": true,
+      "status": "PASS"
+    }
+  ],
+  "summary": {
+    "total_services": 81,
+    "passed_services": 81,
+    "failed_services": 0,
+    "pass_rate": "100.0%",
+    "missing_dockerfile": 0,
+    "missing_compose": 0,
+    "missing_healthcheck": 0,
+    "unpinned_versions": 0
+  }
+}

@@ -14,6 +14,12 @@ services:
     environment:
       CUDA_VISIBLE_DEVICES: '0'
       LOG_LEVEL: INFO
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test: curl -f http://localhost:8000/health || exit 1
+      timeout: 10s
     image: vram_optimizer:latest
     networks:
     - vram_optimizer_net

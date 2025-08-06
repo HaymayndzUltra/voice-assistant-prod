@@ -19,6 +19,12 @@ services:
       NATS_SERVERS: nats://nats_utility:4222
       REDIS_URL: redis://redis_utility:6379/0
       SERVICE_REGISTRY_REDIS_URL: redis://redis_utility:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test: curl -f http://localhost:8000/health || exit 1
+      timeout: 10s
     image: code_generator:latest
     networks:
     - code_generator_net

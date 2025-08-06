@@ -15,6 +15,12 @@ services:
       LOG_LEVEL: INFO
       NATS_SERVERS: nats://nats_emotion:4222
       REDIS_URL: redis://redis_emotion:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test: curl -f http://localhost:8000/health || exit 1
+      timeout: 10s
     image: empathy_agent:latest
     networks:
     - empathy_agent_net

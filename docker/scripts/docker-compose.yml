@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  scripts:
+    build: .
+    container_name: scripts
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
+    command: ["tail", "-f", "/dev/null"]  # Keep container running
+    healthcheck:
+      test: ["CMD", "echo", "Scripts container healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mainpc_network
+
+networks:
+  mainpc_network:
+    external: true

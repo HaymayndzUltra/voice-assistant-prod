@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  shared:
+    build: .
+    container_name: shared
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: ["python", "-c", "import time; time.sleep(3600)"]  # Keep running for 1 hour
+    healthcheck:
+      test: ["CMD", "echo", "Shared libraries container healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mainpc_network
+
+networks:
+  mainpc_network:
+    external: true

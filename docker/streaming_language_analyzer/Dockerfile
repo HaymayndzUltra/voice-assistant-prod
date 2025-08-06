@@ -1,7 +1,9 @@
-FROM python:3.10-slim
-RUN apt-get update && apt-get install -y --no-install-recommends curl gcc build-essential && rm -rf /var/lib/apt/lists/*
+# Optimized Dockerfile - slim base image with pip cache disabled
+FROM python:3.10-slim-bullseye
+RUN apt-get update && apt-get install \
+    && rm -rf /var/lib/apt/lists/* -y --no-install-recommends curl gcc build-essential && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip install --disable-pip-version-check --no-cache-dir -r /tmp/requirements.txt
 COPY main_pc_code /app/main_pc_code
 COPY common /app/common
 COPY common_utils /app/common_utils

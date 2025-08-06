@@ -1,15 +1,17 @@
-FROM python:3.11-slim
+# Optimized Dockerfile - slim base image with pip cache disabled
+FROM python:3.10-slim-bullseye
 
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install \
+    && rm -rf /var/lib/apt/lists/* -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
 COPY docker/go_t_to_t_agent/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
 
 # Copy the entire project
 COPY . .

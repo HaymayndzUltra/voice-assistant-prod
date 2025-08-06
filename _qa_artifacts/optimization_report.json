@@ -1,0 +1,349 @@
+{
+  "summary": {
+    "total_services": 78,
+    "services_with_requirements": 78,
+    "unique_packages": 40
+  },
+  "base_image_recommendations": {
+    "gpu_services": {
+      "count": 4,
+      "services": [
+        "pc2_dream_world_agent",
+        "pc2_dreaming_mode_agent",
+        "pc2_vision_processing_agent",
+        "tiny_llama_service_enhanced"
+      ],
+      "recommended_base": "nvidia/cuda:12.1.1-runtime-ubuntu22.04"
+    },
+    "cpu_services": {
+      "count": 77,
+      "services": [
+        "pc2_advanced_router",
+        "pc2_agent_trust_scorer",
+        "pc2_async_processor",
+        "pc2_authentication_agent",
+        "pc2_cache_manager",
+        "pc2_context_manager",
+        "pc2_experience_tracker",
+        "pc2_filesystem_assistant_agent",
+        "pc2_memory_orchestrator_service",
+        "pc2_observability_hub",
+        "pc2_proactive_context_monitor",
+        "pc2_remote_connector_agent",
+        "pc2_resource_manager",
+        "pc2_task_scheduler",
+        "pc2_tiered_responder",
+        "pc2_tutor_agent",
+        "pc2_tutoring_agent",
+        "pc2_unified_memory_reasoning_agent",
+        "pc2_unified_utils_agent",
+        "pc2_unified_web_agent",
+        "active_learning_monitor",
+        "advanced_command_handler",
+        "audio_capture",
+        "chain_of_thought_agent",
+        "chitchat_agent",
+        "cloud_translation_service",
+        "code_generator",
+        "cognitive_model_agent",
+        "dynamic_identity_agent",
+        "emotion_engine",
+        "emotion_synthesis_agent",
+        "empathy_agent",
+        "executor",
+        "face_recognition_agent",
+        "feedback_handler",
+        "fused_audio_preprocessor",
+        "go_t_to_t_agent",
+        "goal_manager",
+        "human_awareness",
+        "human_awareness_agent",
+        "intention_validator",
+        "intention_validator_agent",
+        "knowledge_base",
+        "learning_manager",
+        "learning_opportunity_detector",
+        "learning_orchestration_service",
+        "memory_client",
+        "model_manager_suite",
+        "model_orchestrator",
+        "mood_tracker",
+        "mood_tracker_agent",
+        "nlu_agent",
+        "observability_hub",
+        "predictive_health_monitor",
+        "proactive_agent",
+        "request_coordinator",
+        "responder",
+        "scripts",
+        "service_registry",
+        "session_memory_agent",
+        "shared",
+        "smart_home_agent",
+        "streaming_interrupt_handler",
+        "streaming_language_analyzer",
+        "streaming_speech_recognition",
+        "streaming_tts_agent",
+        "stt_service",
+        "system_digital_twin",
+        "tone_detector",
+        "translation_services",
+        "tts_service",
+        "unified_system_agent",
+        "voice_profiling",
+        "voice_profiling_agent",
+        "vram_optimizer",
+        "vram_optimizer_agent",
+        "wake_word_detector"
+      ],
+      "recommended_base": "python:3.10-slim-bullseye"
+    }
+  },
+  "top_dependencies": [
+    [
+      "psutil",
+      24
+    ],
+    [
+      "pyzmq",
+      23
+    ],
+    [
+      "pydantic",
+      14
+    ],
+    [
+      "numpy",
+      14
+    ],
+    [
+      "redis",
+      7
+    ],
+    [
+      "fastapi",
+      7
+    ],
+    [
+      "uvicorn",
+      7
+    ],
+    [
+      "requests",
+      7
+    ],
+    [
+      "torch",
+      6
+    ],
+    [
+      "scipy",
+      3
+    ],
+    [
+      "remote_api_adapter",
+      3
+    ],
+    [
+      "dataclasses",
+      2
+    ],
+    [
+      "signal",
+      2
+    ],
+    [
+      "noisereduce",
+      2
+    ],
+    [
+      "zmq",
+      2
+    ],
+    [
+      "transformers",
+      2
+    ],
+    [
+      "PyYAML",
+      2
+    ],
+    [
+      "pyttsx3",
+      2
+    ],
+    [
+      "enum",
+      1
+    ],
+    [
+      "importlib",
+      1
+    ]
+  ],
+  "merged_dependencies": {
+    "pydantic": [
+      "pydantic==2.5.0",
+      "pydantic"
+    ],
+    "redis": [
+      "redis"
+    ],
+    "psutil": [
+      "psutil"
+    ],
+    "pyzmq": [
+      "pyzmq",
+      "pyzmq==25.1.1"
+    ],
+    "torch": [
+      "torch==2.1.1+cu118",
+      "torch==2.1.1",
+      "torch"
+    ],
+    "dataclasses": [
+      "dataclasses"
+    ],
+    "enum": [
+      "enum"
+    ],
+    "numpy": [
+      "numpy",
+      "numpy==1.24.3"
+    ],
+    "importlib": [
+      "importlib"
+    ],
+    "signal": [
+      "signal"
+    ],
+    "filterpy": [
+      "filterpy"
+    ],
+    "insightface": [
+      "insightface"
+    ],
+    "onnxruntime": [
+      "onnxruntime"
+    ],
+    "opencv-python": [
+      "opencv-python"
+    ],
+    "noisereduce": [
+      "noisereduce"
+    ],
+    "fastapi": [
+      "fastapi==0.104.1"
+    ],
+    "uvicorn": [
+      "uvicorn==0.24.0"
+    ],
+    "zmq": [
+      "zmq==0.0.0"
+    ],
+    "requests": [
+      "requests==2.31.0"
+    ],
+    "transformers": [
+      "transformers==4.35.2"
+    ],
+    "scipy": [
+      "scipy==1.11.4",
+      "scipy"
+    ],
+    "heapq": [
+      "heapq"
+    ],
+    "remote_api_adapter": [
+      "remote_api_adapter"
+    ],
+    "sentence_transformers": [
+      "sentence_transformers"
+    ],
+    "PyYAML": [
+      "PyYAML"
+    ],
+    "platform": [
+      "platform"
+    ],
+    "TTS": [
+      "TTS"
+    ],
+    "pyttsx3": [
+      "pyttsx3"
+    ],
+    "tkinter": [
+      "tkinter"
+    ],
+    "plugp100": [
+      "plugp100"
+    ],
+    "orjson": [
+      "orjson"
+    ],
+    "wave": [
+      "wave"
+    ],
+    "sounddevice": [
+      "sounddevice"
+    ],
+    "win32com": [
+      "win32com"
+    ],
+    "prometheus_api_client": [
+      "prometheus_api_client"
+    ],
+    "llama-cpp-python": [
+      "llama-cpp-python==0.2.11"
+    ],
+    "accelerate": [
+      "accelerate==0.24.1"
+    ],
+    "bitsandbytes": [
+      "bitsandbytes==0.41.3"
+    ],
+    "xformers": [
+      "xformers==0.0.22.post7"
+    ],
+    "pvporcupine": [
+      "pvporcupine"
+    ]
+  },
+  "top_5_optimizations": [
+    {
+      "priority": 1,
+      "title": "Switch CPU-only images to python:3.10-slim-bullseye",
+      "description": "Use pip install --no-cache-dir to cut ~65% of image size",
+      "affected_services": 77,
+      "estimated_savings": "~65% image size reduction"
+    },
+    {
+      "priority": 2,
+      "title": "Unify CUDA base to nvidia/cuda:12.1.1-runtime-ubuntu22.04",
+      "description": "Avoid driver mismatch across GPU services",
+      "affected_services": 4,
+      "estimated_savings": "Reduced maintenance, consistent CUDA environment"
+    },
+    {
+      "priority": 3,
+      "title": "Add HEALTHCHECK to all containers",
+      "description": "Missing in containers without healthcheck",
+      "affected_services": "15 services (from structural scan)",
+      "estimated_savings": "Improved reliability and monitoring"
+    },
+    {
+      "priority": 4,
+      "title": "Enable pip cache pruning",
+      "description": "Use --build-arg PIP_DISABLE_PIP_VERSION_CHECK=1 and prune cache",
+      "affected_services": "All services",
+      "estimated_savings": "Reduced layer bloat"
+    },
+    {
+      "priority": 5,
+      "title": "Migrate to multi-stage builds",
+      "description": "Builder \u2192 runtime for compiled dependencies",
+      "affected_services": "Services with PyTorch, TensorRT, etc.",
+      "estimated_savings": "Drop unused toolchains from final image"
+    }
+  ]
+}

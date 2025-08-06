@@ -1,0 +1,126 @@
+# PyYAML (used in 2 services)
+PyYAML
+
+# TTS (used in 1 services)
+TTS
+
+# accelerate (used in 1 services)
+accelerate==0.24.1
+
+# bitsandbytes (used in 1 services)
+bitsandbytes==0.41.3
+
+# dataclasses (used in 2 services)
+dataclasses
+
+# enum (used in 1 services)
+enum
+
+# fastapi (used in 7 services)
+fastapi==0.104.1
+
+# filterpy (used in 1 services)
+filterpy
+
+# heapq (used in 1 services)
+heapq
+
+# importlib (used in 1 services)
+importlib
+
+# insightface (used in 1 services)
+insightface
+
+# llama-cpp-python (used in 1 services)
+llama-cpp-python==0.2.11
+
+# noisereduce (used in 2 services)
+noisereduce
+
+# numpy (used in 14 services)
+numpy
+numpy==1.24.3
+
+# onnxruntime (used in 1 services)
+onnxruntime
+
+# opencv-python (used in 1 services)
+opencv-python
+
+# orjson (used in 1 services)
+orjson
+
+# platform (used in 1 services)
+platform
+
+# plugp100 (used in 1 services)
+plugp100
+
+# prometheus_api_client (used in 1 services)
+prometheus_api_client
+
+# psutil (used in 24 services)
+psutil
+
+# pvporcupine (used in 1 services)
+pvporcupine
+
+# pydantic (used in 14 services)
+pydantic
+pydantic==2.5.0
+
+# pyttsx3 (used in 2 services)
+pyttsx3
+
+# pyzmq (used in 23 services)
+pyzmq
+pyzmq==25.1.1
+
+# redis (used in 7 services)
+redis
+
+# remote_api_adapter (used in 3 services)
+remote_api_adapter
+
+# requests (used in 7 services)
+requests==2.31.0
+
+# scipy (used in 3 services)
+scipy
+scipy==1.11.4
+
+# sentence_transformers (used in 1 services)
+sentence_transformers
+
+# signal (used in 2 services)
+signal
+
+# sounddevice (used in 1 services)
+sounddevice
+
+# tkinter (used in 1 services)
+tkinter
+
+# torch (used in 6 services)
+torch
+torch==2.1.1
+torch==2.1.1+cu118
+
+# transformers (used in 2 services)
+transformers==4.35.2
+
+# uvicorn (used in 7 services)
+uvicorn==0.24.0
+
+# wave (used in 1 services)
+wave
+
+# win32com (used in 1 services)
+win32com
+
+# xformers (used in 1 services)
+xformers==0.0.22.post7
+
+# zmq (used in 2 services)
+zmq==0.0.0
+

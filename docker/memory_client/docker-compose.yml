@@ -19,6 +19,12 @@ services:
       NATS_SERVERS: nats://nats_memory:4222
       REDIS_URL: redis://redis_memory:6379/0
       SERVICE_REGISTRY_REDIS_URL: redis://redis_memory:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test: curl -f http://localhost:5715/health || exit 1
+      timeout: 10s
     image: memory_client:latest
     networks:
     - memory_client_net
