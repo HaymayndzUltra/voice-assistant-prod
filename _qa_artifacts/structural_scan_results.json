@@ -383,11 +383,11 @@
     {
       "name": "human_awareness_agent",
       "type": "MAIN-PC",
-      "dockerfile_exists": true,
-      "compose_exists": true,
-      "healthcheck_exists": true,
-      "pinned_versions": true,
-      "status": "PASS"
+      "dockerfile_exists": false,
+      "compose_exists": false,
+      "healthcheck_exists": false,
+      "pinned_versions": false,
+      "status": "FAIL"
     },
     {
       "name": "intention_validator",
@@ -401,11 +401,11 @@
     {
       "name": "intention_validator_agent",
       "type": "MAIN-PC",
-      "dockerfile_exists": true,
-      "compose_exists": true,
-      "healthcheck_exists": true,
-      "pinned_versions": true,
-      "status": "PASS"
+      "dockerfile_exists": false,
+      "compose_exists": false,
+      "healthcheck_exists": false,
+      "pinned_versions": false,
+      "status": "FAIL"
     },
     {
       "name": "knowledge_base",
@@ -482,11 +482,11 @@
     {
       "name": "mood_tracker_agent",
       "type": "MAIN-PC",
-      "dockerfile_exists": true,
-      "compose_exists": true,
-      "healthcheck_exists": true,
-      "pinned_versions": true,
-      "status": "PASS"
+      "dockerfile_exists": false,
+      "compose_exists": false,
+      "healthcheck_exists": false,
+      "pinned_versions": false,
+      "status": "FAIL"
     },
     {
       "name": "nlu_agent",
@@ -698,11 +698,11 @@
     {
       "name": "voice_profiling_agent",
       "type": "MAIN-PC",
-      "dockerfile_exists": true,
-      "compose_exists": true,
-      "healthcheck_exists": true,
-      "pinned_versions": true,
-      "status": "PASS"
+      "dockerfile_exists": false,
+      "compose_exists": false,
+      "healthcheck_exists": false,
+      "pinned_versions": false,
+      "status": "FAIL"
     },
     {
       "name": "vram_optimizer",
@@ -716,11 +716,11 @@
     {
       "name": "vram_optimizer_agent",
       "type": "MAIN-PC",
-      "dockerfile_exists": true,
-      "compose_exists": true,
-      "healthcheck_exists": true,
-      "pinned_versions": true,
-      "status": "PASS"
+      "dockerfile_exists": false,
+      "compose_exists": false,
+      "healthcheck_exists": false,
+      "pinned_versions": false,
+      "status": "FAIL"
     },
     {
       "name": "wake_word_detector",
@@ -734,12 +734,12 @@
   ],
   "summary": {
     "total_services": 81,
-    "passed_services": 81,
-    "failed_services": 0,
-    "pass_rate": "100.0%",
-    "missing_dockerfile": 0,
-    "missing_compose": 0,
-    "missing_healthcheck": 0,
-    "unpinned_versions": 0
+    "passed_services": 76,
+    "failed_services": 5,
+    "pass_rate": "93.8%",
+    "missing_dockerfile": 5,
+    "missing_compose": 5,
+    "missing_healthcheck": 5,
+    "unpinned_versions": 5
   }
 }
