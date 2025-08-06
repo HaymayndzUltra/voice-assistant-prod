@@ -44,10 +44,7 @@ except ImportError:
 
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+logger = configure_logging(__name__))),
             "logs",
             str(PathManager.get_logs_dir() / "command_suggestion.log")
         )),

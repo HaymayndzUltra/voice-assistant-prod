@@ -16,9 +16,7 @@ from common.utils.log_setup import configure_logging
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "timeline_ui.log")),
+logger = configure_logging(__name__) / "timeline_ui.log")),
         logging.StreamHandler()
     ]
 )

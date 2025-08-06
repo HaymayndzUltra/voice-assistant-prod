@@ -39,9 +39,7 @@ class AgentMigrator:
         self.individual_compose_file = self.workspace_root / "docker-compose.individual.yml"
         
         # Setup logging
-        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(self.workspace_root / 'migration.log'),
+        logger = configure_logging(__name__),
                 logging.StreamHandler()
             ]
         )

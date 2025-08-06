@@ -33,9 +33,7 @@ if str(project_root) not in sys.path:
 log_dir = os.path.join(project_root, 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(os.path.join(log_dir, 'test_service_discovery.log'))
     ]
 )

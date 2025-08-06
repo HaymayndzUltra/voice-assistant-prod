@@ -46,34 +46,7 @@ from common.env_helpers import get_env
 LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "autonomous_web_assistant.log")
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("AutonomousWebAssistant")
-
-# ZMQ port for this agent
-AUTONOMOUS_WEB_ASSISTANT_PORT = 5604
-
-# Ports for required services
-ENHANCED_MODEL_ROUTER_PORT = 5601
-ENHANCED_WEB_SCRAPER_PORT = 5602
-CONTEXT_SUMMARIZER_PORT = 5610
-MODEL_MANAGER_PORT = 5556
-MEMORY_AGENT_PORT = 5596
-MODEL_MANAGER_HOST = "192.168.1.1"  # Main PC's IP address
-
-# Browser automation throttling to avoid rate limits
-MIN_DELAY_BETWEEN_REQUESTS = 2  # seconds
-
-class AutonomousWebAssistant:
-    """
-    Autonomous Web Assistant for proactive information retrieval and web navigation
-    """
-    
-    def __init__(self, zmq_port=AUTONOMOUS_WEB_ASSISTANT_PORT):
+logger = configure_logging(__name__):
         """Initialize the autonomous web assistant"""
         # ZMQ setup for this agent - using REP socket as specified
         self.context = zmq.Context()

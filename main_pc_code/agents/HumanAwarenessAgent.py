@@ -41,20 +41,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Setup logging
 LOG_PATH = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "human_awareness_agent.log"))
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("HumanAwarenessAgent")
-
-class HumanAwarenessAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="Humanawarenessagent")
-        """Initialize the Human Awareness Agent"""
-        # Load configuration
-        config_path = os.path.join('config', 'system_config.json')
+logger = configure_logging(__name__)
         with open(config_path, 'r') as f:
             config = json.load(f)
         

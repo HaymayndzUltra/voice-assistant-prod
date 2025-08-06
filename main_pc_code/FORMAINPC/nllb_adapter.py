@@ -168,10 +168,7 @@ if 'NLLB_IDLE_TIMEOUT' in os.environ:
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "nllb_translation_adapter.log")
 
-logger = configure_logging(__name__)
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file_path),
+logger = configure_logging(__name__),
         logging.StreamHandler(sys.stdout)  # Ensure console output
     ]
 )

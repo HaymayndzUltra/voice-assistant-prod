@@ -14,8 +14,7 @@ from dataclasses import dataclass, asdict
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = configure_logging(__name__)
 
 def get_philippines_time() -> datetime:
     """Get current Philippines time (UTC+8)"""

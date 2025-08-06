@@ -43,8 +43,7 @@ class CrossMachineSync:
         
     def _setup_logging(self) -> logging.Logger:
         """Setup logging for sync service"""
-        logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-        )
+        logger = configure_logging(__name__)
         return logging.getLogger("CrossMachineSync")
     
     def _detect_machine(self) -> str:

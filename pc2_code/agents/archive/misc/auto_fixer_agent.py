@@ -22,8 +22,7 @@ MAX_ATTEMPTS = 3
 RETRY_DELAY = 1  # seconds
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("AutoFixerAgent")
 
 class AutoFixerAgent(BaseAgent):

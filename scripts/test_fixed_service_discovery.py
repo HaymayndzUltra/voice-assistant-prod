@@ -38,8 +38,7 @@ COLORS = {
 }
 
 # Configure logging
-logger = configure_logging(__name__)s{COLORS["END"]} - %(name)s - %(levelname)s - %(message)s',
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("ServiceDiscoveryTest")
 
 def print_section(title):

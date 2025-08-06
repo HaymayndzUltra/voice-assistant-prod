@@ -41,9 +41,7 @@ except ImportError as e:
     print("="*80)
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "llm_translation_adapter.log"),
+logger = configure_logging(__name__) / "llm_translation_adapter.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )

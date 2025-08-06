@@ -33,9 +33,7 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', str(PathManager.get_logs_dir() / "fixed_translation.log")))
     ]
 )

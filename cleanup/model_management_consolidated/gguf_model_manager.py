@@ -47,9 +47,7 @@ except ImportError as e:
     print(f"WARNING: llama-cpp-python not available. GGUF models will not work. Error: {e}")
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(join_path("logs", "gguf_model_manager.log")),
+logger = configure_logging(__name__)),
         logging.StreamHandler()
     ]
 )

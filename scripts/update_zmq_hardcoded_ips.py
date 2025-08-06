@@ -24,8 +24,7 @@ from typing import List, Set
 from common.env_helpers import get_env
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 # Regular expressions for finding hardcoded ZMQ connections

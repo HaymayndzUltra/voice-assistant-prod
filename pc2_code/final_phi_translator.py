@@ -36,9 +36,7 @@ except ImportError:
 ENABLE_AUTH = True  # Can be disabled via command-line argument
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "phi_translator.log"),
+logger = configure_logging(__name__) / "phi_translator.log"),
         logging.StreamHandler()
     ]
 )

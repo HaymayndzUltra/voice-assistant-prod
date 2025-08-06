@@ -38,46 +38,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "model_voting_manager.log"))
 Path(LOG_PATH).parent.mkdir(exist_ok=True)
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-class ModelVotingManager(BaseAgent):
-    """
-    Manages model voting and selection using the LazyVoting system.
-    Acts as an interface between the Enhanced Model Router and LLM backends.
-    """
-    
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="ModelVotingManager")
-        """
-        Initialize the Model Voting Manager
-        
-        Args:
-            zmq_port: Port to listen for voting requests
-        """
-        # Initialize the LazyVoting system
-        self.voting_system = LazyVotingSystem()
-        
-        # Custom model configurations can be loaded from a config file
-        self.load_model_config()
-        
-        # Setup ZMQ communication
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-        
-        # Connect to the model execution backend
-        # This could be a direct connection to model servers or Ollama
-        self.model_backend_socket = self.context.socket(zmq.REQ)
-        self.model_backend_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.model_backend_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.model_backend_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5556")  # Model Manager port
+logger = configure_logging(__name__)}:5556")  # Model Manager port
         
         self.running = True
         self.request_count = 0

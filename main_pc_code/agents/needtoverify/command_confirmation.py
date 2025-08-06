@@ -11,7 +11,7 @@ import uuid
 from typing import Dict, Any, Optional, Tuple
 
 # Setup logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("CommandConfirmation")
 
 # Criticality levels

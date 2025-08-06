@@ -113,9 +113,7 @@ except ImportError:
 # Configure logging
 log_dir = 'logs'
 os.makedirs(log_dir, exist_ok=True)
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'model_manager_suite.log')),
+logger = configure_logging(__name__)),
         logging.StreamHandler(sys.stdout)
     ]
 )

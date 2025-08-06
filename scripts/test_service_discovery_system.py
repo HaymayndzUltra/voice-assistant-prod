@@ -24,8 +24,7 @@ import zmq
 from typing import Dict, Any, List, Optional, Tuple
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("ServiceDiscoveryTest")
 
 # Add project root to Python path

@@ -29,9 +29,7 @@ from datetime import datetime
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "voice_controller.log")),
+logger = configure_logging(__name__) / "voice_controller.log")),
         logging.StreamHandler()
     ]
 )

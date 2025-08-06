@@ -25,9 +25,7 @@ except ImportError:
 ENABLE_AUTH = True  # Can be disabled via command-line argument
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
+logger = configure_logging(__name__)
     ]
 )
 logger = logging.getLogger("PhiTranslationAdapter")

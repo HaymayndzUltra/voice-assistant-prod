@@ -29,8 +29,7 @@ from pc2_code.agents.UnifiedMemoryReasoningAgent import UnifiedMemoryReasoningAg
 from common.env_helpers import get_env
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("TestSecureTwinConnection")
 
 class TestSecureConnection:

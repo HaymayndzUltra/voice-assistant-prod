@@ -24,7 +24,7 @@ print("[DEBUG] Starting listener_debug.py")
 print("[DEBUG] Importing modules completed")
 
 # Set up basic logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("ListenerDebug")
 
 # Constants

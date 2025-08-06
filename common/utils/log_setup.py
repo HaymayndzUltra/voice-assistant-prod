@@ -67,7 +67,10 @@ def configure_logging(
     # File handler if requested
     if log_to_file:
         if log_dir is None:
-            log_dir = Path("/workspace/logs")
+            # Use project logs directory instead of /workspace/logs
+            import os
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            log_dir = Path(project_root) / "logs"
         
         log_dir.mkdir(exist_ok=True)
         log_file = log_dir / f"{name.replace('.', '_')}.log"

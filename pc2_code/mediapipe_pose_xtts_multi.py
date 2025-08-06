@@ -6,7 +6,7 @@ import time
 import logging
 from common.utils.log_setup import configure_logging
 
-logger = configure_logging(__name__)s] %(message)s')
+logger = configure_logging(__name__)
 
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils

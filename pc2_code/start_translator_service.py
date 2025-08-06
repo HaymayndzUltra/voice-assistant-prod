@@ -20,9 +20,7 @@ from common.utils.path_manager import PathManager
 from common.utils.log_setup import configure_logging
 
 # Setup logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "translator_service.log"),
+logger = configure_logging(__name__) / "translator_service.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )

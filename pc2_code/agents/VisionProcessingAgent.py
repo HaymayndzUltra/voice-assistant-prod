@@ -40,9 +40,7 @@ import psutil
 
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(Path(PathManager.get_project_root() / "logs" / str(PathManager.get_logs_dir() / "vision_processing_agent.log")))
     ]
 )

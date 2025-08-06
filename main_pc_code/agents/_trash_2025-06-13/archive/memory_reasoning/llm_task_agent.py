@@ -37,9 +37,7 @@ import psutil
 from datetime import datetime
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(name)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_task_agent.log")))
     ]
 )

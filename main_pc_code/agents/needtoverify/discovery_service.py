@@ -22,58 +22,7 @@ from common.utils.path_manager import PathManager
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "discovery_service.log"), encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("DiscoveryService")
-
-# Default discovery service port
-DEFAULT_PORT = 5555
-
-class DiscoveryService(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="DiscoveryService")
-        self.port = port
-        self.services = {}  # Format: {service_name: {ip, port, last_seen, machine_id}}
-        self.lock = threading.Lock()
-        self.running = False
-        
-        # Load configuration
-        self.config = self.load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
-        if not self.config:
-            logger.error("Failed to load configuration. Exiting.")
-            sys.exit(1)
-        
-        # Initialize ZMQ
-        self.context = zmq.Context()
-        
-        # Socket for service registration (REP)
-        self.register_socket = self.context.socket(zmq.REP)
-        self.register_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.register_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.register_socket.bind(f"tcp://*:{self.port}")
-        
-        # Socket for service queries (REP)
-        self.query_socket = self.context.socket(zmq.REP)
-        self.query_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.query_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.query_socket.bind(f"tcp://*:{self.port+1}")
-        
-        # Socket for service broadcasts (PUB)
-        self.broadcast_socket = self.context.socket(zmq.PUB)
-        self.broadcast_socket.bind(f"tcp://*:{self.port+2}")
-        
-        logger.info(f"Discovery Service initialized on ports {self.port}-{self.port+2}")
-    
-    def load_config(self):
-        """Load the distributed configuration"""
-        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                                  "config", "distributed_config.json")
-        try:
-            with open(config_path, 'r') as f:
+logger = configure_logging(__name__) as f:
                 return json.load(f)
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")

@@ -35,48 +35,7 @@ MEMORY_PATH = "memory_store.json"
 USER_PROFILE_PATH = "user_profile.json"
 DEFAULT_USER_ID = "default_user"
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-ZMQ_MEMORY_AGENT_PORT = 5590
-ZMQ_MEMORY_HEALTH_CHECK_PORT = 5598
-ZMQ_PROACTIVE_EVENT_PORT = 5595
-
-def send_proactive_event(event_type, text, user=None, emotion="neutral"):
-    """Send a proactive event, such as a reminder, to the event bus (e.g., ZeroMQ or fallback)."""
-    # This is a stub. In production, this should publish to the event bus.
-    logging.info(f"[Memory] Proactive event: type={event_type}, text={text}, user={user}, emotion={emotion}")
-    return None
-
-class MemoryAgent:
-    def __init__(self, zmq_port=ZMQ_MEMORY_AGENT_PORT, health_check_port=ZMQ_MEMORY_HEALTH_CHECK_PORT, proactive_port=ZMQ_PROACTIVE_EVENT_PORT):
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        try:
-            self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
-            self.port = zmq_port
-            logging.info(f"[Memory] Successfully bound to port {zmq_port}")
-        except zmq.error.ZMQError as e:
-            # If port is in use, try alternative ports
-            if "Address in use" in str(e):
-                logging.warning(f"[Memory] Port {zmq_port} is in use, trying alternative ports")
-                # Try a range of alternative ports
-                alt_ports = [7590, 7591, 7592, 7593, 7594]
-                for alt_port in alt_ports:
-                    try:
-                        self.socket.bind(f"tcp://0.0.0.0:{alt_port}")
-                        self.port = alt_port
-                        logging.info(f"[Memory] Successfully bound to alternative port {alt_port}")
-                        break
-                    except zmq.error.ZMQError:
-                        continue
-                else:
-                    # If we get here, all ports failed
-                    logging.error("[Memory] Could not bind to any port. Will keep running but won't process requests.")
+logger = configure_logging(__name__)
                     self.port = None
             else:
                 # Some other ZMQ error

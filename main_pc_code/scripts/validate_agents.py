@@ -14,9 +14,7 @@ import json
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "agent_validation.log")),
+logger = configure_logging(__name__) / "agent_validation.log")),
         logging.StreamHandler()
     ]
 )

@@ -19,9 +19,7 @@ from common.env_helpers import get_env
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join('logs', str(PathManager.get_logs_dir() / "code_command_handler.log"))),
+logger = configure_logging(__name__) / "code_command_handler.log"))),
         logging.StreamHandler()
     ]
 )

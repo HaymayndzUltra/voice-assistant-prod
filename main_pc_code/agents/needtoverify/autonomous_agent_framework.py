@@ -52,70 +52,7 @@ from main_pc_code.config.pc2_connections import get_connection_string
 LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "autonomous_agent_framework.log"))
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("AutonomousAgentFramework")
-
-# ZMQ port for this agent
-AUTONOMOUS_AGENT_FRAMEWORK_PORT = 5625
-MODEL_MANAGER_PORT = 5556
-MEMORY_AGENT_PORT = 5596
-
-# Path for experience memory storage
-EXPERIENCE_DB_PATH = PathManager.join_path("data", "experience_memory.pkl")
-os.makedirs(os.path.dirname(EXPERIENCE_DB_PATH), exist_ok=True)
-
-# Initialize DataOptimizer
-optimizer = DataOptimizer()
-
-class Tool(BaseAgent):
-    """Base class for(BaseAgent) tools that can be used by the agent"""
-    
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="AutonomousAgentFramework")
-        self.name = name
-        self.description = description
-        self.required_params = required_params
-        self.optional_params = optional_params or []
-    
-    def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute the tool with the provided parameters"""
-        raise NotImplementedError("Tool subclasses must implement execute method")
-    
-    def validate_params(self, params: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
-        """Validate that all required parameters are present"""
-        for param in self.required_params:
-            if param not in params:
-                return False, f"Missing required parameter: {param}"
-        return True, None
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert tool to dictionary representation"""
-        return {
-            "name": self.name,
-            "description": self.description,
-            "required_params": self.required_params,
-            "optional_params": self.optional_params
-        }
-
-class WebSearchTool(BaseAgent)(Tool):
-    """Tool for searching the web"""
-    
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="AutonomousAgentFramework")
-        super().__init__(
-            name="web_search",
-            description="Search the web for information",
-            required_params=["query"],
-            optional_params=["num_results", "search_type"]
-        )
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+logger = configure_logging(__name__) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
     
     def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:

@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s: %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 @dataclass

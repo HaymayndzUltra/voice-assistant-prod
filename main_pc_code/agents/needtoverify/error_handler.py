@@ -41,8 +41,7 @@ class ErrorHandler(BaseAgent):
         
     def setup_logging(self):
         """Setup logging configuration"""
-        logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-            filename=PathManager.join_path("logs", str(PathManager.get_logs_dir() / "error_handler.log"))
+        logger = configure_logging(__name__) / "error_handler.log"))
         )
         
     def load_config(self, config_path: str) -> Dict:

@@ -18,40 +18,7 @@ from common.utils.path_manager import PathManager
 # Configure logging
 log_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 log_file = fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "pc2_zmq_protocol_finder_{log_timestamp}.log"))
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(log_file)
-    ]
-)
-
-# Common health check variations to try
-HEALTH_CHECK_VARIATIONS = [
-    {"action": "health_check"},
-    {"action": "health"},
-    {"action": "status"},
-    {"action": "ping"},
-    {"request": "health_check"},
-    {"request_type": "health"},
-    {"request_type": "status"},
-    {"request_type": "check_status"},
-    {"request_type": "check_status", "model": "default"},
-    {"request_type": "check_status", "model": "phi3"},
-    {"action": "translate", "text": "ping", "source_lang": "en", "target_lang": "tl"},
-    {"action": "breakdown", "request": "health_check"},
-    {"command": "health_check"},
-    {"type": "health_check"},
-    {"query": "health_check"}
-]
-
-# Parse system_config.py to extract ZMQ services
-def extract_zmq_services_from_config():
-    try:
-        # Get absolute path to system_config.py
-        config_path = os.path.abspath(PathManager.join_path("config", "system_config.py"))
-        logging.debug(f"Reading config from {config_path}")
-        
-        with open(config_path, 'r') as f:
+logger = configure_logging(__name__) as f:
             config_content = f.read()
         
         # Find all model definitions

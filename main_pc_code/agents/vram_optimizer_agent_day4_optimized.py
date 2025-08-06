@@ -51,7 +51,7 @@ from common.config_manager import load_unified_config
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("VRAMOptimizerAgent")
 
 class VramOptimizerAgent(BaseAgent):

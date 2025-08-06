@@ -26,9 +26,7 @@ import psutil
 from collections import defaultdict
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler('logs/mainpc_health_checker.log')
     ]
 )

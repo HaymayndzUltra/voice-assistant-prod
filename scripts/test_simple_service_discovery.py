@@ -18,8 +18,7 @@ from pathlib import Path
 from common.env_helpers import get_env
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("SimpleServiceDiscoveryTest")
 
 # Add project root to Python path

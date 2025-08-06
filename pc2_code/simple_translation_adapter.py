@@ -8,9 +8,7 @@ import logging
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
+logger = configure_logging(__name__)
     ]
 )
 logger = logging.getLogger("SimpleTranslationAdapter")

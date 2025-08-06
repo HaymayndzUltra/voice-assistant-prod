@@ -18,9 +18,7 @@ import sys
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "ollama_bridge.log"),
+logger = configure_logging(__name__) / "ollama_bridge.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )

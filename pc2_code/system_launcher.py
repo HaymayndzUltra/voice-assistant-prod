@@ -53,28 +53,7 @@ def setup_logging():
     """Sets up the main logger for the launcher."""
     os.makedirs(os.path.join(BASE_DIR, LOGS_DIR), exist_ok=True)
     log_file = os.path.join(BASE_DIR, LOGS_DIR, str(PathManager.get_logs_dir() / "system_launcher.log")
-    logger = configure_logging(__name__)s [%(levelname)s] - %(message)s",
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
-    return logging.getLogger("PC2SystemLauncher")
-
-logger = setup_logging()
-
-# --- Pre-flight Checks ---
-def check_postgres():
-    """Performs a pre-flight check to ensure PostgreSQL is accessible."""
-    logger.info(f"Performing pre-flight check for PostgreSQL at {POSTGRES_HOST}:{POSTGRES_PORT}...")
-    try:
-        with socket.create_connection((POSTGRES_HOST, POSTGRES_PORT), timeout=5):
-            logger.info("PostgreSQL connection successful. Pre-flight check passed.")
-            return True
-    except (socket.error, ConnectionRefusedError):
-        logger.critical("--- CRITICAL: PostgreSQL IS NOT RUNNING ---")
-        logger.critical(f"Could not connect to PostgreSQL at {POSTGRES_HOST}:{POSTGRES_PORT}.")
-        logger.critical("The AI system's memory components will fail to initialize.")
+    logger = configure_logging(__name__)
         logger.critical("Please ensure the PostgreSQL database server is running before starting the system.")
         return False
 

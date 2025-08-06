@@ -34,40 +34,7 @@ DEFAULT_USER_ID = "default_user"
 ZMQ_CONTEXTUAL_MEMORY_PORT = 5596
 HEALTH_CHECK_PORT = 5598
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-class ContextualMemoryAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="ContextualMemoryAgent")
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        
-        # Try to bind to the specified port
-        try:
-            self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-            self.port = zmq_port
-            logging.info(f"[ContextualMemory] Successfully bound to port {zmq_port}")
-        except zmq.error.ZMQError as e:
-            if "Address in use" in str(e):
-                logging.warning(f"[ContextualMemory] Port {zmq_port} is in use, trying alternative ports")
-                alt_ports = [7596, 7597, 7598, 7599, 7600]
-                for alt_port in alt_ports:
-                    try:
-                        self.socket.bind(f"tcp://127.0.0.1:{alt_port}")
-                        self.port = alt_port
-                        logging.info(f"[ContextualMemory] Successfully bound to alternative port {alt_port}")
-                        break
-                    except zmq.error.ZMQError:
-                        continue
-                else:
-                    logging.error("[ContextualMemory] Could not bind to any port. Will keep running but won't process requests.")
+logger = configure_logging(__name__)
                     self.port = None
             else:
                 logging.error(f"[ContextualMemory] Error binding to port: {e}")

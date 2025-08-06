@@ -43,9 +43,7 @@ from common.utils.log_setup import configure_logging
 log_file_path = Path(PathManager.get_project_root()) / "logs" / "enhanced_observability_hub.log"
 log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(str(log_file_path))
     ]
 )

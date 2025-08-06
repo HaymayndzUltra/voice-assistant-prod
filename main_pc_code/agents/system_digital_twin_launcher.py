@@ -29,9 +29,7 @@ from main_pc_code.agents.system_digital_twin import SystemDigitalTwinAgent
 from common.core.base_agent import BaseAgent
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "system_digital_twin_launcher.log")))
     ]
 )

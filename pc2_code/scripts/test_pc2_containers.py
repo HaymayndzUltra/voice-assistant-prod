@@ -21,8 +21,7 @@ from common.env_helpers import get_env
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("pc2_container_test")
 
 # Constants

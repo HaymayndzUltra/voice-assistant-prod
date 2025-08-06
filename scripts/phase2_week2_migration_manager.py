@@ -116,9 +116,7 @@ class MigrationManager:
         # Main migration log
         migration_log = log_dir / f"migration_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
         
-        logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(migration_log),
+        logger = configure_logging(__name__),
                 logging.StreamHandler(sys.stdout)
             ]
         )

@@ -21,8 +21,7 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / "common"))
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 def create_app():

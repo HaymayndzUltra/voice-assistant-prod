@@ -33,9 +33,6 @@ log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "translator_fixed.lo
 
 # Enhanced logging format with more details
 logger = configure_logging(__name__),
-    format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file_path),
         logging.StreamHandler(sys.stdout)
     ]
 )

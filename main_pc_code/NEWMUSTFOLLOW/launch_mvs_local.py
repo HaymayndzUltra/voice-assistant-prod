@@ -21,9 +21,7 @@ from common.utils.path_manager import PathManager
 from common.utils.log_setup import configure_logging
 
 # Set up logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(str(PathManager.get_logs_dir() / "mvs_launcher.log"))
     ]
 )

@@ -43,9 +43,7 @@ sys.path.insert(0, str(PathManager.get_project_root()))
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "nlu_agent.log")))
     ]
 )

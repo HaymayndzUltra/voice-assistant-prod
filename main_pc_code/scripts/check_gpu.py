@@ -11,8 +11,7 @@ from typing import Dict, List, Tuple, Any
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("gpu_checker")
 
 def run_command(cmd: List[str]) -> Tuple[str, str, int]:

@@ -151,7 +151,7 @@ ENV = load_all_env()
 
 if __name__ == '__main__':
     # Configure logging for the test
-    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+    logger = configure_logging(__name__)
     
     # Print all environment variables
     print("Environment Variables:")

@@ -92,9 +92,7 @@ class CacheManager:
 
     def _setup_logging(self):
         """Setup logging configuration"""
-        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "cache_manager.log")),
+        logger = configure_logging(__name__) / "cache_manager.log")),
                 logging.StreamHandler()
             ]
         )

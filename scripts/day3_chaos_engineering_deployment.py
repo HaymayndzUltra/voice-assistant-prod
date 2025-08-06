@@ -27,9 +27,7 @@ from enum import Enum
 from common.utils.log_setup import configure_logging
 
 # Setup logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
+logger = configure_logging(__name__),
         logging.FileHandler(f'day3_chaos_engineering_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
     ]
 )

@@ -22,8 +22,7 @@ import json
 import zmq
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("TestUnifiedMemoryAgent")
 
 # Add project root to Python path

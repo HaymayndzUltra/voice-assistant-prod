@@ -33,67 +33,7 @@ except ImportError:
     USE_COMMON_UTILS = False
 
 # Configure logging
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger("SystemHealthCheck")
-
-# Default SystemDigitalTwin port
-SDT_PORT = 7120
-SDT_HEALTH_PORT = 8100
-
-def get_system_digital_twin_address(host: str = None) -> str:
-    """
-    Get the address of the SystemDigitalTwin service.
-    
-    Args:
-        host: Optional host override
-        
-    Returns:
-        str: ZMQ address of SystemDigitalTwin
-    """
-    if USE_COMMON_UTILS:
-        try:
-            return addr("SystemDigitalTwin", "main_pc")
-        except Exception as e:
-            logger.warning(f"Failed to get SystemDigitalTwin address from common_utils: {e}")
-    
-    # Fall back to default
-    host = host or os.environ.get("MAIN_PC_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
-    return f"tcp://{host}:{SDT_PORT}"
-
-def check_system_digital_twin_health(host: str = None, port: int = SDT_HEALTH_PORT, timeout: int = 5000) -> bool:
-    """
-    Check if SystemDigitalTwin is healthy.
-    
-    Args:
-        host: Host of SystemDigitalTwin
-        port: Health check port of SystemDigitalTwin
-        timeout: Timeout in milliseconds
-        
-    Returns:
-        bool: True if health check passed, False otherwise
-    """
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.setsockopt(zmq.RCVTIMEO, timeout)
-    socket.setsockopt(zmq.LINGER, 0)
-    
-    try:
-        # Connect to SystemDigitalTwin health port
-        host = host or os.environ.get("MAIN_PC_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
-        address = f"tcp://{host}:{port}"
-        logger.info(f"Connecting to SystemDigitalTwin health check at {address}")
-        socket.connect(address)
-        
-        # Send health check request
-        request = {"action": "health_check"}
-        logger.info("Sending health check request to SystemDigitalTwin")
-        socket.send_json(request)
-        
-        # Wait for response
-        response = socket.recv_json()
-        logger.info(f"SystemDigitalTwin health status: {response.get('status', 'unknown')}")
+logger = configure_logging(__name__)}")
         
         # Check response
         if response.get("status") == "success":

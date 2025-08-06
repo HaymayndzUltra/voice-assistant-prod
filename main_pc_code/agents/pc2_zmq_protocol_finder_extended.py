@@ -22,34 +22,7 @@ log_dir = Path(__file__).parent.parent / "logs"
 log_dir.mkdir(exist_ok=True)
 log_filename = f"pc2_zmq_protocol_finder_extended_{datetime.now().strftime('%Y%m%d_%H%M%Sstr(PathManager.get_logs_dir() / ")}.log")
 log_filepath = log_dir / log_filename
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(log_filepath),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger()
-
-# Extract PC2 ZMQ services from system_config
-def get_pc2_zmq_services():
-    services = {}
-    
-    # Access the model_configs section directly where PC2 services are defined
-    model_configs = DEFAULT_CONFIG.get("main_pc_settings", {}).get("model_configs", {})
-    
-    for model_id, model_info in model_configs.items():
-        if (
-            isinstance(model_info, dict) and
-            model_info.get("serving_method") == "zmq_service_remote" and
-            model_info.get("zmq_address", "").startswith("tcp://192.168.1.2")
-        ):
-            services[model_id] = {
-                "zmq_address": model_info.get("zmq_address"),
-                "display_name": model_info.get("display_name"),
-                "zmq_actions": model_info.get("zmq_actions", {}),
-                "expected_health_response_contains": model_info.get("expected_health_response_contains", {})
-            }
-            logger.debug(f"Found PC2 ZMQ service: {model_id} at {model_info.get('zmq_address')}")
+logger = configure_logging(__name__)}")
     
     if not services:
         logger.warning("No PC2 ZMQ services found. Debug information follows:")

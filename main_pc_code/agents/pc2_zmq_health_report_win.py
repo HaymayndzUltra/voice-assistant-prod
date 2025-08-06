@@ -28,9 +28,7 @@ log_filename = fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "
 os.makedirs('logs', exist_ok=True)
 
 # Configure logger
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_filename),
+logger = configure_logging(__name__),
         logging.StreamHandler()
     ]
 )

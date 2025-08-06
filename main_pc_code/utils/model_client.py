@@ -15,7 +15,7 @@ from typing import Dict, Any, List, Optional
 from common.utils.network_util import retry_with_backoff
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 # Default configuration

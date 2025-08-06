@@ -7,7 +7,7 @@ import logging
 from common.utils.log_setup import configure_logging
 
 # Logging setup
-logger = configure_logging(__name__)s] %(message)s')
+logger = configure_logging(__name__)
 
 # Mediapipe pose setup
 mp_pose = mp.solutions.pose

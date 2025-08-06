@@ -26,8 +26,7 @@ from watchdog.events import FileSystemEventHandler
 from common.utils.log_setup import configure_logging
 
 # Setup logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 class TaskQueueEngine:

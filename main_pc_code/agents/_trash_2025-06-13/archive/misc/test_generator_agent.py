@@ -24,50 +24,7 @@ from common.utils.log_setup import configure_logging
 LOG_PATH = str(PathManager.get_logs_dir() / "test_generator_agent.log")
 ZMQ_TEST_GENERATOR_PORT = 5613  # New agent port
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-class TestGeneratorAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="TestGeneratorAgent")
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-        self.running = True
-        # Context for LLM router connection
-        self.llm_router_context = zmq.Context()
-        self.llm_router_socket = None  # Will be initialized when needed
-        self.llm_router_port = 5600  # Default LLM router port
-        logging.info(f"[TestGenerator] Agent started on port {zmq_port}")
-    
-    def connect_llm_router(self):
-        """Establish connection to the LLM router"""
-        if self.llm_router_socket is None:
-            self.llm_router_socket = self.llm_router_context.socket(zmq.REQ)
-            self.llm_router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.llm_router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.llm_router_socket.connect(f"tcp://127.0.0.1:{self.llm_router_port}")
-            logging.info(f"[TestGenerator] Connected to LLM router on port {self.llm_router_port}")
-    
-    def send_to_llm(self, prompt, model=None, max_tokens=None):
-        """
-        Send a prompt to the LLM router and get the response
-        
-        Args:
-            prompt (str): The prompt to send to the LLM
-            model (str, optional): Specific model to use, or None for router to decide
-            max_tokens (int, optional): Maximum tokens in the response
-        
-        Returns:
-            str: The LLM's response
-        """
-        self.connect_llm_router()
+logger = configure_logging(__name__)
         
         request = {
             "prompt": prompt,
