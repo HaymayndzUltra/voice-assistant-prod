@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 Service Discovery Fix Verification Test
 
@@ -37,9 +38,7 @@ COLORS = {
 }
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format=f'{COLORS["BLUE"]}%(asctime)s{COLORS["END"]} - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s{COLORS["END"]} - %(name)s - %(levelname)s - %(message)s',
 )
 logger = logging.getLogger("ServiceDiscoveryTest")
 

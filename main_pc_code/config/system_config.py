@@ -16,6 +16,7 @@ from common.utils.env_standardizer import get_current_machine
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Get the root directory
 ROOT_DIR = Path(__file__).parent.parent
@@ -202,9 +203,7 @@ def get_config_for_machine() -> Dict[str, Any]:
 def setup_logging() -> None:
     """Setup logging configuration"""
     log_file = LOGS_DIR / str(PathManager.get_logs_dir() / "system.log")
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.FileHandler(log_file),
             logging.StreamHandler()

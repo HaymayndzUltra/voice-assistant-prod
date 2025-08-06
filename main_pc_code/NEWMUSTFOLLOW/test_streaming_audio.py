@@ -13,11 +13,10 @@ import logging
 import zmq
 import json
 import pickle
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("AudioCaptureTest")
 

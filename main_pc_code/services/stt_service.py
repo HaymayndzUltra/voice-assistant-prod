@@ -19,6 +19,7 @@ from typing import List, Dict, Any
 # Add the project's main_pc_code directory to the Python path
 from common.utils.path_manager import PathManager
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
@@ -32,9 +33,7 @@ from main_pc_code.utils import model_client
 config = load_config()
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler()
     ]

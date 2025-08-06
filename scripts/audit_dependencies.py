@@ -12,11 +12,10 @@ import yaml
 import logging
 from pathlib import Path
 import sys
+from common.utils.log_setup import configure_logging
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler("audit_dependencies.log")

@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
 import zmq
+from common.utils.log_setup import configure_logging
 try:
     import orjson
     # Use orjson for better performance
@@ -25,9 +26,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 LOG_PATH = str(PathManager.get_logs_dir() / "filesystem_assistant_agent.log")
 ZMQ_FILESYSTEM_AGENT_PORT = 5594  # Changed from 5597 to avoid conflict with digital twin agent
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

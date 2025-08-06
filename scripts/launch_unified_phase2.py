@@ -15,11 +15,10 @@ import requests
 from typing import Dict, List, Set, Tuple, Optional
 from collections import defaultdict, deque
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('UnifiedLauncherPhase2')
 

@@ -23,9 +23,10 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Set
 from dataclasses import dataclass
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logger = configure_logging(__name__)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 @dataclass

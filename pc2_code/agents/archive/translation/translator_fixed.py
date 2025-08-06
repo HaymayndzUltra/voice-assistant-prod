@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime
 from collections import deque
+from common.utils.log_setup import configure_logging
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).resolve().parent.parent)
@@ -31,8 +32,7 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "translator_fixed.log")
 
 # Enhanced logging format with more details
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL, logging.INFO),
+logger = configure_logging(__name__),
     format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
     handlers=[
         logging.FileHandler(log_file_path),

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 End-to-End Test for Voice Command Flow
 
@@ -34,9 +35,7 @@ from common.env_helpers import get_env
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(os.path.join(project_root, 'logs', str(PathManager.get_logs_dir() / "voice_command_flow_test.log")))

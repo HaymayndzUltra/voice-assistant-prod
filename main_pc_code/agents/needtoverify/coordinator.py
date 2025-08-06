@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Coordinator Module
 Manages and coordinates all modules in the voice assistant system
@@ -18,9 +19,7 @@ from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "coordinator.log")),
         logging.StreamHandler()

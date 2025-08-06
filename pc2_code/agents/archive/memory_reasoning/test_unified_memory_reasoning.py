@@ -9,14 +9,13 @@ import json
 import logging
 import sys
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent)
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger("TestMemoryReasoning")
 

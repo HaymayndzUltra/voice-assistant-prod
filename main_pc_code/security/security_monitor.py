@@ -15,6 +15,7 @@ from __future__ import annotations
 import sys
 import os
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -1169,7 +1170,7 @@ if __name__ == "__main__":
     # Example usage
     import logging
     
-    logging.basicConfig(level=logging.INFO)
+    logger = configure_logging(__name__, level="INFO")
     
     security_monitor = SecurityMonitor(monitoring_interval_seconds=30)
     

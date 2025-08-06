@@ -29,9 +29,10 @@ import argparse
 
 # Import project brain manager
 from project_brain_manager import ProjectBrainManager, ContextQuery
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class ArchitectureMode:

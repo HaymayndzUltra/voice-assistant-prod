@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 #!/usr/bin/env python3
 """
 Model Manager Agent (MMA) for monitoring and managing pipeline components.
@@ -35,9 +36,7 @@ class ModelManagerAgent(BaseAgent):
         log_dir = project_root / "logs"
         log_dir.mkdir(exist_ok=True)
         
-        logging.basicConfig(
-            level=logging.DEBUG,  # Changed to DEBUG level
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler(log_dir / str(PathManager.get_logs_dir() / "model_manager_agent.log")),
                 logging.StreamHandler()

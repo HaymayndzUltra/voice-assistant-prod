@@ -17,6 +17,7 @@ from pathlib import Path
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Add project root to path
 current_path = Path(__file__).resolve().parent
@@ -25,9 +26,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(os.path.join(project_root, 'logs', str(PathManager.get_logs_dir() / "voice_flow_test_runner.log")))

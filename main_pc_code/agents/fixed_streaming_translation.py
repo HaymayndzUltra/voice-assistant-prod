@@ -1,6 +1,7 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 """
 Enhanced Fixed Streaming Translation Agent with Intelligent Fallback
 Acts as a customer service interface for the main translator, handling translation requests
@@ -32,9 +33,7 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', str(PathManager.get_logs_dir() / "fixed_translation.log")))

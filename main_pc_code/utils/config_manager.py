@@ -19,9 +19,10 @@ from typing import Dict, Any, Optional, List, Callable
 
 # Import the PathManager for consistent path resolution
 from utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logger = configure_logging(__name__, level="INFO")
 logger = logging.getLogger(__name__)
 
 class ConfigManager:

@@ -7,6 +7,7 @@ import logging
 from typing import List, Dict, Tuple, Optional
 import urllib.request
 import urllib.error
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
 
@@ -14,9 +15,7 @@ from common.utils.path_manager import PathManager
 LOGS_DIR = PathManager.join_path("logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(os.path.join(LOGS_DIR, str(PathManager.get_logs_dir() / "startup.log"))),
         logging.StreamHandler()

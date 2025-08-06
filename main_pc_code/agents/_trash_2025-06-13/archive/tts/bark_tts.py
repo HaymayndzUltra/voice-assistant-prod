@@ -17,11 +17,10 @@ import re
 from pathlib import Path
 from bark import SAMPLE_RATE, generate_audio, preload_models
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.StreamHandler()
     ]

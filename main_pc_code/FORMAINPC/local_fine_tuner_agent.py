@@ -9,6 +9,7 @@ from common.utils.path_manager import PathManager
 import sys
 import os
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
@@ -65,9 +66,7 @@ except ImportError as e:
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     filename=str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "local_fine_tuner.log"))
 )
 logger = logging.getLogger(__name__)

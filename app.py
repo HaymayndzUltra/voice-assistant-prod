@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 from flask_socketio import SocketIO
+from common.utils.log_setup import configure_logging
 
 # Add project paths
 project_root = Path(__file__).parent
@@ -20,9 +21,7 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / "common"))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 

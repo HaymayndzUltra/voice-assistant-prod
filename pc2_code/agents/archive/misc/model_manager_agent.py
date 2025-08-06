@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 Model Manager / Resource Monitor Agent
 - Tracks status and availability of all models
 - Provides model selection based on capabilities, availability and task requirements
@@ -23,9 +24,7 @@ from datetime import datetime, timedelta
 sys.path.append(str(Path(__file__).parent.parent)
 
 # Set up basic logging first in case config import fails
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler()
     ]

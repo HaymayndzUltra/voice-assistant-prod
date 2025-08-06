@@ -12,6 +12,7 @@ from datetime import datetime
 # Import path manager for containerization-friendly paths
 import sys
 import os
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
 from common.utils.path_manager import PathManager
 # Set up logging with timestamp for unique filename
@@ -22,9 +23,7 @@ log_file = fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "pc2_
 Path('logs').mkdir(exist_ok=True)
 
 # Configure logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file),
         logging.StreamHandler()

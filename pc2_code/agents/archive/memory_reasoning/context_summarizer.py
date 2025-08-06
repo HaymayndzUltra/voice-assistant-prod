@@ -10,6 +10,7 @@ from common.core.base_agent import BaseAgent
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Setup logging
 LOG_PATH = Path(os.path.dirname(__file__).parent / "logs" / str(PathManager.get_logs_dir() / "context_summarizer.log")
@@ -18,9 +19,7 @@ SUMMARY_STORE_PATH = Path(os.path.dirname(__file__).parent / "data" / "context_s
 SUMMARY_STORE_PATH.parent.mkdir(exist_ok=True)
 ZMQ_CONTEXT_SUMMARIZER_PORT = 5610
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

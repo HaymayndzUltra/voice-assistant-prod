@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Discovery Service Agent
 Provides service discovery for distributed agents across the network.
@@ -21,9 +22,7 @@ from common.utils.path_manager import PathManager
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "discovery_service.log"), encoding="utf-8"),
         logging.StreamHandler()

@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 Final Fix for PHI Translator
 This version enforces extreme restrictions on prompt and output to ensure consistent, high-quality translations
 """
@@ -102,9 +103,7 @@ TRANSLATION_DICT = {
 }
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler()
     ]

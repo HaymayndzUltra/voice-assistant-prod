@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """Unified MemoryHub - True Consolidation Implementation.
 
 This is the production-ready unified implementation that replaces all legacy proxy 
@@ -25,7 +26,7 @@ from .core.auth_middleware import AuthMiddleware, AuthConfig, User, init_auth_mi
 from .core.background_monitor import ProactiveContextMonitor, ContextEvent
 
 logger = logging.getLogger("memory_hub")
-logging.basicConfig(level=logging.INFO)
+logger = configure_logging(__name__, level="INFO")
 
 # Global instances
 storage_manager: Optional[UnifiedStorageManager] = None

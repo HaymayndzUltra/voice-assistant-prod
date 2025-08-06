@@ -8,11 +8,10 @@ from typing import Dict, Any, List
 import os
 import uuid
 import traceback
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "agent_breeder.log")),
         logging.StreamHandler()
@@ -109,9 +108,7 @@ from common.utils.path_manager import PathManager
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "{agent_name}.log")),
         logging.StreamHandler()

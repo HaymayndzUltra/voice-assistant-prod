@@ -1,5 +1,6 @@
 from main_pc_code.src.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 Model Manager Agent GGUF Connector
 ---------------------------------
@@ -21,9 +22,7 @@ import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
 from common.utils.path_manager import PathManager
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "mma_gguf_connector.log"))),
         logging.StreamHandler()

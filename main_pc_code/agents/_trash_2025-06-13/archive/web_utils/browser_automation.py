@@ -9,6 +9,7 @@ from playwright.sync_api import sync_playwright
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -16,9 +17,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 LOG_PATH = str(PathManager.get_logs_dir() / "browser_automation_agent.log")
 ZMQ_BROWSER_PORT = 5588
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

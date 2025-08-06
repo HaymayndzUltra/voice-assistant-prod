@@ -4,6 +4,7 @@
 # Original: main_pc_code/agents/noise_reduction_agent.py
 
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -35,9 +36,7 @@ from datetime import datetime
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "noise_reduction_agent.log")),
         logging.StreamHandler()

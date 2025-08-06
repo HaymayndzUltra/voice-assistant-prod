@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 Health Check Script
 
@@ -25,9 +26,7 @@ import os
 sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_check.log"))

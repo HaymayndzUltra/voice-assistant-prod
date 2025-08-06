@@ -19,13 +19,12 @@ from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 LOG_PATH = str(PathManager.get_logs_dir() / "test_generator_agent.log")
 ZMQ_TEST_GENERATOR_PORT = 5613  # New agent port
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

@@ -13,10 +13,10 @@ from pathlib import Path
 import argparse
 import logging
 from typing import List, Dict, Tuple, Optional
+from common.utils.log_setup import configure_logging
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, 
-                   format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # Add the project root to the Python path

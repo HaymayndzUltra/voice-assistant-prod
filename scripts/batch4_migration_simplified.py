@@ -21,11 +21,10 @@ import asyncio
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+from common.utils.log_setup import configure_logging
 
 # Setup basic logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
         logging.FileHandler(f'batch4_migration_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')

@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Improved Simple TTS Agent
 Enhanced version with better resource handling for multiple responses
@@ -13,9 +14,7 @@ import threading
 from pathlib import Path
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'modular_system', 'logs', str(PathManager.get_logs_dir() / "simple_tts.log")))

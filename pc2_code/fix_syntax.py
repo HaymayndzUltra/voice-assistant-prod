@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 Emergency Syntax Fix Script for phi_adapter.py
 This script will fix the unterminated triple-quoted string issue
 """
@@ -42,9 +43,7 @@ AUTH_${SECRET_PLACEHOLDER} os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")
 ENABLE_AUTH = True  # Can be disabled via command-line argument
 
 # Configure logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler()
     ]

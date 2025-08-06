@@ -15,6 +15,7 @@ import argparse
 from pathlib import Path
 from typing import Dict, Any, Optional
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
 # Add project root to Python path
 project_root = Path(__file__).resolve().parent.parent
@@ -22,9 +23,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
 )
 logger = logging.getLogger("SecureSDTClient")
 

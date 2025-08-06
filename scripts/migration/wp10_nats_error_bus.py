@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 WP-10 NATS Error Bus Migration Script
 Implements NATS messaging system for decoupling error floods and centralized error management
@@ -984,7 +985,7 @@ async def main():
 
 if __name__ == "__main__":
     # Setup basic logging
-    logging.basicConfig(level=logging.INFO)
+    logger = configure_logging(__name__, level="INFO")
     
     # Run the agent
     asyncio.run(main())

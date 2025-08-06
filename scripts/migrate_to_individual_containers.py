@@ -21,6 +21,7 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import logging
+from common.utils.log_setup import configure_logging
 
 
 class AgentMigrator:
@@ -38,9 +39,7 @@ class AgentMigrator:
         self.individual_compose_file = self.workspace_root / "docker-compose.individual.yml"
         
         # Setup logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
+        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler(self.workspace_root / 'migration.log'),
                 logging.StreamHandler()

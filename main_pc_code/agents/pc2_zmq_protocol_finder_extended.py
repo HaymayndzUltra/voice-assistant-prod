@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import datetime
 from prettytable import PrettyTable
 import socket
+from common.utils.log_setup import configure_logging
 
 # Add parent directory to path to import system_config
 sys.path.append(str(Path(__file__).parent.parent))
@@ -21,9 +22,7 @@ log_dir = Path(__file__).parent.parent / "logs"
 log_dir.mkdir(exist_ok=True)
 log_filename = f"pc2_zmq_protocol_finder_extended_{datetime.now().strftime('%Y%m%d_%H%M%Sstr(PathManager.get_logs_dir() / ")}.log")
 log_filepath = log_dir / log_filename
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s",
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler(log_filepath),
         logging.StreamHandler()

@@ -1,6 +1,7 @@
 from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json
@@ -23,9 +24,7 @@ LOG_PATH = str(PathManager.get_logs_dir() / "learning_mode_agent.log")
 LEARNING_MODE_STORE_PATH = "learning_mode_store.json"
 ZMQ_LEARNING_MODE_PORT = 5598  # Changed from 5599 to avoid conflict with health monitoring
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

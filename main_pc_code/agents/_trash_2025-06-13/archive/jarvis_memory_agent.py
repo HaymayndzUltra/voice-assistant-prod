@@ -5,6 +5,7 @@ import os
 import sys
 import traceback
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 
 # Add the parent directory to sys.path to allow importing from sibling modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -34,9 +35,7 @@ LOG_PATH = str(PathManager.get_logs_dir() / "jarvis_memory_agent.log")
 JARVIS_MEMORY_STORE_PATH = "jarvis_memory_store.json"
 ZMQ_JARVIS_MEMORY_PORT = 5598
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

@@ -23,6 +23,7 @@ from main_pc_code.src.core.base_agent import BaseAgent
 
 # Import Config class for PC2
 from pc2_code.agents.utils.config_loader import Config
+from common.utils.log_setup import configure_logging
 
 # Load configuration at module level
 config = Config().get_config()
@@ -32,9 +33,7 @@ log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, "pc2_agent.log")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file),
         logging.StreamHandler()

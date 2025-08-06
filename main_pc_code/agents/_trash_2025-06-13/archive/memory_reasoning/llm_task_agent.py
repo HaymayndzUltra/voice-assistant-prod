@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 LLM Task Agent
 -------------
@@ -36,9 +37,7 @@ import psutil
 from datetime import datetime
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(name)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_task_agent.log")))

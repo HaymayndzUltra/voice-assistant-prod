@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 Translator Agent - PC2 Enhanced Version
 - Translates commands from Filipino to English
 - Sits between listener and Enhanced Model Router
@@ -116,8 +117,7 @@ except ImportError as e:
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "translator_agent.log")
 
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
+logger = configure_logging(__name__), logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file_path),

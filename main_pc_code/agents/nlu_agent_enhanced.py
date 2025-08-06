@@ -9,6 +9,7 @@
 import sys
 import os
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
@@ -42,9 +43,7 @@ sys.path.insert(0, str(PathManager.get_project_root()))
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "nlu_agent.log")))

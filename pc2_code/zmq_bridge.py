@@ -16,6 +16,7 @@ import signal
 import threading
 from pathlib import Path
 from datetime import datetime
+from common.utils.log_setup import configure_logging
 
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent)
@@ -26,9 +27,7 @@ log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 log_file = log_dir / str(PathManager.get_logs_dir() / "zmq_bridge.log")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler(log_file),
         logging.StreamHandler(sys.stdout)

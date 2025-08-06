@@ -13,6 +13,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
@@ -52,9 +53,7 @@ def setup_logging():
     """Sets up the main logger for the launcher."""
     os.makedirs(os.path.join(BASE_DIR, LOGS_DIR), exist_ok=True)
     log_file = os.path.join(BASE_DIR, LOGS_DIR, str(PathManager.get_logs_dir() / "system_launcher.log")
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] - %(message)s",
+    logger = configure_logging(__name__)s [%(levelname)s] - %(message)s",
         handlers=[
             logging.FileHandler(log_file),
             logging.StreamHandler(sys.stdout)

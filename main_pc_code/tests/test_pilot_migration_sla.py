@@ -1,4 +1,5 @@
 import sys
+from common.utils.log_setup import configure_logging
 sys.argv = [sys.argv[0]]
 import pytest
 import time
@@ -10,7 +11,7 @@ import importlib
 import logging
 
 # Configure logging for the test
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("test_pilot_migration")
 
 # Helper to find a free port

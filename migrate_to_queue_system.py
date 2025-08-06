@@ -18,9 +18,10 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any
+from common.utils.log_setup import configure_logging
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class QueueSystemMigrator:

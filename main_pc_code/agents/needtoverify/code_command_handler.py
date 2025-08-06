@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Code Command Handler for Voice Assistant
 This script handles voice commands related to auto code generation, debugging, and self-healing
@@ -18,9 +19,7 @@ from common.env_helpers import get_env
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(os.path.join('logs', str(PathManager.get_logs_dir() / "code_command_handler.log"))),
         logging.StreamHandler()

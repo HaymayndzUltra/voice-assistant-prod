@@ -28,6 +28,7 @@ from enhanced_model_router import EnhancedModelRouter
 from remote_connector_agent import RemoteConnectorAgent
 from tinyllama_service_enhanced import TinyLlamaService
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
 # Configure logging - TODO 1/3 compliance: use configure_logging instead of basicConfig
 # logging.basicConfig removed per canonical import requirements

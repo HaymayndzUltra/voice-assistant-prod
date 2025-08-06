@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 GGUF Model Manager
 -----------------
 Handles loading, unloading, and managing GGUF models using llama-cpp-python
@@ -46,9 +47,7 @@ except ImportError as e:
     print(f"WARNING: llama-cpp-python not available. GGUF models will not work. Error: {e}")
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(join_path("logs", "gguf_model_manager.log")),
         logging.StreamHandler()

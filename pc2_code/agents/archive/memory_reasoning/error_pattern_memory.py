@@ -18,6 +18,7 @@ from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Setup logging
 LOG_PATH = Path(os.path.dirname(__file__).parent / "logs" / str(PathManager.get_logs_dir() / "error_pattern_memory.log")
@@ -28,9 +29,7 @@ ZMQ_ERROR_PATTERN_PORT = 5611  # Port for error pattern memory agent
 MODEL_MANAGER_HOST = "192.168.1.27"  # Main PC's IP address
 MODEL_MANAGER_PORT = 5556  # Main PC's MMA port
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

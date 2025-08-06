@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Error Database for AutoFix System
 - Stores common errors and their solutions
@@ -22,9 +23,7 @@ import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
 from common.utils.path_manager import PathManager
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "error_database.log"))),
         logging.StreamHandler()

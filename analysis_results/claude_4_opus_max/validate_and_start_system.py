@@ -14,11 +14,10 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import logging
+from common.utils.log_setup import configure_logging
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 

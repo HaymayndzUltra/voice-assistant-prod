@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 Client library for interacting with the ModelManagerAgent.
 This provides a simplified interface for generating text, transcribing audio, etc.
 """
@@ -14,7 +15,7 @@ from typing import Dict, Any, List, Optional
 from common.utils.network_util import retry_with_backoff
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # Default configuration

@@ -4,8 +4,9 @@ import numpy as np
 import os
 import time
 import logging
+from common.utils.log_setup import configure_logging
 
-logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
+logger = configure_logging(__name__)s] %(message)s')
 
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils

@@ -20,6 +20,7 @@ from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Import standardized environment variables (Blueprint.md Step 4)
 from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, PathManager.get_project_root())
 # Add the project's main_pc_code directory to the Python path
 PROJECT_ROOT = PathManager.get_project_root()
@@ -254,8 +255,7 @@ def get_zmq_connection_string(port: int, machine: str = "localhost", bind_addres
 
 if __name__ == '__main__':
     # Configure logging for the test
-    logging.basicConfig(level=logging.INFO, 
-                      format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
     
     # A simple test to ensure the loader works
     config = load_network_config()

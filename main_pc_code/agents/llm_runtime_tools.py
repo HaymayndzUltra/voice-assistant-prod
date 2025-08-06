@@ -1,6 +1,7 @@
 from main_pc_code.src.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -41,9 +42,7 @@ sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_runtime.log"))),
         logging.StreamHandler()

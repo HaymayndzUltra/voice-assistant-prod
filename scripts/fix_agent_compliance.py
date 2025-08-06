@@ -27,11 +27,10 @@ import time
 import traceback
 from pathlib import Path
 from typing import Dict, List, Any, Tuple, Optional, Set
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler('agent_compliance_fixes.log')

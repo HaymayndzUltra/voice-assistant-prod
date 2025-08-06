@@ -25,6 +25,7 @@ import time
 import logging
 import unittest
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -39,9 +40,7 @@ from main_pc_code.src.network.secure_zmq import configure_secure_client, start_a
 from common.env_helpers import get_env
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('CrossMachineTest')
 

@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 Self Training Orchestrator
 Purpose: Manages training cycles and resource allocation for PC2 agents
 Features: Cycle management, progress tracking, resource allocation
@@ -35,9 +36,7 @@ config = load_config()
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     filename=str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "self_training.log"))
 )
 logger = logging.getLogger(__name__)

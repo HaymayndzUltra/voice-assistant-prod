@@ -19,6 +19,7 @@ from pathlib import Path
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+from common.utils.log_setup import configure_logging
 
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -37,9 +38,7 @@ CONFIG_PATH = PROJECT_ROOT / "main_pc_code" / "config" / "startup_config.yaml"
 LOGS_DIR = PROJECT_ROOT / "logs"
 
 # --- LOGGING SETUP ---
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("SystemStartup")
 

@@ -8,6 +8,7 @@ import logging
 import sys
 from typing import List, Dict, Any
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 
 # Add the parent directory to sys.path to allow importing from sibling modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -33,9 +34,7 @@ DEFAULT_USER_ID = "default_user"
 ZMQ_CONTEXTUAL_MEMORY_PORT = 5596
 HEALTH_CHECK_PORT = 5598
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

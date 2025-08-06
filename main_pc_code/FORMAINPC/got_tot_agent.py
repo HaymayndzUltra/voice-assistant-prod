@@ -11,6 +11,7 @@ from common.utils.path_manager import PathManager
 import sys
 import os
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
@@ -47,9 +48,7 @@ import os
 
 # Setup logging
 LOG_PATH = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "got_tot_agent.log"))
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

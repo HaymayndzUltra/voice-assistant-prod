@@ -26,9 +26,10 @@ import sys
 import logging
 from pathlib import Path
 from typing import Optional, Union, Dict
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logger = configure_logging(__name__, level="INFO")
 logger = logging.getLogger(__name__)
 
 class PathManager:

@@ -11,6 +11,7 @@ from enum import Enum
 # Import path manager for containerization-friendly paths
 import sys
 import os
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
 from common.utils.path_manager import PathManager
 class ErrorSeverity(BaseAgent)(Enum):
@@ -40,9 +41,7 @@ class ErrorHandler(BaseAgent):
         
     def setup_logging(self):
         """Setup logging configuration"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
             filename=PathManager.join_path("logs", str(PathManager.get_logs_dir() / "error_handler.log"))
         )
         

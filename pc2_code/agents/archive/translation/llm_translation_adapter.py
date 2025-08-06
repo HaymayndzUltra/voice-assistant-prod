@@ -10,6 +10,7 @@ import argparse
 import requests
 import urllib.parse
 from collections import OrderedDict
+from common.utils.log_setup import configure_logging
 
 # Optional PyTorch import with fallback and detailed error handling
 try:
@@ -40,9 +41,7 @@ except ImportError as e:
     print("="*80)
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "llm_translation_adapter.log"),
         logging.StreamHandler(sys.stdout)

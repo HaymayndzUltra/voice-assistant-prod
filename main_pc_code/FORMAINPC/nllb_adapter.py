@@ -24,6 +24,7 @@ import torch
 import zmq
 from pathlib import Path
 from datetime import datetime
+from common.utils.log_setup import configure_logging
 
 # Add the main_pc_code directory to the Python path
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
@@ -168,8 +169,7 @@ if 'NLLB_IDLE_TIMEOUT' in os.environ:
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "nllb_translation_adapter.log")
 
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
+logger = configure_logging(__name__), logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file_path),

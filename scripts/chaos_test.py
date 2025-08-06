@@ -14,10 +14,9 @@ import logging
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('ChaosTest')
 

@@ -16,11 +16,10 @@ import requests
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("container_healthcheck")
 

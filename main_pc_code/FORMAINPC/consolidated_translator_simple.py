@@ -7,6 +7,7 @@ Simplified Consolidated Translator for Health Check Validation
 """
 import sys
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -24,9 +25,7 @@ from main_pc_code.utils.config_parser import parse_agent_args
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout)
     ]

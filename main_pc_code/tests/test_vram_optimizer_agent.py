@@ -13,14 +13,14 @@ from unittest.mock import MagicMock, patch
 # Ensure the parent directory is in the path for imports
 import sys
 import os
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 # Import the agent to test
 from main_pc_code.agents.vram_optimizer_agent import VRAMOptimizerAgent
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 

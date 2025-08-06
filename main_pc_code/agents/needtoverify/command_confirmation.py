@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Command Confirmation Module for Voice Assistant
 ----------------------------------------------
@@ -10,7 +11,7 @@ import uuid
 from typing import Dict, Any, Optional, Tuple
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("CommandConfirmation")
 
 # Criticality levels

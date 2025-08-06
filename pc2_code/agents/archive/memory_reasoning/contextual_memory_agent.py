@@ -19,6 +19,7 @@ from datetime import datetime
 # Import path manager for containerization-friendly paths
 import sys
 import os
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
@@ -31,9 +32,7 @@ MODEL_MANAGER_PORT = 5556  # Main PC's MMA port
 # Ensure logs directory exists
 os.makedirs("logs", exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

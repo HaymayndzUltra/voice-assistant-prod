@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 #!/usr/bin/env python3
 """
 Autonomous Agent Framework
@@ -51,9 +52,7 @@ from main_pc_code.config.pc2_connections import get_connection_string
 LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "autonomous_agent_framework.log"))
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

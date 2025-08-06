@@ -5,15 +5,14 @@ import time
 import logging
 from dotenv import load_dotenv
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Load environment variables
 load_dotenv()
 PC2_HOST = os.getenv('PC2_HOST', 'localhost')
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)

@@ -17,6 +17,7 @@ import asyncio
 import logging
 from contextlib import contextmanager
 from typing import Any, Callable, Optional, Tuple, Type
+from common.utils.log_setup import configure_logging
 
 try:
     import zmq
@@ -312,7 +313,7 @@ if __name__ == "__main__":
     # Example usage and testing
     import logging
     
-    logging.basicConfig(level=logging.INFO)
+    logger = configure_logging(__name__, level="INFO")
     logger = logging.getLogger(__name__)
     
     # Test basic usage

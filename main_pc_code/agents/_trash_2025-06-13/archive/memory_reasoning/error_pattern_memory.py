@@ -15,6 +15,7 @@ import hashlib
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -23,9 +24,7 @@ LOG_PATH = str(PathManager.get_logs_dir() / "error_pattern_memory.log")
 ERROR_PATTERN_STORE_PATH = "error_pattern_store.json"
 ZMQ_ERROR_PATTERN_PORT = 5611  # New agent port
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

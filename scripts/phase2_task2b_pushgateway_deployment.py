@@ -13,11 +13,10 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
+from common.utils.log_setup import configure_logging
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(f'{os.path.expanduser("~")}/phase2_task2b_pushgateway_deployment.log'),
         logging.StreamHandler(sys.stdout)

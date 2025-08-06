@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 PC2 Cross-Machine Agent Template
 -------------------------------
@@ -59,9 +60,7 @@ log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pc2_code", "
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, "pc2_agent_template.log")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format=f'%(asctime)s - PC2 - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - PC2 - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file),
         logging.StreamHandler()

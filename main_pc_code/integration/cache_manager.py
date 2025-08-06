@@ -15,6 +15,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Constants
 ${SECRET_PLACEHOLDER} 'localhost'
@@ -91,9 +92,7 @@ class CacheManager:
 
     def _setup_logging(self):
         """Setup logging configuration"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
+        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "cache_manager.log")),
                 logging.StreamHandler()

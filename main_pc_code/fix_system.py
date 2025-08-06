@@ -11,13 +11,12 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
 # Configure basic logging
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "system_fix.log")),
         logging.StreamHandler(sys.stdout)
@@ -153,9 +152,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "predictive_health_monitor.log"))),
         logging.StreamHandler()

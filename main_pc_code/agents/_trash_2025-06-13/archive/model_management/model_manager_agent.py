@@ -1,5 +1,6 @@
 from main_pc_code.src.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 Model Manager / Resource Monitor Agent
 - Tracks status and availability of all models
@@ -3479,8 +3480,7 @@ from common.env_helpers import get_env
         # Set up root logger only if it has no handlers
         root_logger = logging.getLogger()
         if not root_logger.handlers:
-            logging.basicConfig(
-                level=getattr(logging, log_level),
+            logger = configure_logging(__name__),
                 format=log_format,
                 handlers=[
                     logging.FileHandler(log_file, encoding='utf-8'),

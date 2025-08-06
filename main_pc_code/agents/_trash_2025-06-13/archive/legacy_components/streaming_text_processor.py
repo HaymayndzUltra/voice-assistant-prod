@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Streaming Text Processor Module
 Processes text input and generates appropriate responses
@@ -17,7 +18,7 @@ from typing import Dict, Optional, List
 from collections import deque, OrderedDict
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("TextProcessor")
 
 # Constants

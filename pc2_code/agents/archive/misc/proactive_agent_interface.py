@@ -10,6 +10,7 @@ import zmq
 import logging
 import time
 from typing import Optional
+from common.utils.log_setup import configure_logging
 
 # Constants
 PROACTIVE_EVENT_PORT = 5595
@@ -69,7 +70,7 @@ def send_proactive_event(
             
 if __name__ == "__main__":
     # Simple test if run directly
-    logging.basicConfig(level=logging.INFO)
+    logger = configure_logging(__name__, level="INFO")
     print("Sending test proactive event...")
     result = send_proactive_event(
         event_type="test", 

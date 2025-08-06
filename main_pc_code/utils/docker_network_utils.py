@@ -14,6 +14,7 @@ import yaml
 # Import the environment loader
 from main_pc_code.utils.env_loader import get_env
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -157,8 +158,7 @@ else:
 
 if __name__ == '__main__':
     # Configure logging for the test
-    logging.basicConfig(level=logging.INFO, 
-                      format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
     
     # Print Docker network information
     print(f"Running in Docker: {is_running_in_docker()}")

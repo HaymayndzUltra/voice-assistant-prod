@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 Test UnifiedMemoryReasoningAgent with SystemDigitalTwin
 
@@ -21,9 +22,7 @@ import json
 import zmq
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
 )
 logger = logging.getLogger("TestUnifiedMemoryAgent")
 

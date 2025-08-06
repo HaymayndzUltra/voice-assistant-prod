@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 ModelManagerSuite - Consolidated Model Management Service
 =======================================================
@@ -112,9 +113,7 @@ except ImportError:
 # Configure logging
 log_dir = 'logs'
 os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(os.path.join(log_dir, 'model_manager_suite.log')),
         logging.StreamHandler(sys.stdout)

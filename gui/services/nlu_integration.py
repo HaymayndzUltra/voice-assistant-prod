@@ -10,9 +10,10 @@ import json
 import logging
 from typing import Dict, Any, Optional, Callable
 from dataclasses import dataclass
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logger = configure_logging(__name__, level="INFO")
 logger = logging.getLogger("NLUIntegration")
 
 @dataclass

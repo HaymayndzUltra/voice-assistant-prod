@@ -14,6 +14,7 @@ Features:
 from __future__ import annotations
 import sys
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -1005,7 +1006,7 @@ if __name__ == "__main__":
     import asyncio
     import logging
     
-    logging.basicConfig(level=logging.INFO)
+    logger = configure_logging(__name__, level="INFO")
     
     async def test_data_protection():
         if not CRYPTO_AVAILABLE:

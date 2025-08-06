@@ -11,6 +11,7 @@ import numpy as np
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Constants
 METRICS_PORT = 5619
@@ -73,9 +74,7 @@ class PerformanceMonitor:
         
     def _setup_logging(self):
         """Setup logging configuration"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
+        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "performance_monitor.log")),
                 logging.StreamHandler()

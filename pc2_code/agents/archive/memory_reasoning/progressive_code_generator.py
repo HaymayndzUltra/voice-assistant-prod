@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 Progressive Code Generator
 - Breaks down complex tasks into smaller, testable components
@@ -30,8 +31,7 @@ log_level = config.get('system.log_level', 'INFO')
 log_file = Path(config.get('system.logs_dir', 'logs') / str(PathManager.get_logs_dir() / "progressive_code_generator.log")
 log_file.parent.mkdir(exist_ok=True)
 
-logging.basicConfig(
-    level=getattr(logging, log_level),
+logger = configure_logging(__name__),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file),

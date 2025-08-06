@@ -2,15 +2,14 @@ import os
 import sys
 import logging
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 def setup_logging():
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
     
     log_file = log_dir / str(PathManager.get_logs_dir() / "diagnose.log")
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.FileHandler(log_file),
             logging.StreamHandler()

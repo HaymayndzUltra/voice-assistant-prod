@@ -16,15 +16,14 @@ from pathlib import Path
 
 # Import Hugging Face Transformers
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from common.utils.log_setup import configure_logging
 
 # Configure logging
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 log_file = log_dir / str(PathManager.get_logs_dir() / "nllb_adapter.log")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
     handlers=[
         logging.FileHandler(log_file),
         logging.StreamHandler()

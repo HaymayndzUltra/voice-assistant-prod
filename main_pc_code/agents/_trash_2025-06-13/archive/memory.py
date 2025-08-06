@@ -9,15 +9,14 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # from datetime import datetime
 from typing import List, Dict, Any
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
 LOG_PATH = str(PathManager.get_logs_dir() / "memory_agent.log")
 MEMORY_PATH = "memory_store.json"
 USER_PROFILE_PATH = "user_profile.json"
 DEFAULT_USER_ID = "default_user"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

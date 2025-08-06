@@ -39,14 +39,13 @@ from common.health.standardized_health import StandardizedHealthChecker, HealthS
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.responses import JSONResponse, PlainTextResponse
 import uvicorn
+from common.utils.log_setup import configure_logging
 
 # Configure logging
 log_file_path = Path(PathManager.get_project_root()) / "logs" / "enhanced_observability_hub_restored.log"
 log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(str(log_file_path))

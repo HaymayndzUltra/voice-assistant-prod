@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Streaming Whisper ASR Module (CTranslate2, Real-Time)
 Subscribes to audio chunks from streaming_audio_capture.py via ZMQ and transcribes in near real-time.
@@ -46,7 +47,7 @@ stt_manager = DynamicSTTModelManager(available_models, default_model=list(availa
 timestamp_last_used = {}  # model_id: last used time
 
 # Logging setup
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("StreamingWhisperASR")
 
 # Model paths

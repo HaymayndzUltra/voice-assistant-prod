@@ -29,6 +29,7 @@ from common.utils.path_manager import PathManager
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common_utils.error_handling import SafeExecutor
+from common.utils.log_setup import configure_logging
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -4437,8 +4438,7 @@ class ModelManagerAgent(BaseAgent):
         # Set up root logger only if it has no handlers
         root_logger = logging.getLogger()
         if not root_logger.handlers:
-            logging.basicConfig(
-                level=getattr(logging, log_level),
+            logger = configure_logging(__name__),
                 format=log_format,
                 handlers=[
                     logging.FileHandler(log_file, encoding='utf-8'),

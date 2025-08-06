@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Integrated Listener - Combines working components from our tests
 """
@@ -20,7 +21,7 @@ import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
 from common.utils.path_manager import PathManager
 # Set up basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("IntegratedListener")
 
 # Constants

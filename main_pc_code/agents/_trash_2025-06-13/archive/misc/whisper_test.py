@@ -5,9 +5,10 @@ Whisper Test - Test if Whisper model loading is working
 import sys
 import time
 import logging
+from common.utils.log_setup import configure_logging
 
 # Set up basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("WhisperTest")
 
 print("=== Whisper Model Loading Test ===")

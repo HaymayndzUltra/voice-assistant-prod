@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 
 import torch
+from common.utils.log_setup import configure_logging
 try:
     from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
     from transformers import BitsAndBytesConfig
@@ -42,9 +43,7 @@ except ImportError:
     CTRANSLATE_AVAILABLE = False
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("llm_model_manager")
 

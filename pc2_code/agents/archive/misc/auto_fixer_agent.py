@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 Auto-Fixer Agent
 - Orchestrates auto-code correction and debugging loop
@@ -21,9 +22,7 @@ MAX_ATTEMPTS = 3
 RETRY_DELAY = 1  # seconds
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
 )
 logger = logging.getLogger("AutoFixerAgent")
 

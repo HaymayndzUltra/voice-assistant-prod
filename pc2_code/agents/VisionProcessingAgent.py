@@ -22,6 +22,7 @@ from PIL import Image
 
 # ✅ MODERNIZED: Standardized path management using PathManager only
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Add project root to path using PathManager (standardized approach)
 PROJECT_ROOT = PathManager.get_project_root()
@@ -39,9 +40,7 @@ import psutil
 
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(Path(PathManager.get_project_root() / "logs" / str(PathManager.get_logs_dir() / "vision_processing_agent.log")))

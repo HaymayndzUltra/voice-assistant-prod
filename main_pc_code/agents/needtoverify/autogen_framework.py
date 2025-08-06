@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 AutoGen-inspired Framework for AI Agent Coordination
 - Provides a framework for multiple agents to collaborate
@@ -19,9 +20,7 @@ from typing import Dict, List, Any, Optional
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "autogen_framework.log")),
         logging.StreamHandler()

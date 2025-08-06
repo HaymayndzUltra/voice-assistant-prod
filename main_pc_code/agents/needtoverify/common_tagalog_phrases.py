@@ -3,9 +3,10 @@ Common Tagalog Phrases Module
 Pre-translated common phrases for Tagalog to English and English to Tagalog
 """
 import logging
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("CommonTagalogPhrases")
 
 # Common Tagalog Phrases with English translations

@@ -21,6 +21,7 @@ AFTER (Event-Driven):
 """
 # model_manager_agent.py
 from vram_optimizer_agent import VRAMOptimizerAgent  # ❌ Circular import
+from common.utils.log_setup import configure_logging
 
 class ModelManagerAgent:
     def __init__(self):
@@ -71,7 +72,7 @@ from typing import Dict, Any
 import logging
 
 # Configure logging for the example
-logging.basicConfig(level=logging.INFO)
+logger = configure_logging(__name__, level="INFO")
 logger = logging.getLogger(__name__)
 
 class EventDrivenModelManagerAgent(BaseAgent):

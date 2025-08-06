@@ -14,14 +14,13 @@ import logging
 import hashlib
 from datetime import datetime
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
 LOG_PATH = str(PathManager.get_logs_dir() / "context_summarizer_agent.log")
 CONTEXT_STORE_PATH = "context_store.json"
 ZMQ_CONTEXT_SUMMARIZER_PORT = 5610  # New agent port
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

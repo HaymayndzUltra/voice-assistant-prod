@@ -20,6 +20,7 @@ import importlib.util
 import inspect
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union, Tuple
+from common.utils.log_setup import configure_logging
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -34,9 +35,7 @@ from main_pc_code.utils.zmq_cleanup_utils import cleanup_agent_zmq_resources
 log_dir = os.path.join(project_root, 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(os.path.join(log_dir, 'verify_agent_cleanup.log'))

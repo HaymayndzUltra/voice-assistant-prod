@@ -9,6 +9,7 @@ import logging
 import sys
 import os
 from unittest.mock import MagicMock, patch
+from common.utils.log_setup import configure_logging
 
 # Ensure the parent directory is in the path for imports
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -17,8 +18,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 from main_pc_code.agents.unified_planning_agent import UnifiedPlanningAgent
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 

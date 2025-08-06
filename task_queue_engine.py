@@ -23,11 +23,10 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from common.utils.log_setup import configure_logging
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 

@@ -7,11 +7,10 @@ import subprocess
 import yaml
 import socket
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger("container_startup")
@@ -188,9 +187,7 @@ import logging
 import os
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger("{agent_name}")
@@ -268,7 +265,7 @@ def main():
             [sys.executable, "-c", f"""
 import time
 import logging
-logging.basicConfig(level=logging.INFO)
+logger = configure_logging(__name__, level="INFO")
 logger = logging.getLogger("placeholder")
 logger.info("Starting placeholder process for {CONTAINER_GROUP}")
 while True:

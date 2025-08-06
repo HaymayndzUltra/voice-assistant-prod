@@ -10,6 +10,7 @@ import os
 import logging
 from typing import Any, Dict, List
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -150,8 +151,7 @@ ENV = load_all_env()
 
 if __name__ == '__main__':
     # Configure logging for the test
-    logging.basicConfig(level=logging.INFO, 
-                      format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
     
     # Print all environment variables
     print("Environment Variables:")

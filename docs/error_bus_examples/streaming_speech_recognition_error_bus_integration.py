@@ -6,6 +6,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import asyncio
 import logging
 from common.error_bus import init_error_bus, report_error, report_critical, error_bus_handler, ErrorContext
+from common.utils.log_setup import configure_logging
 
 class StreamingSpeechRecognitionWithErrorBus:
     """
@@ -181,7 +182,7 @@ async def main():
 
 if __name__ == "__main__":
     # Setup basic logging
-    logging.basicConfig(level=logging.INFO)
+    logger = configure_logging(__name__, level="INFO")
     
     # Run the agent
     asyncio.run(main())

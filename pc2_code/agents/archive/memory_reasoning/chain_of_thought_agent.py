@@ -16,6 +16,7 @@ from pathlib import Path
 from datetime import datetime
 import traceback
 from common.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 
 # Add the parent directory to sys.path to import the config
 sys.path.append(str(Path(__file__).parent.parent)
@@ -32,9 +33,7 @@ LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.l
 ZMQ_CHAIN_OF_THOUGHT_PORT = 5612  # Chain of Thought port
 REMOTE_CONNECTOR_PORT = 5557  # Remote Connector Agent port for model inference
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

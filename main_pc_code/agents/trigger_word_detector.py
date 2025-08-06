@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -38,8 +39,7 @@ log_level = config.get('system.log_level', 'INFO')
 log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "trigger_word_detector.log")
 log_file.parent.mkdir(exist_ok=True)
 
-logging.basicConfig(
-    level=getattr(logging, log_level),
+logger = configure_logging(__name__),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file),

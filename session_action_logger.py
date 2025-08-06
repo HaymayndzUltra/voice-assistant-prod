@@ -3,11 +3,10 @@ import logging
 import os
 from datetime import datetime
 from typing import Any, Dict
+from common.utils.log_setup import configure_logging
 
 LOG_FILE = os.path.join(os.getcwd(), "session_logs.log")
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
+logger = configure_logging(__name__)s | %(levelname)s | %(message)s",
     handlers=[
         logging.FileHandler(LOG_FILE),
         logging.StreamHandler(),

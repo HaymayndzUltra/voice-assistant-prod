@@ -9,6 +9,7 @@ import threading
 
 # Import path manager for containerization-friendly paths
 import sys
+from common.utils.log_setup import configure_logging
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
 # Constants
@@ -17,9 +18,7 @@ PUB_PORT = 5614  # For broadcasting metrics
 PULL_PORT = 5615  # For receiving fire-and-forget logs
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "performance_metrics.log"))),
         logging.StreamHandler()

@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 """
 AI Studio Assistant
 ------------------
@@ -42,9 +43,7 @@ from common.env_helpers import get_env
 LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "ai_studio_assistant.log"))
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

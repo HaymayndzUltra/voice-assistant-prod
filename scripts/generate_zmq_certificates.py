@@ -10,6 +10,7 @@ import sys
 import argparse
 import logging
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -18,9 +19,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger("CertGenerator")

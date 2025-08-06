@@ -23,11 +23,10 @@ import ast
 from pathlib import Path
 import logging
 from typing import Dict, List, Set, Tuple, Optional
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("pc2_compliance_fixer")
 

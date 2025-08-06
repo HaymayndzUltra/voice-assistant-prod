@@ -7,6 +7,7 @@ import threading
 import logging
 # from datetime import datetime
 from typing import List, Dict, Any
+from common.utils.log_setup import configure_logging
 
 # Add the parent directory to sys.path to allow importing from sibling modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))
@@ -34,9 +35,7 @@ MEMORY_PATH = "memory_store.json"
 USER_PROFILE_PATH = "user_profile.json"
 DEFAULT_USER_ID = "default_user"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

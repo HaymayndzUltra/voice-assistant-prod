@@ -16,6 +16,7 @@ Exit code 0 = all green, otherwise non-zero; prints JSON report.
 """
 from __future__ import annotations
 import pathlib, re, py_compile, json, ast, subprocess, sys, hashlib
+# from common.utils.log_setup import configure_logging  # Commented out to avoid import issues
 
 ROOT   = pathlib.Path(__file__).resolve().parent.parent
 DOCKER = ROOT / "docker"

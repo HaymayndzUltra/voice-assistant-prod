@@ -15,9 +15,10 @@ from pathlib import Path
 from dataclasses import dataclass, asdict
 import asyncio
 from functools import lru_cache
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logger = configure_logging(__name__, level="INFO")
 logger = logging.getLogger(__name__)
 
 # Import our existing memory system

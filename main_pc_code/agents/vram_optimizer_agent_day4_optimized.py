@@ -11,6 +11,7 @@ from common.utils.path_manager import PathManager
 import sys
 import os
 from pathlib import Path
+from common.utils.log_setup import configure_logging
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
@@ -50,7 +51,7 @@ from common.config_manager import load_unified_config
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("VRAMOptimizerAgent")
 
 class VramOptimizerAgent(BaseAgent):

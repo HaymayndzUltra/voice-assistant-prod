@@ -2,14 +2,13 @@ from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import logging
 from typing import Dict, Any
+from common.utils.log_setup import configure_logging
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 

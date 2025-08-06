@@ -12,9 +12,10 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 import yaml
 from dataclasses import dataclass, asdict
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 @dataclass

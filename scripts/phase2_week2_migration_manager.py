@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
+from common.utils.log_setup import configure_logging
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -115,9 +116,7 @@ class MigrationManager:
         # Main migration log
         migration_log = log_dir / f"migration_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
         
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler(migration_log),
                 logging.StreamHandler(sys.stdout)

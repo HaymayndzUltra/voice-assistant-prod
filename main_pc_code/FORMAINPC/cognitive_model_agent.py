@@ -11,6 +11,7 @@ from common.core.base_agent import BaseAgent
 import psutil
 from main_pc_code.utils.config_loader import load_config
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 
 # Module-level configuration loading
 config = load_config()
@@ -25,9 +26,7 @@ COGNITIVE_MODEL_PORT = 5600  # Cognitive Model port
 REMOTE_CONNECTOR_PORT = 5557  # Remote Connector port on PC2
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "cognitive_model.log")),
         logging.StreamHandler()

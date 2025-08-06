@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.log_setup import configure_logging
 PC2 Services Configuration Loader
 --------------------------------
 Utility module for loading PC2 services configuration
@@ -116,7 +117,7 @@ def reload_configuration():
 
 # Example usage
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logger = configure_logging(__name__, level="INFO")
     
     pc2_config = load_pc2_services()
     print(f"PC2 services enabled: {pc2_config.get('enabled', False)}")

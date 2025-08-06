@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.utils.log_setup import configure_logging
 """
 Distributed Agent Launcher
 - Manages agent distribution across multiple machines
@@ -35,8 +36,7 @@ log_level = config.get('system.log_level', 'INFO')
 log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "distributed_launcher.log")
 log_file.parent.mkdir(exist_ok=True)
 
-logging.basicConfig(
-    level=getattr(logging, log_level),
+logger = configure_logging(__name__),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file),

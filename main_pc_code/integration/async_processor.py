@@ -12,6 +12,7 @@ from pathlib import Path
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
+from common.utils.log_setup import configure_logging
 
 # Constants
 PUSH_PORT = 5615  # For fire-and-forget tasks
@@ -125,9 +126,7 @@ class AsyncProcessor:
         self.health_socket.bind(f"tcp://*:{HEALTH_PORT}")
         
     def _setup_logging(self):
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
+        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "async_processor.log")),
                 logging.StreamHandler()

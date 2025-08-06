@@ -17,6 +17,7 @@ import psutil
 
 # Add the parent directory to sys.path to import the config
 from main_pc_code.utils.config_loader import load_config
+from common.utils.log_setup import configure_logging
 config = load_config()
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
@@ -40,9 +41,7 @@ LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.l
 ZMQ_CHAIN_OF_THOUGHT_PORT = config.get("chain_of_thought_port", 5612)
 REMOTE_CONNECTOR_PORT = config.get("remote_connector_port", 5557)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()

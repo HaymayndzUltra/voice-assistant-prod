@@ -12,6 +12,7 @@ import logging
 from typing import Dict, Any
 from plugp100.common.credentials import AuthCredential  
 from plugp100.new.device_factory import connect, DeviceConnectConfiguration
+from common.utils.log_setup import configure_logging
 
 class SimpleSmartHomeAgent:
     def __init__(self, port=7125):
@@ -20,7 +21,7 @@ class SimpleSmartHomeAgent:
         self.setup_zmq()
         
     def setup_logging(self):
-        logging.basicConfig(level=logging.INFO)
+        logger = configure_logging(__name__, level="INFO")
         self.logger = logging.getLogger("SimpleSmartHomeAgent")
         
     def setup_zmq(self):

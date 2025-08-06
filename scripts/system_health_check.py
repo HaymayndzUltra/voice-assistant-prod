@@ -16,6 +16,7 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from common.env_helpers import get_env
+from common.utils.log_setup import configure_logging
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -32,9 +33,7 @@ except ImportError:
     USE_COMMON_UTILS = False
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger("SystemHealthCheck")

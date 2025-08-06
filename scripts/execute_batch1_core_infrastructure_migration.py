@@ -26,6 +26,7 @@ import requests
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
+from common.utils.log_setup import configure_logging
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -35,9 +36,7 @@ from scripts.migration_validation_framework import MigrationValidationSuite
 from common.observability.migration_metrics import get_migration_observer, MigrationPhase
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler(f"{Path(__file__).parent.parent}/logs/batch1_migration.log")
