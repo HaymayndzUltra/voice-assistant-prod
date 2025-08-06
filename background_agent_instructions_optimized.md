@@ -12,43 +12,108 @@ Claude, execute a comprehensive optimization and validation audit of this dual-m
 
 ## PHASE 1 - CONTAINER VALIDATION & BUILD OPTIMIZATION:
 
-### 1.1 Container Analysis:
-1. Analyze all 77 Docker containers in ./docker/ directory
-2. Validate each Dockerfile builds successfully without errors
-3. Check docker-compose.yml files for proper configuration
-4. Verify requirements.txt files have no conflicting dependencies
-5. Test container startup sequences following startup_config.yaml dependencies
-6. Document any containers that fail to build or start
-7. Validate health check endpoints respond correctly across both machines
+### 1.0 MANDATORY SYSTEM DISCOVERY (RUN FIRST):
+**CRITICAL: Execute this before any other analysis!**
+
+```bash
+# Run the system discovery script to map the complete file structure
+python system_discovery_script.py
+
+# This will generate:
+# - system_discovery_report.json (complete system mapping)
+# - analysis_paths.json (specific file paths for analysis)
+```
+
+**The background agent MUST start with system discovery to know exactly where all files are located!**
+
+### 1.1 SYSTEM DISCOVERY & CONTAINER ANALYSIS:
+1. **Complete File System Mapping:**
+   ```bash
+   # Primary locations to scan:
+   ./docker/                                    # 77 Docker containers
+   ./main_pc_code/agents/                      # MainPC agent source code
+   ./pc2_code/agents/                          # PC2 agent source code
+   ./common/                                   # Shared utilities and base classes
+   ./phase1_implementation/                    # Phase implementation code
+   ./scripts/                                  # Build and utility scripts
+   ./requirements*.txt                         # Root-level requirements
+   ./docker-compose*.yml                       # System-level compose files
+   ```
+
+2. **Container Discovery and Analysis:**
+   - **Docker Container Locations:** `./docker/*/`
+   - **Expected Files per Container:**
+     * `./docker/*/Dockerfile`
+     * `./docker/*/docker-compose.yml`
+     * `./docker/*/requirements.txt`
+     * `./docker/*/requirements*.txt` (variations)
+   - **Analysis Tasks:**
+     * Analyze all 77 Docker containers in ./docker/ directory
+     * Validate each Dockerfile builds successfully without errors
+     * Check docker-compose.yml files for proper configuration
+     * Verify requirements.txt files have no conflicting dependencies
+     * Test container startup sequences following startup_config.yaml dependencies
+     * Document any containers that fail to build or start
+     * Validate health check endpoints respond correctly across both machines
 
 ### 1.2 REQUIREMENTS DISCOVERY & COMPLETION (PREREQUISITE):
 1. **Agent Code Analysis:**
-   - Scan each agent's Python files for import statements
-   - Trace all dependencies including indirect imports
-   - Identify missing packages not listed in requirements.txt
-   - Detect unused packages listed but not imported
-   - Generate complete dependency tree for each agent
+   - **TARGET LOCATIONS:**
+     * Docker containers: `./docker/*/` (77 containers)
+     * MainPC agents: `./main_pc_code/agents/*/`
+     * PC2 agents: `./pc2_code/agents/*/`
+     * Common utilities: `./common/*/`
+     * Phase implementations: `./phase1_implementation/*/`
+   - **ANALYSIS TASKS:**
+     * Scan each agent's Python files for import statements
+     * Trace all dependencies including indirect imports
+     * Identify missing packages not listed in requirements.txt
+     * Detect unused packages listed but not imported
+     * Generate complete dependency tree for each agent
 
 2. **Requirements File Validation:**
-   - Check all 77 containers for existing requirements.txt files
-   - Identify containers with missing or incomplete requirements.txt
-   - Generate missing requirements.txt files using static analysis
-   - Validate that all imported packages are properly versioned
-   - Create backup of original requirements before modification
+   - **TARGET FILES:**
+     * Docker requirements: `./docker/*/requirements.txt`
+     * Root requirements: `./requirements*.txt`
+     * PC2 requirements: `./pc2_code/requirements*.txt`
+     * MainPC requirements: `./main_pc_code/requirements*.txt`
+   - **VALIDATION TASKS:**
+     * Check all 77 containers for existing requirements.txt files
+     * Identify containers with missing or incomplete requirements.txt
+     * Generate missing requirements.txt files using static analysis
+     * Validate that all imported packages are properly versioned
+     * Create backup of original requirements before modification
 
 3. **Dynamic Dependency Detection:**
-   - Analyze runtime imports (importlib, __import__, etc.)
-   - Detect conditional imports based on environment/config
-   - Identify optional dependencies that may be missing
-   - Check for platform-specific requirements (Linux/Windows)
-   - Trace dependencies through configuration files
+   - **TARGET CONFIGURATION FILES:**
+     * Startup configs: `./main_pc_code/config/startup_config*.yaml`
+     * PC2 configs: `./pc2_code/config/startup_config*.yaml`
+     * Docker compose: `./docker/*/docker-compose.yml`
+     * Environment configs: `./config/*.yaml`, `./env_config*.sh`
+   - **DETECTION TASKS:**
+     * Analyze runtime imports (importlib, __import__, etc.)
+     * Detect conditional imports based on environment/config
+     * Identify optional dependencies that may be missing
+     * Check for platform-specific requirements (Linux/Windows)
+     * Trace dependencies through configuration files
 
 4. **Cross-Agent Dependency Mapping:**
-   - Map shared internal modules between agents
-   - Identify common utility imports across agents
-   - Document agent-to-agent communication dependencies
-   - Create dependency graph showing inter-agent relationships
-   - Validate startup order based on actual dependencies
+   - **TARGET SHARED MODULES:**
+     * Common utilities: `./common/*/` (all subdirectories)
+     * Base agent classes: `./common/core/base_agent.py`
+     * Path managers: `./common/utils/path_manager.py`
+     * Config managers: `./common/config_manager.py`
+     * Error handling: `./common/utils/error_publisher.py`
+   - **DEPENDENCY SOURCES:**
+     * Startup configs: `./main_pc_code/config/startup_config*.yaml`
+     * PC2 configs: `./pc2_code/config/startup_config*.yaml`
+     * Import statements in all agent Python files
+   - **MAPPING TASKS:**
+     * Map shared internal modules between agents
+     * Identify common utility imports across agents
+     * Document agent-to-agent communication dependencies
+     * Create dependency graph showing inter-agent relationships
+     * Validate startup order based on actual dependencies
 
 5. **Automated Requirements Generation Tools:**
    - Use `pipreqs` for basic requirements generation from imports
