@@ -1,0 +1,8 @@
+noisereduce
+numpy
+orjson
+psutil
+queue
+scipy
+torch
+wave

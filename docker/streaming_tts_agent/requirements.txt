@@ -1,6 +1,7 @@
+# Auto-optimized requirements.txt (aggressive mode)
+# Original backed up as requirements.txt.backup
+
 pyttsx3
 pyzmq
-queue
-re
 sounddevice
 win32com

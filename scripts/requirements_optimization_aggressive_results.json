@@ -1,0 +1,841 @@
+{
+  "observability_hub": {
+    "status": "empty_requirements"
+  },
+  "stt_service": {
+    "status": "empty_requirements"
+  },
+  "pc2_experience_tracker": {
+    "status": "empty_requirements"
+  },
+  "model_orchestrator": {
+    "status": "analyzed",
+    "current_count": 4,
+    "optimized_count": 4,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "sentence_transformers",
+      "remote_api_adapter",
+      "numpy",
+      "psutil"
+    ],
+    "optimized_packages": [
+      "numpy",
+      "psutil",
+      "remote_api_adapter",
+      "sentence_transformers"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "cognitive_model_agent": {
+    "status": "empty_requirements"
+  },
+  "session_memory_agent": {
+    "status": "empty_requirements"
+  },
+  "pc2_resource_manager": {
+    "status": "empty_requirements"
+  },
+  "pc2_tiered_responder": {
+    "status": "analyzed",
+    "current_count": 3,
+    "optimized_count": 4,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [
+      "PyYAML"
+    ],
+    "used_imports": [
+      "torch",
+      "psutil",
+      "zmq",
+      "yaml"
+    ],
+    "optimized_packages": [
+      "PyYAML",
+      "psutil",
+      "pyzmq",
+      "torch"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "nlu_agent": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 1,
+    "removed": 1,
+    "unused_packages": [
+      "re"
+    ],
+    "missing_packages": [],
+    "used_imports": [
+      "remote_api_adapter"
+    ],
+    "optimized_packages": [
+      "remote_api_adapter"
+    ],
+    "action": "optimized"
+  },
+  "predictive_health_monitor": {
+    "status": "analyzed",
+    "current_count": 4,
+    "optimized_count": 4,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "psutil",
+      "signal",
+      "platform",
+      "yaml"
+    ],
+    "optimized_packages": [
+      "PyYAML",
+      "platform",
+      "psutil",
+      "signal"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_unified_utils_agent": {
+    "status": "analyzed",
+    "current_count": 3,
+    "optimized_count": 3,
+    "removed": 3,
+    "unused_packages": [
+      "psutil",
+      "pydantic",
+      "redis"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil",
+      "pydantic",
+      "redis"
+    ],
+    "action": "optimized"
+  },
+  "voice_profiling": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 1,
+    "removed": 2,
+    "unused_packages": [
+      "psutil",
+      "numpy"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil"
+    ],
+    "action": "optimized"
+  },
+  "tts_service": {
+    "status": "empty_requirements"
+  },
+  "learning_manager": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "zmq"
+    ],
+    "optimized_packages": [
+      "pyzmq"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_context_manager": {
+    "status": "empty_requirements"
+  },
+  "executor": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 2,
+    "removed": 2,
+    "unused_packages": [
+      "psutil",
+      "pyzmq"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil",
+      "pyzmq"
+    ],
+    "action": "optimized"
+  },
+  "vram_optimizer": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 2,
+    "removed": 2,
+    "unused_packages": [
+      "psutil",
+      "pyzmq"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil",
+      "pyzmq"
+    ],
+    "action": "optimized"
+  },
+  "code_generator": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 1,
+    "unused_packages": [
+      "pyzmq"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "pyzmq"
+    ],
+    "action": "optimized"
+  },
+  "service_registry": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 0,
+    "removed": 1,
+    "unused_packages": [
+      "orjson"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [],
+    "action": "optimized"
+  },
+  "emotion_synthesis_agent": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "psutil"
+    ],
+    "optimized_packages": [
+      "psutil"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "feedback_handler": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "psutil"
+    ],
+    "optimized_packages": [
+      "psutil"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_tutor_agent": {
+    "status": "empty_requirements"
+  },
+  "audio_capture": {
+    "status": "empty_requirements"
+  },
+  "empathy_agent": {
+    "status": "empty_requirements"
+  },
+  "cloud_translation_service": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "psutil"
+    ],
+    "optimized_packages": [
+      "psutil"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_memory_orchestrator_service": {
+    "status": "empty_requirements"
+  },
+  "smart_home_agent": {
+    "status": "analyzed",
+    "current_count": 3,
+    "optimized_count": 1,
+    "removed": 2,
+    "unused_packages": [
+      "re",
+      "concurrent"
+    ],
+    "missing_packages": [],
+    "used_imports": [
+      "plugp100"
+    ],
+    "optimized_packages": [
+      "plugp100"
+    ],
+    "action": "optimized"
+  },
+  "system_digital_twin": {
+    "status": "analyzed",
+    "current_count": 5,
+    "optimized_count": 5,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "zmq",
+      "redis",
+      "prometheus_api_client",
+      "psutil",
+      "yaml"
+    ],
+    "optimized_packages": [
+      "PyYAML",
+      "prometheus_api_client",
+      "psutil",
+      "pyzmq",
+      "redis"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_vision_processing_agent": {
+    "status": "empty_requirements"
+  },
+  "memory_client": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "zmq"
+    ],
+    "optimized_packages": [
+      "pyzmq"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "fused_audio_preprocessor": {
+    "status": "analyzed",
+    "current_count": 5,
+    "optimized_count": 5,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "torch",
+      "zmq",
+      "noisereduce",
+      "numpy",
+      "psutil"
+    ],
+    "optimized_packages": [
+      "noisereduce",
+      "numpy",
+      "psutil",
+      "pyzmq",
+      "torch"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "streaming_language_analyzer": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 0,
+    "removed": 2,
+    "unused_packages": [
+      "re",
+      "fasttext"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [],
+    "action": "optimized"
+  },
+  "pc2_dream_world_agent": {
+    "status": "empty_requirements"
+  },
+  "tone_detector": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 1,
+    "unused_packages": [
+      "psutil"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil"
+    ],
+    "action": "optimized"
+  },
+  "proactive_agent": {
+    "status": "empty_requirements"
+  },
+  "knowledge_base": {
+    "status": "empty_requirements"
+  },
+  "pc2_advanced_router": {
+    "status": "empty_requirements"
+  },
+  "chitchat_agent": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 2,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "zmq",
+      "psutil"
+    ],
+    "optimized_packages": [
+      "psutil",
+      "pyzmq"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "responder": {
+    "status": "analyzed",
+    "current_count": 5,
+    "optimized_count": 4,
+    "removed": 1,
+    "unused_packages": [
+      "queue"
+    ],
+    "missing_packages": [],
+    "used_imports": [
+      "tkinter",
+      "TTS",
+      "numpy",
+      "pyttsx3"
+    ],
+    "optimized_packages": [
+      "TTS",
+      "numpy",
+      "pyttsx3",
+      "tkinter"
+    ],
+    "action": "optimized"
+  },
+  "goal_manager": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "heapq"
+    ],
+    "optimized_packages": [
+      "heapq"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_dreaming_mode_agent": {
+    "status": "empty_requirements"
+  },
+  "emotion_engine": {
+    "status": "analyzed",
+    "current_count": 3,
+    "optimized_count": 3,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "psutil",
+      "signal",
+      "zmq"
+    ],
+    "optimized_packages": [
+      "psutil",
+      "pyzmq",
+      "signal"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_unified_memory_reasoning_agent": {
+    "status": "empty_requirements"
+  },
+  "pc2_authentication_agent": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 2,
+    "removed": 2,
+    "unused_packages": [
+      "pydantic",
+      "redis"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "pydantic",
+      "redis"
+    ],
+    "action": "optimized"
+  },
+  "chain_of_thought_agent": {
+    "status": "empty_requirements"
+  },
+  "face_recognition_agent": {
+    "status": "analyzed",
+    "current_count": 8,
+    "optimized_count": 8,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "torch",
+      "dataclasses",
+      "insightface",
+      "filterpy",
+      "numpy",
+      "psutil",
+      "onnxruntime",
+      "cv2"
+    ],
+    "optimized_packages": [
+      "dataclasses",
+      "filterpy",
+      "insightface",
+      "numpy",
+      "onnxruntime",
+      "opencv-python",
+      "psutil",
+      "torch"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_proactive_context_monitor": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 2,
+    "removed": 2,
+    "unused_packages": [
+      "pydantic",
+      "redis"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "pydantic",
+      "redis"
+    ],
+    "action": "optimized"
+  },
+  "streaming_tts_agent": {
+    "status": "analyzed",
+    "current_count": 6,
+    "optimized_count": 4,
+    "removed": 2,
+    "unused_packages": [
+      "re",
+      "queue"
+    ],
+    "missing_packages": [],
+    "used_imports": [
+      "sounddevice",
+      "zmq",
+      "win32com",
+      "pyttsx3"
+    ],
+    "optimized_packages": [
+      "pyttsx3",
+      "pyzmq",
+      "sounddevice",
+      "win32com"
+    ],
+    "action": "optimized"
+  },
+  "pc2_unified_web_agent": {
+    "status": "empty_requirements"
+  },
+  "pc2_agent_trust_scorer": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 2,
+    "removed": 2,
+    "unused_packages": [
+      "pydantic",
+      "redis"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "pydantic",
+      "redis"
+    ],
+    "action": "optimized"
+  },
+  "human_awareness": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 1,
+    "unused_packages": [
+      "psutil"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil"
+    ],
+    "action": "optimized"
+  },
+  "wake_word_detector": {
+    "status": "analyzed",
+    "current_count": 3,
+    "optimized_count": 3,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "psutil",
+      "numpy",
+      "pvporcupine"
+    ],
+    "optimized_packages": [
+      "numpy",
+      "psutil",
+      "pvporcupine"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_observability_hub": {
+    "status": "analyzed",
+    "current_count": 3,
+    "optimized_count": 3,
+    "removed": 3,
+    "unused_packages": [
+      "psutil",
+      "pydantic",
+      "redis"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil",
+      "pydantic",
+      "redis"
+    ],
+    "action": "optimized"
+  },
+  "streaming_speech_recognition": {
+    "status": "analyzed",
+    "current_count": 8,
+    "optimized_count": 7,
+    "removed": 1,
+    "unused_packages": [
+      "queue"
+    ],
+    "missing_packages": [],
+    "used_imports": [
+      "torch",
+      "orjson",
+      "noisereduce",
+      "wave",
+      "scipy",
+      "numpy",
+      "psutil"
+    ],
+    "optimized_packages": [
+      "noisereduce",
+      "numpy",
+      "orjson",
+      "psutil",
+      "scipy",
+      "torch",
+      "wave"
+    ],
+    "action": "optimized"
+  },
+  "request_coordinator": {
+    "status": "analyzed",
+    "current_count": 3,
+    "optimized_count": 3,
+    "removed": 3,
+    "unused_packages": [
+      "psutil",
+      "pyzmq",
+      "pydantic"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil",
+      "pydantic",
+      "pyzmq"
+    ],
+    "action": "optimized"
+  },
+  "pc2_tutoring_agent": {
+    "status": "empty_requirements"
+  },
+  "active_learning_monitor": {
+    "status": "analyzed",
+    "current_count": 4,
+    "optimized_count": 4,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "zmq",
+      "enum",
+      "dataclasses",
+      "numpy"
+    ],
+    "optimized_packages": [
+      "dataclasses",
+      "enum",
+      "numpy",
+      "pyzmq"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "streaming_interrupt_handler": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 2,
+    "removed": 2,
+    "unused_packages": [
+      "psutil",
+      "pyzmq"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil",
+      "pyzmq"
+    ],
+    "action": "optimized"
+  },
+  "unified_system_agent": {
+    "status": "analyzed",
+    "current_count": 3,
+    "optimized_count": 3,
+    "removed": 3,
+    "unused_packages": [
+      "psutil",
+      "pydantic",
+      "redis"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil",
+      "pydantic",
+      "redis"
+    ],
+    "action": "optimized"
+  },
+  "pc2_filesystem_assistant_agent": {
+    "status": "empty_requirements"
+  },
+  "advanced_command_handler": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 1,
+    "unused_packages": [
+      "re"
+    ],
+    "missing_packages": [
+      "importlib"
+    ],
+    "used_imports": [
+      "importlib"
+    ],
+    "optimized_packages": [
+      "importlib"
+    ],
+    "action": "optimized"
+  },
+  "learning_orchestration_service": {
+    "status": "analyzed",
+    "current_count": 2,
+    "optimized_count": 2,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "remote_api_adapter",
+      "zmq"
+    ],
+    "optimized_packages": [
+      "pyzmq",
+      "remote_api_adapter"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "dynamic_identity_agent": {
+    "status": "empty_requirements"
+  },
+  "mood_tracker": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 1,
+    "unused_packages": [
+      "psutil"
+    ],
+    "missing_packages": [],
+    "used_imports": [],
+    "optimized_packages": [
+      "psutil"
+    ],
+    "action": "optimized"
+  },
+  "learning_opportunity_detector": {
+    "status": "analyzed",
+    "current_count": 1,
+    "optimized_count": 1,
+    "removed": 0,
+    "unused_packages": [],
+    "missing_packages": [],
+    "used_imports": [
+      "zmq"
+    ],
+    "optimized_packages": [
+      "pyzmq"
+    ],
+    "action": "no_optimization_needed"
+  },
+  "pc2_async_processor": {
+    "status": "empty_requirements"
+  },
+  "pc2_cache_manager": {
+    "status": "empty_requirements"
+  },
+  "pc2_task_scheduler": {
+    "status": "empty_requirements"
+  },
+  "model_manager_suite": {
+    "status": "empty_requirements"
+  },
+  "pc2_remote_connector_agent": {
+    "status": "empty_requirements"
+  },
+  "intention_validator": {
+    "status": "empty_requirements"
+  }
+}
