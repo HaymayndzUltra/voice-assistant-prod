@@ -2,15 +2,24 @@
 """
 patch_dockerfiles.py
 ====================
+<<<<<<< HEAD
 Scans all Dockerfiles under AI_System_Monorepo/docker and injects a shared base-layer
 that installs `AI_System_Monorepo/requirements.common.txt` to maximise layer caching.
+=======
+Scans all Dockerfiles under /workspace/docker and injects a shared base-layer
+that installs `/workspace/requirements.common.txt` to maximise layer caching.
+>>>>>>> remotes/origin/cursor/pamahalaan-ang-listahan-ng-gagawin-412a
 
 Patch logic (idempotent):
 1. If the Dockerfile already contains the marker `# -- common-req-layer`, skip.
 2. Otherwise, inject the following snippet **after the first FROM line**::
 
     # -- common-req-layer (auto-generated)
+<<<<<<< HEAD
     ARG COMMON_REQ=/home/haymayndz/AI_System_Monorepo/requirements.common.txt
+=======
+    ARG COMMON_REQ=/workspace/requirements.common.txt
+>>>>>>> remotes/origin/cursor/pamahalaan-ang-listahan-ng-gagawin-412a
     COPY ${COMMON_REQ} /tmp/
     RUN pip install --no-cache-dir -r /tmp/requirements.common.txt
 
@@ -30,13 +39,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCKER_DIR = ROOT / "docker"
-WORKSPACE_PATH = "/home/haymayndz/AI_System_Monorepo"
 MARKER = "# -- common-req-layer"
-INJECT_SNIPPET = f"""{MARKER}
-ARG COMMON_REQ={WORKSPACE_PATH}/requirements.common.txt
-COPY ${{COMMON_REQ}} /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.common.txt
-"""
+INJECT_SNIPPET = f"""{MARKER}\nARG COMMON_REQ=/workspace/requirements.common.txt\nCOPY ${{COMMON_REQ}} /tmp/\nRUN pip install --no-cache-dir -r /tmp/requirements.common.txt\n"""
 
 
 def patch_dockerfile(path: Path, apply: bool = False) -> bool:

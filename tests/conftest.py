@@ -119,3 +119,7 @@ def _port_open(host, port):
     with socket.socket() as s:
         s.settimeout(1)
         return s.connect_ex((host, port)) == 0 
+
+import os, pytest
+if os.getenv("SKIP_DOCKER_TESTS") == "1":
+    pytest.skip("Docker-backed tests skipped: no daemon available", allow_module_level=True) 
