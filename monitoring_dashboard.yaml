@@ -1,0 +1,5 @@
+# Monitoring dashboard placeholder
+widgets:
+  - name: GPU Utilization
+    type: line
+    query: metrics.gpu.usage

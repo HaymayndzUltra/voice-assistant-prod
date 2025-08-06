@@ -1,0 +1,20 @@
+# Auto-generated common requirements (packages in >=10 containers)
+accelerate
+aiohttp
+fastapi
+nats-py
+numpy
+prometheus-client
+psutil
+pydantic
+pyyaml
+pyzmq
+redis
+requests
+rich
+scikit-learn
+scipy
+structlog
+torch
+transformers
+uvicorn

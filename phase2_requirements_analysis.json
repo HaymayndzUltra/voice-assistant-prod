@@ -1,0 +1,907 @@
+{
+  "total_requirements_files": 125,
+  "packages_total": 225,
+  "packages_ge10_containers": 19,
+  "duplicate_packages": {
+    "pyyaml": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.common.txt",
+      "docker/scripts/requirements.txt",
+      "docker/predictive_health_monitor/requirements.txt",
+      "docker/system_digital_twin/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.auto.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/pc2/requirements.pc2.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "accelerate": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "fastapi": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.core_infrastructure.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker/translation_services/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt"
+    ],
+    "numpy": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.common.txt",
+      "docker/model_orchestrator/requirements.txt",
+      "docker/fused_audio_preprocessor/requirements.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/responder/requirements.txt",
+      "docker/face_recognition_agent/requirements.txt",
+      "docker/wake_word_detector/requirements.txt",
+      "docker/streaming_speech_recognition/requirements.txt",
+      "docker/active_learning_monitor/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_service/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "prometheus-client": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.common.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "psutil": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.common.txt",
+      "docker/model_orchestrator/requirements.txt",
+      "docker/pc2_tiered_responder/requirements.txt",
+      "docker/predictive_health_monitor/requirements.txt",
+      "docker/pc2_unified_utils_agent/requirements.txt",
+      "docker/voice_profiling/requirements.txt",
+      "docker/executor/requirements.txt",
+      "docker/vram_optimizer/requirements.txt",
+      "docker/emotion_synthesis_agent/requirements.txt",
+      "docker/feedback_handler/requirements.txt",
+      "docker/cloud_translation_service/requirements.txt",
+      "docker/system_digital_twin/requirements.txt",
+      "docker/fused_audio_preprocessor/requirements.txt",
+      "docker/tone_detector/requirements.txt",
+      "docker/chitchat_agent/requirements.txt",
+      "docker/emotion_engine/requirements.txt",
+      "docker/face_recognition_agent/requirements.txt",
+      "docker/human_awareness/requirements.txt",
+      "docker/wake_word_detector/requirements.txt",
+      "docker/pc2_observability_hub/requirements.txt",
+      "docker/streaming_speech_recognition/requirements.txt",
+      "docker/request_coordinator/requirements.txt",
+      "docker/streaming_interrupt_handler/requirements.txt",
+      "docker/unified_system_agent/requirements.txt",
+      "docker/mood_tracker/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.auto.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "pydantic": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "docker/pc2_unified_utils_agent/requirements.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/pc2_authentication_agent/requirements.txt",
+      "docker/pc2_proactive_context_monitor/requirements.txt",
+      "docker/pc2_agent_trust_scorer/requirements.txt",
+      "docker/pc2_observability_hub/requirements.txt",
+      "docker/request_coordinator/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker/unified_system_agent/requirements.txt",
+      "docker/translation_services/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "pyzmq": [
+      "requirements.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.common.txt",
+      "docker/pc2_tiered_responder/requirements.txt",
+      "docker/learning_manager/requirements.txt",
+      "docker/executor/requirements.txt",
+      "docker/vram_optimizer/requirements.txt",
+      "docker/code_generator/requirements.txt",
+      "docker/system_digital_twin/requirements.txt",
+      "docker/memory_client/requirements.txt",
+      "docker/fused_audio_preprocessor/requirements.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/chitchat_agent/requirements.txt",
+      "docker/emotion_engine/requirements.txt",
+      "docker/streaming_tts_agent/requirements.txt",
+      "docker/request_coordinator/requirements.txt",
+      "docker/active_learning_monitor/requirements.txt",
+      "docker/streaming_interrupt_handler/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker/learning_orchestration_service/requirements.txt",
+      "docker/learning_opportunity_detector/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.auto.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_service/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "redis": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "requirements-web.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.common.txt",
+      "docker/pc2_unified_utils_agent/requirements.txt",
+      "docker/system_digital_twin/requirements.txt",
+      "docker/pc2_authentication_agent/requirements.txt",
+      "docker/pc2_proactive_context_monitor/requirements.txt",
+      "docker/pc2_agent_trust_scorer/requirements.txt",
+      "docker/pc2_observability_hub/requirements.txt",
+      "docker/unified_system_agent/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "requests": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.common.txt",
+      "docker/scripts/requirements.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/shared/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker/translation_services/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/pc2/requirements.pc2.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "rich": [
+      "requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "scikit-learn": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.memory_storage.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "structlog": [
+      "requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "torch": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "docker/pc2_tiered_responder/requirements.txt",
+      "docker/fused_audio_preprocessor/requirements.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/face_recognition_agent/requirements.txt",
+      "docker/streaming_speech_recognition/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.auto.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "transformers": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.memory_storage.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "uvicorn": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.core_infrastructure.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker/translation_services/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.auto.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt"
+    ],
+    "aiohttp": [
+      "requirements.txt",
+      "requirements.base.txt",
+      "requirements_cloud_apis.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "pc2_code/docker/requirements.core_infrastructure.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "scipy": [
+      "requirements.txt",
+      "main_pc_code/requirements.txt",
+      "pc2_code/requirements.txt",
+      "pc2_code/agents/requirements_pc2.txt",
+      "docker/tiny_llama_service_enhanced/requirements.txt",
+      "docker/streaming_speech_recognition/requirements.txt",
+      "docker/go_t_to_t_agent/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ],
+    "nats-py": [
+      "docker_backup_not_in_startup_config/pc2_utility_suite/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_memory_stack/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_web_interface/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_vision_dream_gpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_infra_core/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_tutoring_cpu/requirements.txt",
+      "docker_backup_not_in_startup_config/pc2_async_pipeline/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/language_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/memory_stack/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/speech_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/coordination/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/utility_cpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/emotion_system/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/reasoning_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/infra_core/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/observability/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/translation_services/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/vision_gpu/requirements.txt",
+      "mainpc_docker_backup_not_in_startup_config/learning_gpu/requirements.txt"
+    ]
+  },
+  "version_conflicts": {
+    "black": [
+      "==24.2.0",
+      ">=23.7.0",
+      ">=23.0.0"
+    ],
+    "isort": [
+      "==5.13.2",
+      ">=5.12.0"
+    ],
+    "flake8": [
+      "==7.0.0",
+      ">=6.0.0"
+    ],
+    "mypy": [
+      ">=1.0.0",
+      ">=1.5.0",
+      "==1.8.0"
+    ],
+    "pyyaml": [
+      "==6.0",
+      ">=6.0",
+      "==6.0.1"
+    ],
+    "accelerate": [
+      ">=0.23.0",
+      ">=0.20.0",
+      "==0.28.0",
+      "==0.25.0",
+      "==0.30.1",
+      "==0.29.3",
+      "==0.23.0",
+      "==0.24.1"
+    ],
+    "aiofiles": [
+      "==23.2.1",
+      ">=23.0.0"
+    ],
+    "asyncio-mqtt": [
+      ">=0.16.1",
+      "==0.13.0"
+    ],
+    "click": [
+      "==8.1.7",
+      ">=8.1.0"
+    ],
+    "datasets": [
+      ">=2.10.0",
+      "==2.16.1",
+      "==2.19.0"
+    ],
+    "fastapi": [
+      ">=0.103.0",
+      "==0.111.0",
+      "==0.104.1",
+      ">=0.100.0",
+      "==0.100.0",
+      "==0.109.2"
+    ],
+    "librosa": [
+      "==0.10.1",
+      ">=0.10.0"
+    ],
+    "matplotlib": [
+      ">=3.7.0",
+      "==3.8.3",
+      "==3.8.2",
+      "==3.7.2"
+    ],
+    "numpy": [
+      "==1.24.3",
+      "==1.24.4",
+      "==1.26.4",
+      ">=1.24.0"
+    ],
+    "opencv-python": [
+      "==4.9.0.80",
+      "==4.8.1.78",
+      ">=4.8.0"
+    ],
+    "opentelemetry-api": [
+      "==1.21.0",
+      ">=1.18.0"
+    ],
+    "opentelemetry-sdk": [
+      "==1.21.0",
+      ">=1.18.0"
+    ],
+    "orjson": [
+      "==3.9.10",
+      ">=3.8.0"
+    ],
+    "pandas": [
+      "==2.3.1",
+      "==2.2.1",
+      ">=2.0.0",
+      "==2.1.3"
+    ],
+    "pillow": [
+      "==10.0.1",
+      "==10.0.0",
+      "==10.1.0",
+      ">=10.0.0",
+      "==10.3.0"
+    ],
+    "prometheus-client": [
+      "==0.17.1",
+      "==0.19.0",
+      ">=0.17.0",
+      "==0.20.0"
+    ],
+    "psutil": [
+      "==5.9.6",
+      "==5.9.5",
+      ">=5.9.0",
+      "==5.9.8"
+    ],
+    "pyaudio": [
+      ">=0.2.11",
+      "==0.2.11"
+    ],
+    "pydantic": [
+      "==2.5.1",
+      "==2.5.2",
+      ">=2.4.0",
+      "==2.7.1",
+      "==2.5.0"
+    ],
+    "pytest-asyncio": [
+      ">=0.21.0",
+      "==0.23.5",
+      "==0.21.1"
+    ],
+    "pytest": [
+      "==7.3.1",
+      ">=7.4.0",
+      "==8.0.2",
+      ">=7.0.0"
+    ],
+    "python-dotenv": [
+      ">=1.0.0",
+      "==1.0.1",
+      "==1.0.0"
+    ],
+    "pyzmq": [
+      "==25.1.2",
+      "==25.1.1",
+      "==27.0.0",
+      "==26.0.3"
+    ],
+    "redis": [
+      "==5.0.4",
+      ">=4.5.0",
+      "==5.0.1",
+      "==4.6.0",
+      ">=5.0.0"
+    ],
+    "requests": [
+      ">=2.31.0",
+      "==2.31.0",
+      "==2.32.4"
+    ],
+    "rich": [
+      "==13.7.1",
+      ">=13.4.0"
+    ],
+    "scikit-learn": [
+      "==1.4.1.post1",
+      "==1.3.0",
+      "==1.4.2",
+      ">=1.3.0"
+    ],
+    "speechrecognition": [
+      ">=3.10.0",
+      "==3.10.0"
+    ],
+    "structlog": [
+      "==24.1.0",
+      ">=23.1.0"
+    ],
+    "tokenizers": [
+      "==0.19.1",
+      ">=0.13.0"
+    ],
+    "torch": [
+      "==2.1.0+cu121",
+      "==2.1.1",
+      "==2.1.1+cu118",
+      ">=2.0.0",
+      "==2.2.1",
+      "==2.1.0"
+    ],
+    "tqdm": [
+      "==4.66.2",
+      "==4.66.1",
+      "==4.65.0",
+      ">=4.65.0"
+    ],
+    "transformers": [
+      ">=4.30.0",
+      "==4.41.0",
+      "==4.42.0",
+      "==4.38.2",
+      "==4.35.2",
+      "==4.30.2",
+      "==4.36.0",
+      ">=4.34.0",
+      "==4.34.0",
+      "==4.39.3"
+    ],
+    "uvicorn": [
+      ">=0.23.0",
+      "==0.23.2",
+      "==0.23.1",
+      "==0.27.1",
+      "==0.24.0",
+      "==0.30.0"
+    ],
+    "websockets": [
+      ">=11.0.0",
+      "==12.0"
+    ],
+    "selenium": [
+      "==4.15.2",
+      ">=4.21"
+    ],
+    "beautifulsoup4": [
+      ">=4.12",
+      "==4.12.2",
+      "==4.12.3"
+    ],
+    "aiohttp": [
+      "==3.9.3",
+      ">=3.9",
+      "==3.8.5",
+      "==3.9.1",
+      ">=3.9.0",
+      "==3.9.5"
+    ],
+    "sentence-transformers": [
+      ">=2.5",
+      "==2.2.2",
+      "==2.5.1"
+    ],
+    "langchain": [
+      ">=0.1.4",
+      "==0.1.4",
+      "==0.0.340"
+    ],
+    "networkx": [
+      "==3.2.1",
+      "==3.4.2",
+      "==3.1",
+      ">=3.2"
+    ],
+    "scipy": [
+      "==1.11.4",
+      ">=1.12",
+      "==1.11.3",
+      "==1.12.0",
+      "==1.13.0"
+    ],
+    "plotly": [
+      "==5.19.0",
+      ">=5.19"
+    ],
+    "streamlit": [
+      "==1.32.0",
+      ">=1.32"
+    ],
+    "bitsandbytes": [
+      "==0.41.1",
+      "==0.41.3",
+      ">=0.41.3",
+      ">=0.41.1"
+    ],
+    "peft": [
+      ">=0.7.1",
+      "==0.7.1",
+      "==0.5.0"
+    ],
+    "playwright": [
+      "==1.42.0",
+      ">=1.42",
+      "==1.40.0"
+    ],
+    "colorama": [
+      ">=0.4.6",
+      "==0.4.6"
+    ],
+    "jsonschema": [
+      "==4.20.0",
+      ">=4.0.0"
+    ],
+    "nltk": [
+      ">=3.8",
+      "==3.8.1"
+    ],
+    "chromadb": [
+      "==0.4.22",
+      ">=0.4.0"
+    ],
+    "faiss-cpu": [
+      "==1.7.4",
+      ">=1.7.4"
+    ],
+    "sentencepiece": [
+      ">=0.1.99",
+      "==0.1.99",
+      "==0.2.0"
+    ],
+    "sqlalchemy": [
+      "==2.0.23",
+      "==2.0.25",
+      "==2.0.17",
+      ">=2.0.0",
+      "==2.0.27",
+      "==2.0.21"
+    ],
+    "openai": [
+      ">=1.0.0",
+      "==1.3.5",
+      "==1.30.5"
+    ],
+    "httpx": [
+      ">=0.23.0,<1.0",
+      "==0.25.2"
+    ],
+    "boto3": [
+      ">=1.34.0",
+      "==1.34.0"
+    ],
+    "loguru": [
+      "==0.7.2",
+      "==0.7.0"
+    ],
+    "werkzeug": [
+      "==2.3.7",
+      "==3.0.1"
+    ],
+    "pynacl": [
+      "==1.5.0",
+      ">=1.5.0"
+    ],
+    "pvporcupine": [
+      "==3.0.0",
+      "==2.2.0"
+    ],
+    "torchaudio": [
+      "==2.1.0+cu121",
+      "==2.1.0"
+    ],
+    "alembic": [
+      "==1.13.1",
+      "==1.12.0"
+    ],
+    "scikit-image": [
+      "==0.22.0",
+      "==0.21.0"
+    ],
+    "spacy": [
+      "==3.6.0",
+      "==3.7.2"
+    ],
+    "apscheduler": [
+      "==3.10.1",
+      "==3.10.4"
+    ],
+    "zmq": [
+      "==24.0.1",
+      "==0.0.0"
+    ],
+    "nats-py": [
+      "==2.3.1",
+      "==2.5.0",
+      "==2.7.2",
+      "==2.6.0"
+    ],
+    "torchvision": [
+      "==0.16.1+cu118",
+      "==0.17.2+cu121",
+      "==0.17.2"
+    ],
+    "diffusers": [
+      "==0.24.0",
+      "==0.27.0"
+    ],
+    "safetensors": [
+      "==0.4.0",
+      "==0.5.3"
+    ],
+    "huggingface-hub": [
+      "==0.34.3",
+      "==0.23.2",
+      "==0.19.4"
+    ]
+  }
+}
