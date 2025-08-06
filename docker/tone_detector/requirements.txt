@@ -1,7 +1,4 @@
-PyYAML
-numpy
+# Auto-optimized requirements.txt
+# Original backed up as requirements.txt.backup
+
 psutil
-pyaudio
-queue
-re
-whisper

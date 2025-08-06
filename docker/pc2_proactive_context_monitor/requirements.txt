@@ -1,9 +1,5 @@
-fastapi
-uvicorn
+# Auto-optimized requirements.txt
+# Original backed up as requirements.txt.backup
+
 pydantic
 redis
-nats-py
-aiohttp
-requests
-python-dotenv
-asyncio-mqtt

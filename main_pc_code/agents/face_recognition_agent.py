@@ -18,8 +18,7 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-# Add the parent directory to sys.path to import the config module
+# Removed # Add the parent directory to sys.path to import the config module
 # from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
 from common.env_helpers import get_env
 
@@ -45,10 +44,10 @@ from main_pc_code.agents.error_publisher import ErrorPublisher
 import sys
 import os
 from pathlib import Path
+from common.utils.env_standardizer import get_env
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # ZMQ timeout settings

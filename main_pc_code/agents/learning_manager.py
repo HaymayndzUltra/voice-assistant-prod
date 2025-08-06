@@ -12,8 +12,7 @@ from common.utils.path_manager import PathManager
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 import zmq
 import time
 import logging
@@ -25,6 +24,8 @@ from typing import Dict, Any
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Parse command line arguments
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

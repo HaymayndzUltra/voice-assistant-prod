@@ -7,10 +7,10 @@ from common.core.base_agent import BaseAgent
 import sys
 from pathlib import Path
 from common.utils.path_manager import PathManager
+from main_pc_code.agents.error_publisher import ErrorPublisher
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if MAIN_PC_CODE_DIR not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR)
-
+    
 # Migrated to unified config manager (replacing Pattern 4)
 from common.config.unified_config_manager import Config
 config = Config.for_agent(__file__)
@@ -33,11 +33,10 @@ import psutil
 import socket
 import platform
 import traceback
+from common.utils.log_setup import configure_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "unified_system_agent.log")),
         logging.StreamHandler()

@@ -15,8 +15,7 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-import sys
+# Removed import sys
 import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = get_main_pc_code()
@@ -62,8 +61,7 @@ except ImportError as e:
 logger = configure_logging(__name__, log_to_file=True)
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler(os.path.join(
                         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "logs", str(PathManager.get_logs_dir() / "human_awareness_tone.log"))), 

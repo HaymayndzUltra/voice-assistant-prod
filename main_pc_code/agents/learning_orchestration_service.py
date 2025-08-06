@@ -25,8 +25,7 @@ import os
 from common.utils.path_manager import PathManager
 
 # --- Path Setup ---
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
@@ -37,6 +36,8 @@ from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integratio
 
 # --- Logging Setup ---
 from common.utils.log_setup import configure_logging
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 logger = configure_logging(__name__, log_to_file=True)
 
 # --- Constants ---

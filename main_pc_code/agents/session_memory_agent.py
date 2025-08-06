@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 """
 Session Memory Agent
 ------------------
@@ -28,8 +30,7 @@ from common.utils.path_manager import PathManager
 # Import path manager for containerization-friendly paths
 import sys
 import os
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from main_pc_code.agents.memory_client import MemoryClient

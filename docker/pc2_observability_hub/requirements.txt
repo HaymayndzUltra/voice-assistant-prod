@@ -1,10 +1,6 @@
-fastapi
-uvicorn
+# Auto-optimized requirements.txt
+# Original backed up as requirements.txt.backup
+
+psutil
 pydantic
 redis
-nats-py
-aiohttp
-requests
-prometheus-client
-psutil
-python-dotenv

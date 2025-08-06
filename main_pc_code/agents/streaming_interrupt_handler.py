@@ -6,11 +6,11 @@ from common.env_helpers import get_env
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 """
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 Streaming Interrupt Handler
 Monitors partial transcripts for interruption keywords and sends interrupt signals
 """
@@ -34,7 +34,7 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Logging setup
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("StreamingInterruptHandler")
 
 # ZMQ Configuration - using ports from config

@@ -40,7 +40,7 @@ except ImportError as e:
     FASTTEXT_AVAILABLE = False
 
 # Logging setup
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("StreamingLanguageAnalyzer")
 
 # Port configuration from args or defaults

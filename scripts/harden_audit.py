@@ -33,7 +33,7 @@ REQUIRED_IMPORTS = {
 }
 ERROR_PUBLISHER = {
     "pc2"   : "pc2_code.utils.pc2_error_publisher",
-    "main"  : "main_pc_code.utils.mainpc_error_publisher"
+    "main"  : "main_pc_code.agents.error_publisher"
 }
 
 def compile_tree():

@@ -32,6 +32,7 @@ from common.utils.path_manager import PathManager
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.utils.config_loader import Config
+from pc2_code.utils.pc2_error_publisher import PC2ErrorPublisher
 # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
 # Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 # Now using: self.report_error() method from BaseAgent

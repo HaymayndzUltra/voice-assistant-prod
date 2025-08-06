@@ -22,8 +22,7 @@ from pydantic import BaseModel, Field
 # Import path manager for containerization-friendly paths
 from common.utils.path_manager import PathManager
 # --- Path Setup ---
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
 

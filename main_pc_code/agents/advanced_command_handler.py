@@ -11,8 +11,7 @@ Extends the custom command handler with advanced features:
 from common.utils.path_manager import PathManager
 import sys
 import os
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-import json
+# Removed import json
 import logging
 import time
 import sys
@@ -24,6 +23,8 @@ from typing import Dict, List, Any, Optional, Tuple
 from common.core.base_agent import BaseAgent
 from main_pc_code.agents.needtoverify.custom_command_handler import CustomCommandHandler
 from common.config_manager import load_unified_config
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 config = load_unified_config(os.path.join(PathManager.get_project_root(), 'main_pc_code', 'config', 'startup_config.yaml'))
 # Configure logging using canonical approach
 from common.utils.log_setup import configure_logging

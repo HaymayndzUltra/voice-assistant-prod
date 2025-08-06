@@ -24,13 +24,13 @@ from common.env_helpers import get_env
 
 # Standardized environment variables (Blueprint.md Step 4)
 from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # -----------------------------------------------------------------------------
 # Configuration & Logging
 # -----------------------------------------------------------------------------
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Ports are loaded from configuration or environment variables (Rule 2)

@@ -3,8 +3,7 @@ from common.utils.path_manager import PathManager
 # Ensure project root (main_pc_code) is in sys.path so that local packages can be imported reliably
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 from common.core.base_agent import BaseAgent
 import json
 import subprocess
@@ -363,8 +362,7 @@ class ExecutorAgent(BaseAgent):
 # -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
     # Configure logging
-    logging.basicConfig(level=logging.INFO, 
-                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
     
     # Standardized main execution block
     agent = None

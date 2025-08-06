@@ -1,5 +1,5 @@
-GPUtil
-PyYAML
+# Auto-optimized requirements.txt
+# Original backed up as requirements.txt.backup
+
 psutil
 pyzmq
-torch

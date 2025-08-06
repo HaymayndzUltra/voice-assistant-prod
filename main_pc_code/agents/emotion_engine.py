@@ -8,9 +8,7 @@ from common.utils.path_manager import PathManager
 import sys
 import os
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed # Removed 
 import os
 from common.pools.zmq_pool import get_rep_socket
 import json
@@ -25,6 +23,8 @@ from common.core.base_agent import BaseAgent
 
 # Configure logging using canonical approach
 from common.utils.log_setup import configure_logging
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 logger = configure_logging(__name__, log_to_file=True)
 
 class EmotionEngine(BaseAgent):
@@ -44,8 +44,7 @@ class EmotionEngine(BaseAgent):
         # Call BaseAgent's __init__ with proper parameters
         super().__init__(name=agent_name, port=agent_port)
         
-        # Project root setup (sys.path.insert removed for Docker environment)
-        self.project_root = os.environ.get("PROJECT_ROOT", os.path.dirname(os.path.abspath(__file__)))
+        # Project root setup (        self.project_root = os.environ.get("PROJECT_ROOT", os.path.dirname(os.path.abspath(__file__)))
         
         # Save core parameters
         self.port = agent_port

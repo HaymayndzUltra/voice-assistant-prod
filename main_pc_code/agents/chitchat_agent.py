@@ -15,8 +15,7 @@ from common.utils.env_standardizer import get_pc2_ip
 import sys
 import os
 from pathlib import Path
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 import zmq
 import json
 import logging
@@ -31,6 +30,7 @@ from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common.env_helpers import get_env
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 

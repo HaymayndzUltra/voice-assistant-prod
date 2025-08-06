@@ -19,9 +19,11 @@ from typing import Dict, List, Any, Optional
 # Add project paths - use standard main_pc_code path management
 import os
 from pathlib import Path
-project_root = Path(__file__).parent.parent.parent
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
+from common.utils.env_standardizer import get_env
 from common.core.base_agent import BaseAgent
+from main_pc_code.agents.error_publisher import ErrorPublisher
+project_root = Path(__file__).parent.parent.parent
+# Removed from common.core.base_agent import BaseAgent
 from common.hybrid_api_manager import api_manager
 
 # Tapo device control

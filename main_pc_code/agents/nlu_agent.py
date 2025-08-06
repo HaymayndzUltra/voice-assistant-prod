@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # Migrated to unified config manager - legacy imports maintained for compatibility
 from common.config.unified_config_manager import Config
+from common.utils.env_standardizer import get_env
 """
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 NLU Agent
 ---------
 Natural Language Understanding agent that analyzes user input and extracts intents and entities. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
@@ -40,8 +40,7 @@ import sys
 import os
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-# Load configuration at module level
+# Removed # Load configuration at module level
 # New unified config manager - cached singleton with environment awareness
 config = Config.for_agent(__file__)
 

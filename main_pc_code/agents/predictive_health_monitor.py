@@ -9,8 +9,7 @@ Predictive Health Monitor
 """
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 import logging
 from common.utils.log_setup import configure_logging
 import socket
@@ -21,8 +20,7 @@ import sys
 import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-from main_pc_code.utils.network import get_bind_address, get_host
+# Removed from main_pc_code.utils.network import get_bind_address, get_host
 import yaml
 import time
 import sys
@@ -44,6 +42,8 @@ from common.core.base_agent import BaseAgent, logger
 from common_utils.error_handling import SafeExecutor
 from common.config_manager import load_unified_config
 from common.env_helpers import get_env
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Configure logging
 logger = logging.getLogger(__name__)
