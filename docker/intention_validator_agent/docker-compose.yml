@@ -1,31 +1,35 @@
-version: '3.8'
-
+networks:
+  intention_validator_agent_net:
+    driver: bridge
 services:
   intention_validator_agent:
     build:
-      context: ../../
+      context: ../..
       dockerfile: docker/intention_validator_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.IntentionValidatorAgent
     container_name: intention_validator_agent
-    hostname: intention_validator_agent
-    ports:
-      - "5705:5705"
-      - "6705:6705"
     environment:
-      - PYTHONPATH=/app
-      - PORT=5705
-      - HEALTH_PORT=6705
-    volumes:
-      - ../../logs:/app/logs
-      - ../../data:/app/data
-    networks:
-      - ai_system_network
-    restart: unless-stopped
+      AGENT_NAME: IntentionValidatorAgent
+      AGENT_PORT: '5701'
+      LOG_LEVEL: INFO
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6705/health"]
       interval: 30s
-      timeout: 10s
       retries: 3
-
-networks:
-  ai_system_network:
-    external: true
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6701/health
+      timeout: 10s
+    image: intention_validator_agent:latest
+    networks:
+    - intention_validator_agent_net
+    ports:
+    - 5701:5701
+    - 6701:6701
+    restart: unless-stopped
+version: '3.8'

@@ -1,31 +1,35 @@
-version: '3.8'
-
+networks:
+  voice_profiling_agent_net:
+    driver: bridge
 services:
   voice_profiling_agent:
     build:
-      context: ../../
+      context: ../..
       dockerfile: docker/voice_profiling_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.voice_profiling_agent
     container_name: voice_profiling_agent
-    hostname: voice_profiling_agent
-    ports:
-      - "5705:5705"
-      - "6705:6705"
     environment:
-      - PYTHONPATH=/app
-      - PORT=5705
-      - HEALTH_PORT=6705
-    volumes:
-      - ../../logs:/app/logs
-      - ../../data:/app/data
-    networks:
-      - ai_system_network
-    restart: unless-stopped
+      AGENT_NAME: VoiceProfilingAgent
+      AGENT_PORT: '5708'
+      LOG_LEVEL: INFO
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6705/health"]
       interval: 30s
-      timeout: 10s
       retries: 3
-
-networks:
-  ai_system_network:
-    external: true
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6708/health
+      timeout: 10s
+    image: voice_profiling_agent:latest
+    networks:
+    - voice_profiling_agent_net
+    ports:
+    - 5708:5708
+    - 6708:6708
+    restart: unless-stopped
+version: '3.8'
