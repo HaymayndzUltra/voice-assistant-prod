@@ -18,6 +18,12 @@ from pathlib import Path
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from common.utils.log_setup import configure_logging
 
+# Import torch at the top for memory management
+import torch
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
@@ -80,24 +86,46 @@ class NLLBTranslationAdapter:
         logger.info("=" * 80)
         
     def load_model(self):
-        """Load NLLB model and tokenizer"""
+        """Load NLLB model and tokenizer with memory optimization"""
         try:
             logger.info(f"Loading NLLB model: {self.model_name}")
             start_time = time.time()
             
             # Load tokenizer and model
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name)
+            
+            # Enable int8 quantization for memory optimization (PC2 CRITICAL)
+            # This reduces VRAM usage by approximately 50%
+            try:
+                from transformers import BitsAndBytesConfig
+                quantization_config = BitsAndBytesConfig(
+                    load_in_8bit=True,
+                    load_in_4bit=False,  # Keep 8bit for better quality
+                    bnb_8bit_compute_dtype=torch.float16,
+                    bnb_8bit_use_double_quant=True
+                )
+                self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                    self.model_name,
+                    quantization_config=quantization_config,
+                    device_map="auto" if torch.cuda.is_available() else None
+                )
+                logger.info("✅ Int8 quantization enabled for GPU memory optimization")
+            except ImportError:
+                logger.warning("⚠️ BitsAndBytesConfig not available, loading without quantization")
+                self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name)
             
             # Try to use GPU if available
-            import torch
-
-# Containerization-friendly paths (Blueprint.md Step 5)
-from common.utils.path_manager import PathManager
             if torch.cuda.is_available():
-                self.model = self.model.to("cuda")
+                if not hasattr(self.model, 'quantization_config'):
+                    # Only move to GPU if not already quantized
+                    self.model = self.model.to("cuda")
                 self.device = "cuda"
                 logger.info(f"Model loaded on GPU ({torch.cuda.get_device_name(0)})")
+                
+                # Log initial GPU memory usage
+                memory_allocated = torch.cuda.memory_allocated(0) / (1024 ** 3)  # Convert to GB
+                memory_reserved = torch.cuda.memory_reserved(0) / (1024 ** 3)   # Convert to GB
+                logger.info(f"Initial GPU memory - Allocated: {memory_allocated:.2f} GB, Reserved: {memory_reserved:.2f} GB")
             else:
                 self.device = "cpu"
                 logger.info("Model loaded on CPU")
@@ -106,7 +134,7 @@ from common.utils.path_manager import PathManager
             logger.info(f"Model loaded in {elapsed:.2f} seconds")
         except Exception as e:
             logger.error(f"Error loading NLLB model: {e}")
-            logger.error(traceback.format_exc()
+            logger.error(traceback.format_exc())
             raise
         
     def translate(self, text, src_lang="tl", tgt_lang="en"):

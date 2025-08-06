@@ -16,7 +16,7 @@ dataclasses
 # enum (used in 1 services)
 enum
 
-# fastapi (used in 7 services)
+# fastapi (used in 3 services)
 fastapi==0.104.1
 
 # filterpy (used in 1 services)
@@ -37,7 +37,7 @@ llama-cpp-python==0.2.11
 # noisereduce (used in 2 services)
 noisereduce
 
-# numpy (used in 14 services)
+# numpy (used in 9 services)
 numpy
 numpy==1.24.3
 
@@ -65,14 +65,17 @@ psutil
 # pvporcupine (used in 1 services)
 pvporcupine
 
-# pydantic (used in 14 services)
+# pydantic (used in 10 services)
 pydantic
 pydantic==2.5.0
 
 # pyttsx3 (used in 2 services)
 pyttsx3
 
-# pyzmq (used in 23 services)
+# pyyaml (used in 1 services)
+pyyaml==6.0.1
+
+# pyzmq (used in 18 services)
 pyzmq
 pyzmq==25.1.1
 
@@ -82,7 +85,7 @@ redis
 # remote_api_adapter (used in 3 services)
 remote_api_adapter
 
-# requests (used in 7 services)
+# requests (used in 5 services)
 requests==2.31.0
 
 # scipy (used in 3 services)
@@ -109,7 +112,7 @@ torch==2.1.1+cu118
 # transformers (used in 2 services)
 transformers==4.35.2
 
-# uvicorn (used in 7 services)
+# uvicorn (used in 3 services)
 uvicorn==0.24.0
 
 # wave (used in 1 services)
