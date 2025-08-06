@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  intention_validator_agent:
+    build:
+      context: ../../
+      dockerfile: docker/intention_validator_agent/Dockerfile
+    container_name: intention_validator_agent
+    hostname: intention_validator_agent
+    ports:
+      - "5705:5705"
+      - "6705:6705"
+    environment:
+      - PYTHONPATH=/app
+      - PORT=5705
+      - HEALTH_PORT=6705
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+    networks:
+      - ai_system_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6705/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ai_system_network:
+    external: true

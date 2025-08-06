@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  go_t_to_t_agent:
+    build:
+      context: ../../
+      dockerfile: docker/go_t_to_t_agent/Dockerfile
+    container_name: go_t_to_t_agent
+    hostname: go_t_to_t_agent
+    ports:
+      - "5646:5646"  # Main service port
+      - "6646:6646"  # Health check port
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - PORT=5646
+      - HEALTH_PORT=6646
+      - AGENT_NAME=go_t_to_t_agent
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../models:/app/models
+    networks:
+      - ai_system_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6646/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - model_manager_suite
+      - system_digital_twin
+      - chain_of_thought_agent
+
+networks:
+  ai_system_network:
+    external: true

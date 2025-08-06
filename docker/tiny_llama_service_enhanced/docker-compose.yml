@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  tiny_llama_service_enhanced:
+    build:
+      context: ../../
+      dockerfile: docker/tiny_llama_service_enhanced/Dockerfile
+    container_name: tiny_llama_service_enhanced
+    hostname: tiny_llama_service_enhanced
+    ports:
+      - "5615:5615"  # Main service port
+      - "6615:6615"  # Health check port
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - PORT=5615
+      - HEALTH_PORT=6615
+      - AGENT_NAME=tiny_llama_service_enhanced
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../models:/app/models
+    networks:
+      - ai_system_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6615/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - model_manager_suite
+      - system_digital_twin
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+networks:
+  ai_system_network:
+    external: true
