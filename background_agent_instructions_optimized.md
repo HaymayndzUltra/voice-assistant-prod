@@ -21,7 +21,52 @@ Claude, execute a comprehensive optimization and validation audit of this dual-m
 6. Document any containers that fail to build or start
 7. Validate health check endpoints respond correctly across both machines
 
-### 1.2 REQUIREMENTS OPTIMIZATION (CRITICAL - BUILD TIME REDUCTION):
+### 1.2 REQUIREMENTS DISCOVERY & COMPLETION (PREREQUISITE):
+1. **Agent Code Analysis:**
+   - Scan each agent's Python files for import statements
+   - Trace all dependencies including indirect imports
+   - Identify missing packages not listed in requirements.txt
+   - Detect unused packages listed but not imported
+   - Generate complete dependency tree for each agent
+
+2. **Requirements File Validation:**
+   - Check all 77 containers for existing requirements.txt files
+   - Identify containers with missing or incomplete requirements.txt
+   - Generate missing requirements.txt files using static analysis
+   - Validate that all imported packages are properly versioned
+   - Create backup of original requirements before modification
+
+3. **Dynamic Dependency Detection:**
+   - Analyze runtime imports (importlib, __import__, etc.)
+   - Detect conditional imports based on environment/config
+   - Identify optional dependencies that may be missing
+   - Check for platform-specific requirements (Linux/Windows)
+   - Trace dependencies through configuration files
+
+4. **Cross-Agent Dependency Mapping:**
+   - Map shared internal modules between agents
+   - Identify common utility imports across agents
+   - Document agent-to-agent communication dependencies
+   - Create dependency graph showing inter-agent relationships
+   - Validate startup order based on actual dependencies
+
+5. **Automated Requirements Generation Tools:**
+   - Use `pipreqs` for basic requirements generation from imports
+   - Implement custom AST parser for complex import patterns
+   - Use `pip-tools` for dependency resolution and version pinning
+   - Employ `safety` for security vulnerability scanning
+   - Create requirements.txt templates for different agent types
+   - Generate requirements.common.txt for shared dependencies
+
+6. **Requirements Validation & Testing:**
+   - Test build each container with generated requirements.txt
+   - Validate that all imports work correctly at runtime
+   - Check for missing system-level dependencies (apt packages, etc.)
+   - Ensure version compatibility across the entire ecosystem
+   - Document any manual adjustments needed for complex agents
+   - Create automated requirements testing pipeline
+
+### 1.3 REQUIREMENTS OPTIMIZATION (CRITICAL - BUILD TIME REDUCTION):
 1. **Duplicate Requirements Analysis:**
    - Scan all 77 requirements.txt files for duplicate packages
    - Identify version conflicts across containers
@@ -117,6 +162,8 @@ Claude, execute a comprehensive optimization and validation audit of this dual-m
 
 ### 1. Container Optimization Report:
 - Complete container validation report with build/startup status for all 77 agents
+- **Requirements Discovery Analysis:** Complete dependency mapping for all 77 agents
+- **Missing Requirements Report:** Generated requirements.txt for incomplete containers
 - Requirements deduplication analysis with shared dependency recommendations
 - Base image optimization strategy with size reduction metrics
 - Build time optimization implementation with before/after comparisons
@@ -157,11 +204,12 @@ Claude, execute a comprehensive optimization and validation audit of this dual-m
 - Container startup time improved by 50%+
 
 ## OPTIMIZATION PRIORITIES:
-1. **CRITICAL:** GPU memory optimization for PC2
-2. **HIGH:** Requirements deduplication and build optimization
-3. **HIGH:** Memory leak fixes and monitoring
-4. **MEDIUM:** Algorithm and runtime optimizations
-5. **MEDIUM:** Infrastructure hardening and monitoring
-6. **LOW:** Documentation and maintenance procedures
+1. **PREREQUISITE:** Requirements discovery and completion for all 77 agents
+2. **CRITICAL:** GPU memory optimization for PC2
+3. **HIGH:** Requirements deduplication and build optimization
+4. **HIGH:** Memory leak fixes and monitoring
+5. **MEDIUM:** Algorithm and runtime optimizations
+6. **MEDIUM:** Infrastructure hardening and monitoring
+7. **LOW:** Documentation and maintenance procedures
 
 Use all your available tools and capabilities. Analyze the existing codebase thoroughly, implement optimizations systematically, and provide production-ready solutions with proper testing and validation.
