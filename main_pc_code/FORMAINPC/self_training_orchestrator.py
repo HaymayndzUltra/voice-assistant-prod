@@ -28,7 +28,6 @@ import sys
 import os
 from common.utils.path_manager import PathManager
 
-sys.path.insert(0, str(PathManager.get_project_root()))
 # Load configuration at the module level
 config = load_config()
 
@@ -36,7 +35,7 @@ config = load_config()
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)
     filename=str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "self_training.log"))
 )
 logger = logging.getLogger(__name__)
@@ -90,8 +89,7 @@ class SelfTrainingOrchestrator(BaseAgent):
         # Project root setup
         self.project_root = os.environ.get("PROJECT_ROOT", os.path.dirname(os.path.abspath(__file__)))
         if self.project_root not in sys.path:
-            sys.path.insert(0, self.project_root)
-        
+                    
         self.port = agent_port
         self.health_port = health_port
         self.name = agent_name

@@ -33,6 +33,8 @@ import uuid
 from common.utils.path_manager import PathManager
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.core.base_agent import BaseAgent
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 from common.utils.data_models import ErrorSeverity
 from common.health.standardized_health import StandardizedHealthChecker, HealthStatus
 
@@ -510,7 +512,7 @@ class PerformanceLogger:
                     CREATE INDEX IF NOT EXISTS idx_agent_name ON performance_metrics(agent_name)
                 """)
                 
-                conn.execute("""
+                conn.execute(
                     CREATE INDEX IF NOT EXISTS idx_environment ON performance_metrics(environment)
                 """)
                 
@@ -530,7 +532,7 @@ class PerformanceLogger:
         try:
             with self.db_lock:
                 with sqlite3.connect(str(self.db_path)) as conn:
-                    conn.execute("""
+                    conn.execute(
                         INSERT INTO performance_metrics 
                         (timestamp, agent_name, metric_type, metric_value, metadata, environment, hub_role)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -554,14 +556,14 @@ class PerformanceLogger:
             
             with sqlite3.connect(str(self.db_path)) as conn:
                 if agent_name:
-                    cursor = conn.execute("""
+                    cursor = conn.execute(
                         SELECT timestamp, agent_name, metric_type, metric_value, metadata, environment, hub_role
                         FROM performance_metrics
                         WHERE agent_name = ? AND timestamp > ? AND environment = ?
                         ORDER BY timestamp DESC
                     """, (agent_name, cutoff_time, self.config.environment))
                 else:
-                    cursor = conn.execute("""
+                    cursor = conn.execute(
                         SELECT timestamp, agent_name, metric_type, metric_value, metadata, environment, hub_role
                         FROM performance_metrics
                         WHERE timestamp > ? AND environment = ?
@@ -596,7 +598,7 @@ class PerformanceLogger:
                 
                 with self.db_lock:
                     with sqlite3.connect(str(self.db_path)) as conn:
-                        cursor = conn.execute("""
+                        cursor = conn.execute(
                             DELETE FROM performance_metrics WHERE timestamp < ?
                         """, (cutoff_time,))
                         

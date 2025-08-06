@@ -1,0 +1,90 @@
+[
+  {
+    "file": "main_pc_code/FORMAINPC/chain_of_thought_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/cognitive_model_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/consolidated_translator_simple.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/got_tot_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/learning_adjuster_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/local_fine_tuner_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/nllb_adapter.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/self_training_orchestrator.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "main_pc_code/FORMAINPC/ConsolidatedTranslator.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "syntax_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "file": "phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "syntax_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  }
+]

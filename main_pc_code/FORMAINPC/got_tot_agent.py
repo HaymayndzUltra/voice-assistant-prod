@@ -14,8 +14,7 @@ from pathlib import Path
 from common.utils.log_setup import configure_logging
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
-
+    
 import logging
 import json
 import time
@@ -41,14 +40,13 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-sys.path.insert(0, str(PathManager.get_project_root()))
 from main_pc_code.utils import model_client
 import sys
 import os
 
 # Setup logging
 LOG_PATH = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "got_tot_agent.log"))
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
+logger = configure_logging(__name__)
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()
@@ -61,10 +59,8 @@ GOT_TOT_PORT = 5646
 PROJECT_ROOT = PathManager.get_project_root()
 MAIN_PC_CODE = PathManager.get_main_pc_code()
 if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)  # Insert project root to path
-if MAIN_PC_CODE not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE)  # Insert main_pc_code to path
-
+    if MAIN_PC_CODE not in sys.path:
+    
 # Import BaseAgent for standardized agent implementation
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config

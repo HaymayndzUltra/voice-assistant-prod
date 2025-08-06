@@ -29,8 +29,7 @@ from common.utils.log_setup import configure_logging
 # Add the main_pc_code directory to the Python path
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
-
+    
 # Import model_client for centralized model loading
 from main_pc_code.utils import model_client
 from main_pc_code.utils.config_loader import load_config
@@ -169,7 +168,7 @@ if 'NLLB_IDLE_TIMEOUT' in os.environ:
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "nllb_translation_adapter.log")
 
-logger = configure_logging(__name__), logging.INFO),
+logger = configure_logging(__name__)
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file_path),

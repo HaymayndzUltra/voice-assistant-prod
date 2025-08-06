@@ -69,7 +69,7 @@ log_level = config.get('system.log_level', 'INFO')
 log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "tinyllama_service.log")
 log_file.parent.mkdir(exist_ok=True)
 
-logger = configure_logging(__name__),
+logger = configure_logging(__name__)
     format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
     handlers=[
         logging.FileHandler(log_file),

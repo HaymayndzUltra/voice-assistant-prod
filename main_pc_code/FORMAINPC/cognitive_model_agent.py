@@ -26,7 +26,7 @@ COGNITIVE_MODEL_PORT = 5600  # Cognitive Model port
 REMOTE_CONNECTOR_PORT = 5557  # Remote Connector port on PC2
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)
     handlers=[
         logging.FileHandler(str(PathManager.get_logs_dir() / "cognitive_model.log")),
         logging.StreamHandler()
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 class CognitiveModelAgent(BaseAgent):
     """
-    Cognitive Model Agent for belief system management and cognitive reasoning. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    Cognitive Model Agent for belief system management and cognitive reasoning. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
     
     def __init__(self, port: int = 5641, name: str = None, **kwargs):
         """Initialize the Cognitive Model Agent."""

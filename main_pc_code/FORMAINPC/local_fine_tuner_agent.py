@@ -12,8 +12,7 @@ from pathlib import Path
 from common.utils.log_setup import configure_logging
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
-
+    
 import zmq
 import json
 import logging
@@ -41,14 +40,12 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-sys.path.insert(0, str(PathManager.get_project_root()))
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
+    
 # Import common utilities if available
 import psutil
 from datetime import datetime
@@ -66,7 +63,7 @@ except ImportError as e:
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
+logger = configure_logging(__name__)
     filename=str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "local_fine_tuner.log"))
 )
 logger = logging.getLogger(__name__)

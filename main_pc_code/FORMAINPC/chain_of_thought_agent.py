@@ -40,7 +40,7 @@ LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.l
 ZMQ_CHAIN_OF_THOUGHT_PORT = config.get("chain_of_thought_port", 5612)
 REMOTE_CONNECTOR_PORT = config.get("remote_connector_port", 5557)
 
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
+logger = configure_logging(__name__)
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()
