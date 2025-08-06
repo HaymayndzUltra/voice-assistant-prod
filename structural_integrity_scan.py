@@ -81,12 +81,21 @@ def scan_service(service_name: str, service_type: str) -> Dict[str, Any]:
     return result
 
 def main():
-    """Main scanning function"""
+    """Main function to run the structural integrity scan"""
     print("Starting structural integrity scan...")
     
-    # Load docker sets
-    with open('_qa_artifacts/docker_sets.json', 'r') as f:
-        docker_sets = json.load(f)
+    # Get current list of folders in docker directory
+    docker_dir = pathlib.Path("docker")
+    if not docker_dir.exists():
+        print("Error: docker directory not found")
+        return
+        
+    # Get all current folders
+    all_folders = [d.name for d in docker_dir.iterdir() if d.is_dir()]
+    
+    # Classify folders
+    pc2_services = [f for f in all_folders if f.startswith("pc2_")]
+    mainpc_services = [f for f in all_folders if not f.startswith("pc2_")]
     
     results = {
         "pc2": [],
@@ -95,13 +104,13 @@ def main():
     }
     
     # Scan PC2 services
-    for service in docker_sets["pc2"]:
+    for service in pc2_services:
         result = scan_service(service, "PC2")
         results["pc2"].append(result)
         print(f"PC2 {service}: {result['status']}")
     
     # Scan MAIN-PC services  
-    for service in docker_sets["mainpc"]:
+    for service in mainpc_services:
         result = scan_service(service, "MAIN-PC")
         results["mainpc"].append(result)
         print(f"MAIN-PC {service}: {result['status']}")
