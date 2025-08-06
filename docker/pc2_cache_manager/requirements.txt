@@ -1,1 +1,4 @@
-# No third-party requirements detected
+# PC2 Cache Manager Requirements
+redis>=4.5.0
+PyYAML>=6.0
+psutil>=5.9.0
