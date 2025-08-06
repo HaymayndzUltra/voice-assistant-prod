@@ -80,11 +80,11 @@ async def test_api_priorities():
         else:
             print("⚠️  OpenAI not configured - Set OPENAI_API_KEY for STT/TTS fallback")
             
-        # Check if ElevenLabs is available  
-        if api_manager.credentials['elevenlabs']['api_key']:
-            print("✅ ElevenLabs configured - Excellent TTS quality")
+        # Check if OpenAI TTS is configured
+        if 'openai' in status['tts']['available_providers']:
+            print("✅ OpenAI TTS-1-HD configured - High quality TTS")
         else:
-            print("⚠️  ElevenLabs not configured - Set ELEVENLABS_API_KEY for best TTS")
+            print("⚠️  OpenAI not configured - Set OPENAI_API_KEY for TTS")
             
         # Check if Google Translate is available
         if 'google' in status['translate']['available_providers']:
