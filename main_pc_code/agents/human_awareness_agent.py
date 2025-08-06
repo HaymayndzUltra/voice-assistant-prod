@@ -4,8 +4,7 @@ Monitors and analyzes human presence and behavior
 """
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 import time
 import logging
 from common.utils.log_setup import configure_logging
@@ -24,11 +23,12 @@ import os
 import sys
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 import psutil
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,435 @@
+[
+  {
+    "agent": "active_learning_monitor",
+    "python_file": "/workspace/main_pc_code/agents/active_learning_monitor.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "advanced_command_handler",
+    "python_file": "/workspace/main_pc_code/agents/advanced_command_handler.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "chitchat_agent",
+    "python_file": "/workspace/main_pc_code/agents/chitchat_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "cloud_translation_service",
+    "python_file": "/workspace/main_pc_code/agents/cloud_translation_service.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "emotion_engine",
+    "python_file": "/workspace/main_pc_code/agents/emotion_engine.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "emotion_synthesis_agent",
+    "python_file": "/workspace/main_pc_code/agents/emotion_synthesis_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "executor",
+    "python_file": "/workspace/main_pc_code/agents/executor.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "face_recognition_agent",
+    "python_file": "/workspace/main_pc_code/agents/face_recognition_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "feedback_handler",
+    "python_file": "/workspace/main_pc_code/agents/feedback_handler.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "fused_audio_preprocessor",
+    "python_file": "/workspace/main_pc_code/agents/fused_audio_preprocessor.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "goal_manager",
+    "python_file": "/workspace/main_pc_code/agents/goal_manager.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "knowledge_base",
+    "python_file": "/workspace/main_pc_code/agents/knowledge_base.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "learning_manager",
+    "python_file": "/workspace/main_pc_code/agents/learning_manager.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "learning_opportunity_detector",
+    "python_file": "/workspace/main_pc_code/agents/learning_opportunity_detector.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "learning_orchestration_service",
+    "python_file": "/workspace/main_pc_code/agents/learning_orchestration_service.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "memory_client",
+    "python_file": "/workspace/main_pc_code/agents/memory_client.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "model_orchestrator",
+    "python_file": "/workspace/main_pc_code/agents/model_orchestrator.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "nlu_agent",
+    "python_file": "/workspace/main_pc_code/agents/nlu_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "predictive_health_monitor",
+    "python_file": "/workspace/main_pc_code/agents/predictive_health_monitor.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "request_coordinator",
+    "python_file": "/workspace/main_pc_code/agents/request_coordinator.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "responder",
+    "python_file": "/workspace/main_pc_code/agents/responder.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "session_memory_agent",
+    "python_file": "/workspace/main_pc_code/agents/session_memory_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "smart_home_agent",
+    "python_file": "/workspace/main_pc_code/agents/smart_home_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "streaming_interrupt_handler",
+    "python_file": "/workspace/main_pc_code/agents/streaming_interrupt_handler.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "streaming_language_analyzer",
+    "python_file": "/workspace/main_pc_code/agents/streaming_language_analyzer.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "streaming_speech_recognition",
+    "python_file": "/workspace/main_pc_code/agents/streaming_speech_recognition.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "streaming_tts_agent",
+    "python_file": "/workspace/main_pc_code/agents/streaming_tts_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "system_digital_twin",
+    "python_file": "/workspace/main_pc_code/agents/system_digital_twin.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "tone_detector",
+    "python_file": "/workspace/main_pc_code/agents/tone_detector.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "unified_system_agent",
+    "python_file": "/workspace/main_pc_code/agents/unified_system_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "wake_word_detector",
+    "python_file": "/workspace/main_pc_code/agents/wake_word_detector.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "audio_capture",
+    "python_file": "/workspace/main_pc_code/agents/streaming_audio_capture.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "code_generator",
+    "python_file": "/workspace/main_pc_code/agents/code_generator_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from common.core.base_agent import BaseAgent",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "dynamic_identity_agent",
+    "python_file": "/workspace/main_pc_code/agents/DynamicIdentityAgent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from common.utils.log_setup import configure_logging",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "empathy_agent",
+    "python_file": "/workspace/main_pc_code/agents/EmpathyAgent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "human_awareness",
+    "python_file": "/workspace/main_pc_code/agents/human_awareness_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "intention_validator",
+    "python_file": "/workspace/main_pc_code/agents/IntentionValidatorAgent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from common.utils.log_setup import configure_logging",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "mood_tracker",
+    "python_file": "/workspace/main_pc_code/agents/mood_tracker_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "proactive_agent",
+    "python_file": "/workspace/main_pc_code/agents/ProactiveAgent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from common.utils.log_setup import configure_logging",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "service_registry",
+    "python_file": "/workspace/main_pc_code/agents/service_registry_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from common.utils.log_setup import configure_logging",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "translation_services",
+    "python_file": "/workspace/main_pc_code/agents/translation_service.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "voice_profiling",
+    "python_file": "/workspace/main_pc_code/agents/voice_profiling_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.utils.env_standardizer import get_env",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "vram_optimizer",
+    "python_file": "/workspace/main_pc_code/agents/vram_optimizer_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": true,
+    "missing_imports": [
+      "from common.core.base_agent import BaseAgent",
+      "from main_pc_code.agents.error_publisher import ErrorPublisher"
+    ]
+  },
+  {
+    "agent": "chain_of_thought_agent",
+    "python_file": "/workspace/main_pc_code/FORMAINPC/chain_of_thought_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "cognitive_model_agent",
+    "python_file": "/workspace/main_pc_code/FORMAINPC/cognitive_model_agent.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "model_manager_suite",
+    "python_file": "/workspace/main_pc_code/agents/model_manager_agent.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "observability_hub",
+    "python_file": "/workspace/phase1_implementation/consolidated_agents/observability_hub/enhanced_observability_hub.py",
+    "exists": true,
+    "patterns_fixed": false,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "stt_service",
+    "python_file": "/workspace/main_pc_code/services/stt_service.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  },
+  {
+    "agent": "tts_service",
+    "python_file": "/workspace/main_pc_code/services/tts_service.py",
+    "exists": true,
+    "patterns_fixed": true,
+    "imports_added": false,
+    "missing_imports": []
+  }
+]

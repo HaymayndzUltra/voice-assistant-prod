@@ -1,16 +1,17 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.path_manager import PathManager
-
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-import sys
-import os
-from pathlib import Path
-
 Streaming Audio Capture Module
 Streams audio chunks in real-time to downstream modules via ZMQ
 Includes integrated wake word detection using Whisper
 """
+
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
+
+# Removed import sys
+import os
+from pathlib import Path
 
 import time
 import pickle
@@ -37,8 +38,7 @@ import os
 from common.utils.path_manager import PathManager
 
 # Add project root to the Python path to allow for absolute imports
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 # Import with canonical path
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
@@ -119,8 +119,7 @@ class StreamingAudioCapture(BaseAgent):
         self.health_port = int(os.environ.get("HEALTH_CHECK_PORT", str(self.port + 1)))
         self.running = True
         self.start_time = time.time()
-        # Project root setup (sys.path.insert removed for Docker environment)
-        self.project_root = os.environ.get("PROJECT_ROOT", os.path.abspath(os.path.join("main_pc_code", "..")))
+        # Project root setup (        self.project_root = os.environ.get("PROJECT_ROOT", os.path.abspath(os.path.join("main_pc_code", "..")))
         # Call BaseAgent's __init__
         super().__init__(port=self.port, name=self.name)
         # --- Original initialization preserved below ---

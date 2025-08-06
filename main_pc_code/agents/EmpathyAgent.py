@@ -9,8 +9,7 @@ import os
 import sys
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
+# Removed 
 from common.core.base_agent import BaseAgent
 import logging
 import time
@@ -19,6 +18,8 @@ from typing import Dict, Any
 import threading
 from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import get_service_address
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 # from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings

@@ -38,8 +38,7 @@ import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
+    
 Model Manager / Resource Monitor Agent
 - Tracks status and availability of all models
 - Reports health to Task Router

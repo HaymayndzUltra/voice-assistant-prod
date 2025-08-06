@@ -5,6 +5,8 @@ _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
 # Removed 
 from common.core.base_agent import BaseAgent
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 import json
 import subprocess
 import threading
@@ -362,7 +364,7 @@ class ExecutorAgent(BaseAgent):
 # -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
     # Configure logging
-    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+    logger = configure_logging(__name__)
     
     # Standardized main execution block
     agent = None

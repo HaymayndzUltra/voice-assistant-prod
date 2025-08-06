@@ -1,6 +1,7 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common.utils.path_manager import PathManager
+from common.utils.env_standardizer import get_env
 from main_pc_code.utils.service_discovery_client import register_service
 from common.env_helpers import get_env
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
@@ -34,7 +35,7 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Logging setup
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("StreamingInterruptHandler")
 
 # ZMQ Configuration - using ports from config

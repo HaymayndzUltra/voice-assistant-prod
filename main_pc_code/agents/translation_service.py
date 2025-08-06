@@ -20,8 +20,9 @@ from common.utils.data_models import ErrorSeverity
 import sys
 import os
 from common.utils.path_manager import PathManager
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-# Try importing optional dependencies
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
+# Removed # Try importing optional dependencies
 try:
     LANGDETECT_AVAILABLE = True
 except ImportError:

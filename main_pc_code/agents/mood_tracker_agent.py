@@ -4,8 +4,7 @@ Tracks and analyzes user mood over time based on emotional state updates
 """
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-import sys
+# Removed import sys
 import os
 
 import sys
@@ -19,6 +18,8 @@ from collections import deque
 from typing import Dict, Any, List, Optional
 from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 

@@ -23,8 +23,9 @@ import sys
 import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
+# Removed config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logger = configure_logging(__name__, log_to_file=True)

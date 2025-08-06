@@ -8,8 +8,7 @@ Code Generator Agent
 """
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-import sys
+# Removed import sys
 from pathlib import Path
 
 import time
@@ -28,12 +27,14 @@ import sys
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-from common.core.base_agent import BaseAgent
+# Removed from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
 # from main_pc_code.agents.gguf_model_manager import GGUFModelManager  # Optional dependency
 from common.env_helpers import get_env
+from common.utils.env_standardizer import get_env
+from common.core.base_agent import BaseAgent
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Parse command line arguments
 config = load_unified_config(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"))

@@ -31,9 +31,9 @@ from common.core.base_agent import BaseAgent
 from utils.service_discovery_client import get_service_address, register_service
 from utils.env_loader import get_env
 # from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
-from common.utils.data_models import (
 from common.utils.env_standardizer import get_env
 from main_pc_code.agents.error_publisher import ErrorPublisher
+from common.utils.data_models import (
     TaskDefinition, ErrorSeverity
 )
 from pydantic import BaseModel, Field

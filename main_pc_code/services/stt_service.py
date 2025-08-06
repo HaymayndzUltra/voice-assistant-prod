@@ -22,8 +22,7 @@ from common.utils.path_manager import PathManager
 from common.utils.log_setup import configure_logging
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
-
+    
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import register_service

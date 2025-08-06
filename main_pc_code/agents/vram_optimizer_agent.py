@@ -1,17 +1,18 @@
 """
+VRAM Optimizer Agent
+Handles VRAM monitoring, optimization, and model management
+Implements predictive model loading and fine-tuned unloading
+"""
+
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
+from common.core.base_agent import BaseAgent
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-
-VRAM Optimizer Agent
-Handles VRAM monitoring, optimization, and model management
-Implements predictive model loading and fine-tuned unloading
-"""
 
 import logging
 import time
@@ -35,8 +36,7 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
-from common.core.base_agent import BaseAgent
+# Removed from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common_utils.error_handling import SafeExecutor
 # Standardized environment variables (Blueprint.md Step 4)

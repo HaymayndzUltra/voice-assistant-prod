@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from common.utils.env_standardizer import get_env
+from common.utils.log_setup import configure_logging
+from main_pc_code.agents.error_publisher import ErrorPublisher
 """Service Registry Agent
 
 A minimal, highly-available registry that other agents can query to discover

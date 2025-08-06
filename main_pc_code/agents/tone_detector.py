@@ -22,6 +22,8 @@ MAIN_PC_CODE_DIR = get_main_pc_code()
 # Path setup completed above
 
 from common.core.base_agent import BaseAgent
+from common.utils.env_standardizer import get_env
+from main_pc_code.agents.error_publisher import ErrorPublisher
 # Tone detection for Human Awareness Agent
 
 import time
@@ -61,11 +63,6 @@ except ImportError as e:
 logger = configure_logging(__name__, log_to_file=True)
 
 # Setup logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler(os.path.join(
-                        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        "logs", str(PathManager.get_logs_dir() / "human_awareness_tone.log"))), 
-                              logging.StreamHandler()])
 logger = logging.getLogger("HumanAwareness-Tone")
 
 # Shared data queue for detected tones
