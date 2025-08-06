@@ -1,8 +1,8 @@
 {
-  "current_task_id": "20240524_dual_machine_optimization",
-  "current_task_description": "A comprehensive plan to optimize, validate, and harden a dual-machine AI system with 77 containerized agents, focusing on performance, stability, and maintainability.",
+  "current_task_id": "ai_execution_playbook",
+  "current_task_description": "A multi-phase plan to build, push, pull, run, and validate a set of AI services across two machines (MainPC and PC2).",
   "status": "in_progress",
-  "last_updated": "2025-08-06T20:33:34.120649+08:00",
-  "todos_count": 6,
+  "last_updated": "2025-08-06T18:49:50.272375+08:00",
+  "todos_count": 5,
   "completed_todos": 3
 }

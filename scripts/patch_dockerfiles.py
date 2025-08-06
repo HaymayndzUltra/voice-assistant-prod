@@ -15,11 +15,7 @@ Patch logic (idempotent):
 2. Otherwise, inject the following snippet **after the first FROM line**::
 
     # -- common-req-layer (auto-generated)
-<<<<<<< HEAD
-    ARG COMMON_REQ=/home/haymayndz/AI_System_Monorepo/requirements.common.txt
-=======
-    ARG COMMON_REQ=/workspace/requirements.common.txt
->>>>>>> remotes/origin/cursor/pamahalaan-ang-listahan-ng-gagawin-412a
+    ARG COMMON_REQ=./requirements.common.txt
     COPY ${COMMON_REQ} /tmp/
     RUN pip install --no-cache-dir -r /tmp/requirements.common.txt
 
@@ -40,7 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DOCKER_DIR = ROOT / "docker"
 MARKER = "# -- common-req-layer"
-INJECT_SNIPPET = f"""{MARKER}\nARG COMMON_REQ=/workspace/requirements.common.txt\nCOPY ${{COMMON_REQ}} /tmp/\nRUN pip install --no-cache-dir -r /tmp/requirements.common.txt\n"""
+INJECT_SNIPPET = f"""{MARKER}\nARG COMMON_REQ=./requirements.common.txt\nCOPY ${{COMMON_REQ}} /tmp/\nRUN pip install --no-cache-dir -r /tmp/requirements.common.txt\n"""
 
 
 def patch_dockerfile(path: Path, apply: bool = False) -> bool:
