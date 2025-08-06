@@ -1,0 +1,24 @@
+# PC2 Agent Dockerfile Template - MINIMAL BASE
+# Use this template to refactor agent Dockerfiles
+
+# Stage 1: Use shared base image
+FROM ghcr.io/haymayndzultra/pc2-base-minimal:latest AS base
+
+# Stage 2: Agent-specific build  
+FROM base AS runtime
+
+# Copy agent code
+WORKDIR /app
+COPY . /app
+
+# Install ONLY agent-specific requirements (not already in base)
+# Remove packages already in base: requests, pydantic, click, python-dotenv
+COPY requirements.txt /tmp/agent_reqs.txt
+RUN pip install --no-cache-dir -r /tmp/agent_reqs.txt || true
+
+# Agent entry point
+# ENTRYPOINT ["python", "-m", "AGENT_MODULE"]
+
+# Labels
+LABEL base_image="pc2-base-minimal"
+LABEL build_strategy="shared_base_optimization"

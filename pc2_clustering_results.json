@@ -1,0 +1,54 @@
+{
+  "clusters": {
+    "utility": [
+      "TaskScheduler",
+      "ResourceManager"
+    ],
+    "deep_learning": [
+      "TieredResponder"
+    ]
+  },
+  "cluster_dependencies": {
+    "cluster_0": [],
+    "utility": [],
+    "cluster_1": [
+      "redis",
+      "pydantic"
+    ],
+    "cluster_2": [
+      "psutil",
+      "PyYAML",
+      "redis"
+    ],
+    "cluster_3": [],
+    "cluster_4": [
+      "psutil",
+      "PyYAML",
+      "torch",
+      "pyzmq"
+    ],
+    "deep_learning": [
+      "psutil",
+      "torch",
+      "pyzmq"
+    ],
+    "cluster_5": [],
+    "cluster_6": [],
+    "cluster_7": [],
+    "cluster_8": [],
+    "cluster_9": [
+      "psutil",
+      "torch",
+      "pyzmq"
+    ],
+    "cluster_10": [
+      "psutil",
+      "redis",
+      "pydantic"
+    ],
+    "cluster_11": []
+  },
+  "agent_count": 23,
+  "strategy": "shared_base_images",
+  "expected_reduction": "70-80%"
+}

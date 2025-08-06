@@ -1,0 +1,8 @@
+requests
+pydantic
+click
+python-dotenv
+torch
+pyzmq
+PyYAML
+psutil

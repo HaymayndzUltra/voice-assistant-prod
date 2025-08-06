@@ -1,0 +1,7 @@
+requests
+pydantic
+click
+python-dotenv
+redis
+PyYAML
+psutil
