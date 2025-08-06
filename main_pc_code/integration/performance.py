@@ -18,9 +18,7 @@ PUB_PORT = 5614  # For broadcasting metrics
 PULL_PORT = 5615  # For receiving fire-and-forget logs
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "performance_metrics.log"))),
+logger = configure_logging(__name__) / "performance_metrics.log"))),
         logging.StreamHandler()
     ]
 )

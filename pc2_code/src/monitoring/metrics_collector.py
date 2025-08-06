@@ -63,9 +63,7 @@ log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file_path),
+logger = configure_logging(__name__),
         logging.StreamHandler()
     ]
 )

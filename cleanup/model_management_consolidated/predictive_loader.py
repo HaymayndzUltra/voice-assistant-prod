@@ -42,8 +42,7 @@ from main_pc_code.utils.config_loader import load_config
 config = load_config()
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("PredictiveLoader")
 
 class PredictiveLoader(BaseAgent):

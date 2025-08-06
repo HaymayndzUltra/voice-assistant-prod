@@ -9,8 +9,7 @@ from transformers import MarianMTModel, MarianTokenizer
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 
 class HelsinkiTranslationAdapter:
     """

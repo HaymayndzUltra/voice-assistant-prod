@@ -126,9 +126,7 @@ class AsyncProcessor:
         self.health_socket.bind(f"tcp://*:{HEALTH_PORT}")
         
     def _setup_logging(self):
-        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "async_processor.log")),
+        logger = configure_logging(__name__) / "async_processor.log")),
                 logging.StreamHandler()
             ]
         )

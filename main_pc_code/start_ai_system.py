@@ -12,8 +12,7 @@ load_dotenv()
 PC2_HOST = os.getenv('PC2_HOST', 'localhost')
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
+logger = configure_logging(__name__)]
 )
 logger = logging.getLogger(__name__)
 

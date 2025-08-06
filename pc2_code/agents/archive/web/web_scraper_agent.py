@@ -32,9 +32,6 @@ log_file = Path(config.get('system.logs_dir', 'logs') / str(PathManager.get_logs
 log_file.parent.mkdir(exist_ok=True)
 
 logger = configure_logging(__name__),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
         logging.StreamHandler()
     ]
 )

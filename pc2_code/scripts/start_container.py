@@ -23,9 +23,7 @@ from common.utils.log_setup import configure_logging
 sys.path.insert(0, get_project_root()
 from common.utils.path_manager import PathManager
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "container_start.log"))
     ]
 )

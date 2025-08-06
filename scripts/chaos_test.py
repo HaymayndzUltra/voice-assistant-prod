@@ -16,8 +16,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from common.utils.log_setup import configure_logging
 
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger('ChaosTest')
 
 class ChaosTest:

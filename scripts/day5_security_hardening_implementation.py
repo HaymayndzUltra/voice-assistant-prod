@@ -32,9 +32,7 @@ from abc import ABC, abstractmethod
 from common.utils.log_setup import configure_logging
 
 # Setup logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
+logger = configure_logging(__name__),
         logging.FileHandler(f'day5_security_hardening_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
     ]
 )

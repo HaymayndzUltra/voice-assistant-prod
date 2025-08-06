@@ -38,9 +38,7 @@ from common.env_helpers import get_env
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "ultimate_tts_agent.log")))
     ]
 )

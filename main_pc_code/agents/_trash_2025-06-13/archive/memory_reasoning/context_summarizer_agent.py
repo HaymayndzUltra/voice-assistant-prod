@@ -20,43 +20,7 @@ LOG_PATH = str(PathManager.get_logs_dir() / "context_summarizer_agent.log")
 CONTEXT_STORE_PATH = "context_store.json"
 ZMQ_CONTEXT_SUMMARIZER_PORT = 5610  # New agent port
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-class ContextSummarizerAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="ContextSummarizerAgent")
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-        self.context_store = self.load_context_store()
-        self.lock = threading.Lock()
-        self.running = True
-        self.max_session_history = 50  # Maximum entries per session
-        logging.info(f"[ContextSummarizer] Agent started on port {zmq_port}")
-        
-    def load_context_store(self):
-        if os.path.exists(CONTEXT_STORE_PATH):
-            with open(CONTEXT_STORE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return {"sessions": {}, "summaries": {}}
-    
-    def save_context_store(self):
-        with open(CONTEXT_STORE_PATH, "w", encoding="utf-8") as f:
-            json.dump(self.context_store, f, ensure_ascii=False, indent=2)
-    
-    def get_session_id(self, user_id="default", project_name=None):
-        """Generate a unique session ID based on user and optional project"""
-        if project_name:
-            return f"{user_id}_{project_name}"
-        # Use today's date as part of the session ID if no project specified
-        today = datetime.now().strftime("%Y-%m-%d")
+logger = configure_logging(__name__).strftime("%Y-%m-%d")
         return f"{user_id}_{today}"
     
     def add_interaction(self, session_id, interaction_type, content, metadata=None):

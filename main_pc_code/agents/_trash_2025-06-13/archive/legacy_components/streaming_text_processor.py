@@ -18,7 +18,7 @@ from typing import Dict, Optional, List
 from collections import deque, OrderedDict
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("TextProcessor")
 
 # Constants

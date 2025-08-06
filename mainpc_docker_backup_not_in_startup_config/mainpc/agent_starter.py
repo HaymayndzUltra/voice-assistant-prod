@@ -16,8 +16,7 @@ import multiprocessing as mp
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("agent_starter")
 
 # Global process list for cleanup

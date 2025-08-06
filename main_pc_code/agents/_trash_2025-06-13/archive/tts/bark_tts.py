@@ -20,56 +20,7 @@ from common.env_helpers import get_env
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("BarkTTSAgent")
-
-# ZMQ port for communication
-ZMQ_PORT = 5562  # Changed from 5561 to avoid conflict
-
-# Voice presets
-VOICE_PRESETS = {
-    # English voices
-    "en_male": "v2/en_speaker_6",
-    "en_female": "v2/en_speaker_9",
-    "en_neutral": "v2/en_speaker_0",
-    "en_announcer": "v2/en_speaker_1",
-    "en_british": "v2/en_speaker_2",
-    "en_australian": "v2/en_speaker_3",
-    "en_radio": "v2/en_speaker_4",
-    "en_deep": "v2/en_speaker_5",
-    "en_soft": "v2/en_speaker_7",
-    "en_narrator": "v2/en_speaker_8",
-    
-    # Tagalog/Filipino voices (using standard English voices)
-    "tl_male": "v2/en_speaker_6",  # Filipino male voice
-    "tl_female": "v2/en_speaker_9",  # Filipino female voice
-    "tl_neutral": "v2/en_speaker_0",  # Filipino neutral voice
-    "tl_announcer": "v2/en_speaker_1",  # Filipino announcer voice
-    "tl_soft": "v2/en_speaker_7",  # Filipino soft voice
-    
-    # Emotion-based voices
-    "happy": "v2/en_speaker_9",
-    "sad": "v2/en_speaker_7",
-    "angry": "v2/en_speaker_5",
-    "surprised": "v2/en_speaker_8",
-    "neutral": "v2/en_speaker_0",
-    
-    # Default voice
-    "default": "v2/en_speaker_6"
-}
-
-# Cache directory for generated audio
-CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tts_cache")
-os.makedirs(CACHE_DIR, exist_ok=True)
-
-class BarkTTSAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="BarkTts")
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+logger = configure_logging(__name__) else 'cpu')
         self.is_running = False
         self.current_voice = VOICE_PRESETS["default"]
         self.use_gpu = torch.cuda.is_available()

@@ -29,49 +29,7 @@ except ImportError:
     USE_COMMON_UTILS = False
 
 # Configure logging
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger("MemoryHealthTest")
-
-def test_memory_agent_health(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 5597, timeout: int = 5000) -> bool:
-    """
-    Test the health check functionality of the UnifiedMemoryReasoningAgent.
-    
-    Args:
-        host: Host of the memory agent
-        port: Health check port of the memory agent
-        timeout: Timeout in milliseconds
-        
-    Returns:
-        bool: True if health check passed, False otherwise
-    """
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.setsockopt(zmq.RCVTIMEO, timeout)
-    socket.setsockopt(zmq.LINGER, 0)
-    
-    try:
-        # Connect to the memory agent
-        address = f"tcp://{host}:{port}"
-        logger.info(f"Connecting to memory agent at {address}")
-        socket.connect(address)
-        
-        # Send health check request
-        request = {"action": "health_check"}
-        logger.info(f"Sending health check request: {request}")
-        socket.send_json(request)
-        
-        # Wait for response
-        response = socket.recv_json()
-        logger.info(f"Received response: {json.dumps(response, indent=2)}")
-        
-        # Check response
-        if response.get("status") == "success":
-            logger.info("Health check passed!")
-            return True
-        else:
-            logger.error(f"Health check failed: {response.get('message', 'Unknown error')}")
+logger = configure_logging(__name__)}")
             return False
             
     except zmq.Again:

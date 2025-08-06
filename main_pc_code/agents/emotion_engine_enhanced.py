@@ -33,9 +33,7 @@ from common.core.base_agent import BaseAgent
 # Enhanced BaseAgent capabilities
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "emotion_engine.log"))),
+logger = configure_logging(__name__) / str(PathManager.get_logs_dir() / "emotion_engine.log"))),
         logging.StreamHandler()
     ]
 )

@@ -38,8 +38,7 @@ CONFIG_PATH = PROJECT_ROOT / "main_pc_code" / "config" / "startup_config.yaml"
 LOGS_DIR = PROJECT_ROOT / "logs"
 
 # --- LOGGING SETUP ---
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("SystemStartup")
 
 class ModernDependencyResolver:

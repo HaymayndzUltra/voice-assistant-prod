@@ -43,8 +43,7 @@ except ImportError:
     CTRANSLATE_AVAILABLE = False
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger("llm_model_manager")
 
 # Default paths

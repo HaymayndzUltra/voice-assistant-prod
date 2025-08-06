@@ -27,39 +27,7 @@ log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 log_file = log_dir / str(PathManager.get_logs_dir() / "zmq_bridge.log")
 
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger("ZMQBridge")
-
-# Default configuration
-DEFAULT_BRIDGE_PORT = 5600
-DEFAULT_BIND_ADDRESS = "0.0.0.0"  # CRITICAL: Bind to ALL interfaces
-
-class ZMQBridge:
-    """ZMQ Bridge for cross-machine communication between Main PC and PC2"""
-    
-    def __init__(self, port=DEFAULT_BRIDGE_PORT, bind_address=DEFAULT_BIND_ADDRESS):
-        self.port = port
-        self.bind_address = bind_address
-        self.context = zmq.Context()
-        self.running = True
-        
-        # Setup ZMQ socket - REP/REQ pattern
-        self.socket = self.context.socket(zmq.REP)
-        full_address = f"tcp://{self.bind_address}:{self.port}"
-        logger.info(f"Binding ZMQ bridge to: {full_address}")
-        
-        try:
-            self.socket.bind(full_address)
-            logger.info(f"Successfully bound to {full_address}")
-            
-            # Set socket options
-            self.socket.setsockopt(zmq.LINGER, 0)  # Don't wait for unsent messages on close
-            self.socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout for receives
+logger = configure_logging(__name__)  # 1 second timeout for receives
             
             logger.info("ZMQ Bridge initialized successfully")
         except zmq.error.ZMQError as e:

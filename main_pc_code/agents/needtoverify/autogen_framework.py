@@ -20,9 +20,7 @@ from typing import Dict, List, Any, Optional
 from common.utils.path_manager import PathManager
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "autogen_framework.log")),
+logger = configure_logging(__name__) / "autogen_framework.log")),
         logging.StreamHandler()
     ]
 )

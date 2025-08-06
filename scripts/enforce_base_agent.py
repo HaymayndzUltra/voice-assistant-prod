@@ -17,9 +17,7 @@ from typing import List, Tuple, Optional, Set
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 # List of files to process (from the health check audit report)

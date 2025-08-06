@@ -15,8 +15,7 @@ from typing import Dict, Optional
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 class AgentHealthChecker:

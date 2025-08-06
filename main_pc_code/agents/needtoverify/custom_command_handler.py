@@ -20,7 +20,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 _agent_args = parse_agent_args()
 
 # Setup logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("CustomCommandHandler")
 
 # ZMQ Configuration

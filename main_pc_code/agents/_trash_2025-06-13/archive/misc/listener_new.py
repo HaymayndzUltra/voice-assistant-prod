@@ -21,7 +21,7 @@ import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
 from common.utils.path_manager import PathManager
 # Set up basic logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("IntegratedListener")
 
 # Constants

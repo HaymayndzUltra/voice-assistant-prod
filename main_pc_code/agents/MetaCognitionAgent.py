@@ -39,9 +39,7 @@ from common.env_helpers import get_env
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "meta_cognition.log")),
+logger = configure_logging(__name__) / "meta_cognition.log")),
         logging.StreamHandler()
     ]
 )

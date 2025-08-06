@@ -15,49 +15,7 @@ import sys
 from common.utils.log_setup import configure_logging
 
 # Set up logging
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("audit_dependencies.log")
-    ]
-)
-
-logger = logging.getLogger("DependencyAudit")
-
-# Map of common service name patterns to standardized agent names
-SERVICE_NAME_MAP = {
-    "StreamingTtsAgent": "StreamingTTSAgent",
-    "StreamingTTS": "StreamingTTSAgent",
-    "TtsService": "TTSService",
-    "TTSCache": "TTSService",
-    "TTSConnector": "TTSService",
-    "FaceRecognition": "FaceRecognitionAgent",
-    "MemoryOrchestrator": "MemoryOrchestratorService",
-    "ModelManager": "ModelManagerAgent",
-    "GGUF": "GGUFModelManager",
-    "VRAMOptimizer": "VRAMOptimizerAgent",
-    "SystemDigital": "SystemDigitalTwin",
-    "RequestCoord": "RequestCoordinator",
-    # Add more mappings as needed
-}
-
-def normalize_agent_name(name):
-    """Normalize service names to match the canonical agent names in config"""
-    # Direct match in the map
-    if name in SERVICE_NAME_MAP:
-        return SERVICE_NAME_MAP[name]
-    
-    # Check for partial matches
-    for key, value in SERVICE_NAME_MAP.items():
-        if key in name:
-            return value
-    
-    # If name ends with Agent, return as is
-    if name.endswith("Agent") or name.endswith("Service"):
-        return name
-        
-    # Otherwise, add Agent suffix if it's not already there
-    if not name.endswith("Agent") and not name.endswith("Service"):
+logger = configure_logging(__name__) and not name.endswith("Service"):
         name = f"{name}Agent"
     
     return name

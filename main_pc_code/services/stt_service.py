@@ -32,9 +32,7 @@ from main_pc_code.utils import model_client
 config = load_config()
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
+logger = configure_logging(__name__)
     ]
 )
 logger = logging.getLogger("STTService")

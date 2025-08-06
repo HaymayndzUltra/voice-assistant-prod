@@ -35,9 +35,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 config = load_config()
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler("logs/coordinator_agent.log")
     ]
 )

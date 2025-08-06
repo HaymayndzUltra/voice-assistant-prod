@@ -20,9 +20,7 @@ from common.env_helpers import get_env
 init()
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "nllb_test_results.log"),
+logger = configure_logging(__name__) / "nllb_test_results.log"),
         logging.StreamHandler()
     ]
 )

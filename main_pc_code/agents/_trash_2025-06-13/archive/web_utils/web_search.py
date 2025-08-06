@@ -6,20 +6,7 @@ import logging
 from common.utils.log_setup import configure_logging
 
 LOG_PATH = str(PathManager.get_logs_dir() / "web_search_agent.log")
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-
-def duckduckgo_search(query, max_results=3):
-    """
-    Performs a DuckDuckGo Instant Answer API search and returns a summary.
-    """
-    if not query or not query.strip():
-        logging.warning('[WebSearch] No query provided for DuckDuckGo search (skipped).')
+logger = configure_logging(__name__).')
         return 'No query provided (skipped).'
     url = (
         f"https://api.duckduckgo.com/?q={requests.utils.quote(query)}"

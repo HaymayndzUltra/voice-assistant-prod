@@ -23,9 +23,7 @@ log_file = fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "pc2_
 Path('logs').mkdir(exist_ok=True)
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
+logger = configure_logging(__name__),
         logging.StreamHandler()
     ]
 )

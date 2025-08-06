@@ -16,45 +16,7 @@ MEMORY_PATH = "memory_store.json"
 USER_PROFILE_PATH = "user_profile.json"
 DEFAULT_USER_ID = "default_user"
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-ZMQ_MEMORY_PORT = 5590  # REQ/REP for memory queries
-
-
-class MemoryAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="Memory")
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        
-        # Try to bind to the specified port
-        try:
-            self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-            self.port = zmq_port
-            logging.info(f"[Memory] Successfully bound to port {zmq_port}")
-        except zmq.error.ZMQError as e:
-            # If port is in use, try alternative ports
-            if "Address in use" in str(e):
-                logging.warning(f"[Memory] Port {zmq_port} is in use, trying alternative ports")
-                # Try a range of alternative ports
-                alt_ports = [7590, 7591, 7592, 7593, 7594]
-                for alt_port in alt_ports:
-                    try:
-                        self.socket.bind(f"tcp://127.0.0.1:{alt_port}")
-                        self.port = alt_port
-                        logging.info(f"[Memory] Successfully bound to alternative port {alt_port}")
-                        break
-                    except zmq.error.ZMQError:
-                        continue
-                else:
-                    # If we get here, all ports failed
-                    logging.error("[Memory] Could not bind to any port. Will keep running but won't process requests.")
+logger = configure_logging(__name__)
                     self.port = None
             else:
                 # Some other ZMQ error

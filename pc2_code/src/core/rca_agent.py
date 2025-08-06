@@ -61,9 +61,7 @@ except ImportError:
 _agent_args = parse_agent_args()
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "rca_agent.log"))
     ]
 )

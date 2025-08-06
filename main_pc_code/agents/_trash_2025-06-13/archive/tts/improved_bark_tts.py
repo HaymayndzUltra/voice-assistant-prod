@@ -26,50 +26,7 @@ import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
 from common.utils.path_manager import PathManager
 # Configure logging
-logger = configure_logging(__name__)s [%(levelname)s] [BarkTTS] %(message)s",
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("BarkTTSAgent")
-
-# ZMQ port for communication
-ZMQ_PORT = 5562  # Port for TTS commands
-HEALTH_PORT = 5563  # Port for health checks
-
-# Voice presets
-VOICE_PRESETS = {
-    # English voices
-    "en_male": "v2/en_speaker_6",
-    "en_female": "v2/en_speaker_9",
-    "en_neutral": "v2/en_speaker_0",
-    "en_announcer": "v2/en_speaker_1",
-    "en_british": "v2/en_speaker_2",
-    "en_australian": "v2/en_speaker_3",
-    "en_radio": "v2/en_speaker_4",
-    "en_deep": "v2/en_speaker_5",
-    "en_soft": "v2/en_speaker_7",
-    "en_narrator": "v2/en_speaker_8",
-    
-    # Tagalog/Filipino voices (using standard English voices)
-    "tl_male": "v2/en_speaker_6",  # Filipino male voice
-    "tl_female": "v2/en_speaker_9",  # Filipino female voice
-    "tl_neutral": "v2/en_speaker_0",  # Filipino neutral voice
-    "tl_announcer": "v2/en_speaker_1",  # Filipino announcer voice
-    "tl_soft": "v2/en_speaker_7",  # Filipino soft voice
-    
-    # Default voice
-    "default": "v2/en_speaker_6"
-}
-
-# Cache directory for generated audio
-CACHE_DIR = Path(PathManager.join_path("cache", "tts_cache"))
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
-class BarkTTSAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="ImprovedBarkTts")
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+logger = configure_logging(__name__) else 'cpu')
         self.is_running = True
         self.current_voice = VOICE_PRESETS["default"]
         self.use_gpu = torch.cuda.is_available()

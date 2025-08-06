@@ -32,9 +32,7 @@ if PC2_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR.as_posix()
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "standardize_agents.log")),
+logger = configure_logging(__name__) / "standardize_agents.log")),
         logging.StreamHandler()
     ]
 )

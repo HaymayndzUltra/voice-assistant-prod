@@ -24,9 +24,7 @@ from datetime import datetime, timedelta
 sys.path.append(str(Path(__file__).parent.parent)
 
 # Set up basic logging first in case config import fails
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
+logger = configure_logging(__name__)
     ]
 )
 logger = logging.getLogger("ModelManager")

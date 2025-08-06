@@ -74,9 +74,7 @@ class PerformanceMonitor:
         
     def _setup_logging(self):
         """Setup logging configuration"""
-        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "performance_monitor.log")),
+        logger = configure_logging(__name__) / "performance_monitor.log")),
                 logging.StreamHandler()
             ]
         )

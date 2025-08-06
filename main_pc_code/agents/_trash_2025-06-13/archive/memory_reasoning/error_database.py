@@ -23,9 +23,7 @@ import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
 from common.utils.path_manager import PathManager
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "error_database.log"))),
+logger = configure_logging(__name__) / "error_database.log"))),
         logging.StreamHandler()
     ]
 )

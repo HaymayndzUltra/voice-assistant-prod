@@ -33,63 +33,7 @@ LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.l
 ZMQ_CHAIN_OF_THOUGHT_PORT = 5612  # Chain of Thought port
 REMOTE_CONNECTOR_PORT = 5557  # Remote Connector Agent port for model inference
 
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("ChainOfThoughtAgent")
-
-class ChainOfThoughtAgent(BaseAgent):
-    def __init__(self, zmq_port=ZMQ_CHAIN_OF_THOUGHT_PORT):
-
-        super().__init__(*args, **kwargs)        logger.info("=" * 80)
-        logger.info("Initializing Chain of Thought Agent")
-        logger.info("=" * 80)
-        
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
-        self.running = True
-        
-        # Context for Remote Connector Agent connection
-        self.llm_router_context = zmq.Context()
-        self.llm_router_socket = None  # Will be initialized when needed
-        self.llm_router_port = REMOTE_CONNECTOR_PORT  # Use Remote Connector for model inference
-        
-        # Record start time for uptime tracking
-        self.start_time = time.time()
-        
-        # Track statistics
-        self.total_requests = 0
-        self.successful_requests = 0
-        self.failed_requests = 0
-        
-        logger.info(f"Chain of Thought Agent started on port {zmq_port}")
-        logger.info(f"Remote Connector port: {self.llm_router_port}")
-        logger.info("=" * 80)
-    
-    def connect_llm_router(self):
-        """Establish connection to the Remote Connector Agent for model inference"""
-        if self.llm_router_socket is None:
-            self.llm_router_socket = self.llm_router_context.socket(zmq.REQ)
-            self.llm_router_socket.connect(f"tcp://127.0.0.1:{self.llm_router_port}")
-            logger.info(f"[ChainOfThought] Connected to Remote Connector Agent on port {self.llm_router_port}")
-    
-    def send_to_llm(self, prompt, model=None, max_tokens=None):
-        """
-        Send a prompt to the Remote Connector Agent for model inference
-        
-        Args:
-            prompt (str): The prompt to send to the LLM
-            model (str, optional): Specific model to use, or None for default
-            max_tokens (int, optional): Maximum tokens in the response
-        
-        Returns:
-            str: The LLM's response
-        """
-        self.connect_llm_router()
+logger = configure_logging(__name__)
         
         # Format request for Remote Connector Agent
         request = {

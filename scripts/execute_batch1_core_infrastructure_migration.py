@@ -36,9 +36,7 @@ from scripts.migration_validation_framework import MigrationValidationSuite
 from common.observability.migration_metrics import get_migration_observer, MigrationPhase
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(f"{Path(__file__).parent.parent}/logs/batch1_migration.log")
     ]
 )

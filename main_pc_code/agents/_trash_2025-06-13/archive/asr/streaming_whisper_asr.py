@@ -47,7 +47,7 @@ stt_manager = DynamicSTTModelManager(available_models, default_model=list(availa
 timestamp_last_used = {}  # model_id: last used time
 
 # Logging setup
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("StreamingWhisperASR")
 
 # Model paths

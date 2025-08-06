@@ -9,8 +9,7 @@ from typing import List
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s'
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 def find_agent_files() -> List[str]:

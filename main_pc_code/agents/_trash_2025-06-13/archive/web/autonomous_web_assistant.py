@@ -50,77 +50,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "autonomous_web_assistant.log"))
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("AutonomousWebAssistant")
-
-# ZMQ port for this agent
-AUTONOMOUS_WEB_ASSISTANT_PORT = 5620
-CONTEXT_SUMMARIZER_PORT = 5610
-MODEL_MANAGER_PORT = 5556
-MEMORY_AGENT_PORT = 5596
-
-# Browser automation throttling to avoid rate limits
-MIN_DELAY_BETWEEN_REQUESTS = 2  # seconds
-
-class AutonomousWebAssistant(BaseAgent):
-    """
-    Autonomous Web Assistant for proactive information retrieval and web navigation
-    """
-    
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="AutonomousWebAssistant")
-        """Initialize the autonomous web assistant"""
-        # ZMQ setup
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-        
-        # Connect to other agents
-        self.model_manager = self.context.socket(zmq.REQ)
-        self.model_manager.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        try:
-            # Try to use PC2 connection if available
-            self.model_manager.connect(get_connection_string("model_manager"))
-            logger.info("Connected to Model Manager on PC2")
-        except (ImportError, ValueError):
-            # Fallback to local connection
-            self.model_manager.connect(f"tcp://localhost:{MODEL_MANAGER_PORT}")
-            logger.info(f"Connected to local Model Manager on port {MODEL_MANAGER_PORT}")
-            
-        # Similarly for context summarizer
-        self.context_summarizer = self.context.socket(zmq.REQ)
-        self.context_summarizer.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.context_summarizer.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        try:
-            self.context_summarizer.connect(get_connection_string("context_summarizer"))
-            logger.info("Connected to Context Summarizer on PC2")
-        except (ImportError, ValueError):
-            self.context_summarizer.connect(f"tcp://localhost:{CONTEXT_SUMMARIZER_PORT}")
-            logger.info(f"Connected to local Context Summarizer on port {CONTEXT_SUMMARIZER_PORT}")
-        
-        # Similarly for memory agent
-        self.memory_agent = self.context.socket(zmq.REQ)
-        self.memory_agent.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.memory_agent.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        try:
-            self.memory_agent.connect(get_connection_string("contextual_memory"))
-            logger.info("Connected to Memory Agent on PC2")
-        except (ImportError, ValueError):
-            self.memory_agent.connect(f"tcp://localhost:{MEMORY_AGENT_PORT}")
-            logger.info(f"Connected to local Memory Agent on port {MEMORY_AGENT_PORT}")
-        
-        # Browser session
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+logger = configure_logging(__name__) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
         
         # State tracking

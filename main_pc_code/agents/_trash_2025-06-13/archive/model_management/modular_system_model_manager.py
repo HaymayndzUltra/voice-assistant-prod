@@ -36,9 +36,7 @@ class ModelManagerAgent(BaseAgent):
         log_dir = project_root / "logs"
         log_dir.mkdir(exist_ok=True)
         
-        logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_dir / str(PathManager.get_logs_dir() / "model_manager_agent.log")),
+        logger = configure_logging(__name__) / "model_manager_agent.log")),
                 logging.StreamHandler()
             ]
         )

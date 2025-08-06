@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirna
 from pc2_code.agents.UnifiedMemoryReasoningAgent import UnifiedMemoryReasoningAgent
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 

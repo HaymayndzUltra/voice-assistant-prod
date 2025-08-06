@@ -36,9 +36,7 @@ log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
 log_file = f"{log_dir}/mvs_startup_{datetime.now().strftime('%Y%m%d_%H%M%Sstr(PathManager.get_logs_dir() / ")}.log")
 
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
+logger = configure_logging(__name__),
         logging.StreamHandler()
     ]
 )

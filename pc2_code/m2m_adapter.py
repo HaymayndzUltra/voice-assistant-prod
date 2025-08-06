@@ -14,9 +14,7 @@ from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "m2m_adapter.log"),
+logger = configure_logging(__name__) / "m2m_adapter.log"),
         logging.StreamHandler()
     ]
 )

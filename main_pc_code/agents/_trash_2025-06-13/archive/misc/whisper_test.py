@@ -8,7 +8,7 @@ import logging
 from common.utils.log_setup import configure_logging
 
 # Set up basic logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("WhisperTest")
 
 print("=== Whisper Model Loading Test ===")

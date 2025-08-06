@@ -17,9 +17,7 @@ from common.utils.path_manager import PathManager
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "system_startup.log")),
+logger = configure_logging(__name__) / "system_startup.log")),
         logging.StreamHandler(sys.stdout)
     ]
 )

@@ -29,42 +29,7 @@ ZMQ_ERROR_PATTERN_PORT = 5611  # Port for error pattern memory agent
 MODEL_MANAGER_HOST = "192.168.1.27"  # Main PC's IP address
 MODEL_MANAGER_PORT = 5556  # Main PC's MMA port
 
-logger = configure_logging(__name__)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("ErrorPatternMemory")
-
-class ErrorPatternMemory:
-    def __init__(self, zmq_port=ZMQ_ERROR_PATTERN_PORT):
-        """Initialize the Error Pattern Memory Agent"""
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        
-        # Try to bind to the specified port
-        try:
-        self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
-            self.port = zmq_port
-            logger.info(f"Successfully bound to port {zmq_port}")
-        except zmq.error.ZMQError as e:
-            # If port is in use, try alternative ports
-            if "Address in use" in str(e):
-                logger.warning(f"Port {zmq_port} is in use, trying alternative ports")
-                # Try a range of alternative ports
-                alt_ports = [7611, 7612, 7613, 7614, 7615]
-                for alt_port in alt_ports:
-                    try:
-                        self.socket.bind(f"tcp://0.0.0.0:{alt_port}")
-                        self.port = alt_port
-                        logger.info(f"Successfully bound to alternative port {alt_port}")
-                        break
-                    except zmq.error.ZMQError:
-                        continue
-                else:
-                    # If we get here, all ports failed
-                    logger.error("Could not bind to any port. Will keep running but won't process requests.")
+logger = configure_logging(__name__)
                     self.port = None
             else:
                 # Some other ZMQ error

@@ -255,7 +255,7 @@ def get_zmq_connection_string(port: int, machine: str = "localhost", bind_addres
 
 if __name__ == '__main__':
     # Configure logging for the test
-    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+    logger = configure_logging(__name__)
     
     # A simple test to ensure the loader works
     config = load_network_config()

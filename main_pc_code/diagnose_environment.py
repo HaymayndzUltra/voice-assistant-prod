@@ -9,9 +9,7 @@ def setup_logging():
     log_dir.mkdir(exist_ok=True)
     
     log_file = log_dir / str(PathManager.get_logs_dir() / "diagnose.log")
-    logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_file),
+    logger = configure_logging(__name__),
             logging.StreamHandler()
         ]
     )

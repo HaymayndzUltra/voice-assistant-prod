@@ -15,9 +15,7 @@ from common.utils.path_manager import PathManager
 LOGS_DIR = PathManager.join_path("logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(LOGS_DIR, str(PathManager.get_logs_dir() / "startup.log"))),
+logger = configure_logging(__name__) / "startup.log"))),
         logging.StreamHandler()
     ]
 )

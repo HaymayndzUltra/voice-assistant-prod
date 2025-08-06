@@ -20,7 +20,7 @@ import psutil
 from datetime import datetime
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("LanguageToLLMConnector")
 
 # ZMQ settings

@@ -32,58 +32,7 @@ MODEL_MANAGER_PORT = 5556  # Main PC's MMA port
 # Ensure logs directory exists
 os.makedirs("logs", exist_ok=True)
 
-logger = configure_logging(__name__)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-class ContextualMemoryAgent:
-    def __init__(self, zmq_port=ZMQ_CONTEXTUAL_MEMORY_PORT):
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
-        self.context_store = self.load_context_store()
-        self.lock = threading.Lock()
-        self.running = True
-        self.max_session_history = 50  # Maximum entries per session
-        # Token optimization parameters
-        self.token_budget_default = 2000
-        self.token_compression_ratio = 0.8  # Target compression ratio
-        
-        # Hierarchical memory organization
-        self.memory_hierarchy = {
-            "short_term": 50,    # Recent interactions, high detail
-            "medium_term": 200,  # Less recent, moderate detail
-            "long_term": 1000    # Oldest interactions, highly summarized
-        }
-        
-        # Track statistics
-        self.total_requests = 0
-        self.successful_requests = 0
-        self.failed_requests = 0
-        self.health_check_requests = 0
-        self.start_time = time.time()
-        
-        logging.info(f"[ContextualMemory] Agent started on port {zmq_port}")
-        
-    def load_context_store(self):
-        if os.path.exists(CONTEXT_STORE_PATH):
-            with open(CONTEXT_STORE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return {"sessions": {}, "summaries": {}}
-    
-    def save_context_store(self):
-        with open(CONTEXT_STORE_PATH, "w", encoding="utf-8") as f:
-            json.dump(self.context_store, f, ensure_ascii=False, indent=2)
-    
-    def get_session_id(self, user_id="default", project_name=None):
-        """Generate a unique session ID based on user and optional project"""
-        if project_name:
-            return f"{user_id}_{project_name}"
-        # Use today's date as part of the session ID if no project specified
-        today = datetime.now().strftime("%Y-%m-%d")
+logger = configure_logging(__name__).strftime("%Y-%m-%d")
         return f"{user_id}_{today}"
     
     def add_interaction(self, session_id, interaction_type, content, metadata=None):

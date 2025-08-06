@@ -19,7 +19,7 @@ from common.env_helpers import get_env
 from common.utils.log_setup import configure_logging
 
 # Set up logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("docker_health_check")
 
 def check_port(host: str, port: int, timeout: int = 5) -> bool:

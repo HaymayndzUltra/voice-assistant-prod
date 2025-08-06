@@ -24,45 +24,7 @@ LOG_PATH = str(PathManager.get_logs_dir() / "error_pattern_memory.log")
 ERROR_PATTERN_STORE_PATH = "error_pattern_store.json"
 ZMQ_ERROR_PATTERN_PORT = 5611  # New agent port
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-class ErrorPatternMemory(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="ErrorPatternMemory")
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-        self.error_store = self.load_error_store()
-        self.lock = threading.Lock()
-        self.running = True
-        logging.info(f"[ErrorPatternMemory] Agent started on port {zmq_port}")
-    
-    def load_error_store(self):
-        if os.path.exists(ERROR_PATTERN_STORE_PATH):
-            with open(ERROR_PATTERN_STORE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return {"errors": [], "fixes": {}, "success_rate": {}}
-    
-    def save_error_store(self):
-        with open(ERROR_PATTERN_STORE_PATH, "w", encoding="utf-8") as f:
-            json.dump(self.error_store, f, ensure_ascii=False, indent=2)
-    
-    def extract_error_signature(self, error_text):
-        """
-        Extract a normalized error signature from the full error text.
-        This helps group similar errors together.
-        """
-        # Extract error type and message from Python-style tracebacks
-        if "Traceback (most recent call last):" in error_text:
-            # Extract the actual error line (last line of traceback)
-            lines = error_text.strip().split('\n')
+logger = configure_logging(__name__)
             for line in reversed(lines):
                 if ': ' in line:
                     # For Python errors like "TypeError: cannot concatenate 'str' and 'int'"

@@ -23,8 +23,7 @@ if str(project_root) not in sys.path:
 from main_pc_code.utils.network_utils import load_network_config, get_mainpc_address, get_pc2_address
 
 # Set up logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-)
+logger = configure_logging(__name__)
 logger = logging.getLogger(__name__)
 
 def check_port_open(host: str, port: int, timeout: float = 2.0) -> bool:

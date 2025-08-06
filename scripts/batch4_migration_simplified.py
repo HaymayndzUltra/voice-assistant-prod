@@ -24,9 +24,7 @@ from typing import Dict, List, Optional
 from common.utils.log_setup import configure_logging
 
 # Setup basic logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
+logger = configure_logging(__name__),
         logging.FileHandler(f'batch4_migration_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
     ]
 )

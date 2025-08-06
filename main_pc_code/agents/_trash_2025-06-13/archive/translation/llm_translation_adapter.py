@@ -28,9 +28,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from main_pc_code.agents.llm_runtime_tools import ensure_model, get_model_status, get_model_url, get_model_api_type
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_translation_adapter.log"))),
+logger = configure_logging(__name__) / "llm_translation_adapter.log"))),
         logging.StreamHandler()
     ]
 )

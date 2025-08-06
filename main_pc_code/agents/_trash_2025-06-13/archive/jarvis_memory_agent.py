@@ -35,54 +35,7 @@ LOG_PATH = str(PathManager.get_logs_dir() / "jarvis_memory_agent.log")
 JARVIS_MEMORY_STORE_PATH = "jarvis_memory_store.json"
 ZMQ_JARVIS_MEMORY_PORT = 5598
 
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-class JarvisMemoryAgent(BaseAgent):
-    def broadcast_reminder(self, text, user=None, emotion="neutral"):
-        send_proactive_event(event_type="reminder", text=text, user=user, emotion=emotion)
-
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="JarvisMemoryAgent")
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-        self.memory = self.load_memory()
-        self.lock = threading.Lock()
-        self.running = True
-        logging.info(f"[JarvisMemory] Agent started on port {zmq_port}")
-
-    def load_memory(self):
-        if os.path.exists(JARVIS_MEMORY_STORE_PATH):
-            with open(JARVIS_MEMORY_STORE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return {}
-
-    def save_memory(self):
-        with open(JARVIS_MEMORY_STORE_PATH, "w", encoding="utf-8") as f:
-            json.dump(self.memory, f, ensure_ascii=False, indent=2)
-
-    def handle_query(self, query):
-        action = query.get("action")
-        user = query.get("user_id", "default")
-        if action == "add_memory":
-            memory_entry = query.get("memory")
-            with self.lock:
-                if user not in self.memory:
-                    self.memory[user] = []
-                self.memory[user].append({
-                    "timestamp": time.time(),
-                    "memory": memory_entry
-                })
-                self.save_memory()
-            logging.info(f"[JarvisMemory] Added memory for {user}: {memory_entry}")
-            # Proactive broadcast for new memory (if it's a reminder)
+logger = configure_logging(__name__)
             if memory_entry and isinstance(memory_entry, dict) and memory_entry.get("type") == "reminder":
                 send_proactive_event(
                     event_type="reminder",

@@ -19,28 +19,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Configure logging
-logger = configure_logging(__name__)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger("CertGenerator")
-
-def generate_certificates(cert_dir: str, server_name: str = "server", client_name: str = "client") -> bool:
-    """
-    Generate ZMQ CURVE certificates.
-    
-    Args:
-        cert_dir: Directory to store certificates
-        server_name: Name for server certificate
-        client_name: Name for client certificate
-        
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    try:
-        import zmq.auth
-        
-        # Create directory if it doesn't exist
-        cert_dir_path = Path(cert_dir)
+logger = configure_logging(__name__)
         cert_dir_path.mkdir(parents=True, exist_ok=True)
         
         logger.info(f"Generating certificates in {cert_dir_path.absolute()}")

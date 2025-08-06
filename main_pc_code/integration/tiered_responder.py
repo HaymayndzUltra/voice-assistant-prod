@@ -141,9 +141,7 @@ class TieredResponder:
         ]
         
     def _setup_logging(self):
-        logger = configure_logging(__name__)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log")),
+        logger = configure_logging(__name__) / "tiered_responder.log")),
                 logging.StreamHandler()
             ]
         )

@@ -6,7 +6,7 @@ import logging
 from common.utils.log_setup import configure_logging
 
 # Configure logging
-logger = configure_logging(__name__)s - %(levelname)s - %(message)s')
+logger = configure_logging(__name__)
 logger = logging.getLogger("CommonTagalogPhrases")
 
 # Common Tagalog Phrases with English translations

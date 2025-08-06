@@ -14,9 +14,7 @@ import threading
 from pathlib import Path
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'modular_system', 'logs', str(PathManager.get_logs_dir() / "simple_tts.log")))
     ]
 )

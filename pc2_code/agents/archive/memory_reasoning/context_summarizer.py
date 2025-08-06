@@ -19,43 +19,7 @@ SUMMARY_STORE_PATH = Path(os.path.dirname(__file__).parent / "data" / "context_s
 SUMMARY_STORE_PATH.parent.mkdir(exist_ok=True)
 ZMQ_CONTEXT_SUMMARIZER_PORT = 5610
 
-logger = configure_logging(__name__)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("ContextSummarizer")
-
-class ContextSummarizer:
-    def __init__(self, zmq_port=ZMQ_CONTEXT_SUMMARIZER_PORT):
-
-        super().__init__(*args, **kwargs)        """Initialize the Context Summarizer agent"""
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        
-        # Try to bind to the specified port
-        try:
-            self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
-            self.port = zmq_port
-            logger.info(f"Successfully bound to port {zmq_port}")
-        except zmq.error.ZMQError as e:
-            # If port is in use, try alternative ports
-            if "Address in use" in str(e):
-                logger.warning(f"Port {zmq_port} is in use, trying alternative ports")
-                # Try a range of alternative ports
-                alt_ports = [7610, 7611, 7612, 7613, 7614]
-                for alt_port in alt_ports:
-                    try:
-                        self.socket.bind(f"tcp://0.0.0.0:{alt_port}")
-                        self.port = alt_port
-                        logger.info(f"Successfully bound to alternative port {alt_port}")
-                        break
-                    except zmq.error.ZMQError:
-                        continue
-                else:
-                    # If we get here, all ports failed
-                    logger.error("Could not bind to any port. Will keep running but won't process requests.")
+logger = configure_logging(__name__)
                     self.port = None
             else:
                 # Some other ZMQ error

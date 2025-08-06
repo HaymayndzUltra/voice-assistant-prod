@@ -45,38 +45,7 @@ HEALTH_CHECK_PORT = 5597
 os.makedirs("logs", exist_ok=True)
 
 # Configure logging
-logger = configure_logging(__name__)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("UnifiedMemoryReasoning")
-
-class ContextManager:
-    """Advanced context management for voice assistant conversations"""
-    
-    def __init__(self, min_size=5, max_size=20, initial_size=10):
-        # Context window configuration
-        self.min_size = min_size
-        self.max_size = max_size
-        self.current_size = initial_size
-        self.context_window = deque(maxlen=self.current_size)
-        
-        # Context importance scoring
-        self.importance_scores = {}
-        self.importance_threshold = 0.5  # Minimum score to keep in context
-        
-        # Speaker-specific context
-        self.speaker_contexts = {}
-        
-        # Keywords that indicate important context
-        self.important_keywords = [
-            'remember', 'don\'t forget', 'important', 'critical', 'essential',
-            'alalahanin', 'tandaan', 'mahalaga', 'importante', 'kailangan'
-        ]
-        
-        logger.info(f"[ContextManager] Initialized with size range {min_size}-{max_size}, current: {initial_size}")
+logger = configure_logging(__name__)
     
     def add_to_context(self, text, speaker=None, metadata=None):
         """Add a new item to the context window with importance scoring"""

@@ -26,9 +26,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Configure logging
-logger = configure_logging(__name__)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
+logger = configure_logging(__name__),
         logging.FileHandler(os.path.join(project_root, 'logs', str(PathManager.get_logs_dir() / "voice_flow_test_runner.log")))
     ]
 )
