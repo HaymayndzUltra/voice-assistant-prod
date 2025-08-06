@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total_services": 78,
-    "services_with_requirements": 78,
-    "unique_packages": 40
+    "total_services": 76,
+    "services_with_requirements": 76,
+    "unique_packages": 41
   },
   "base_image_recommendations": {
     "gpu_services": {
@@ -106,35 +106,35 @@
     ],
     [
       "pyzmq",
-      23
+      18
     ],
     [
       "pydantic",
-      14
+      10
     ],
     [
       "numpy",
-      14
+      9
     ],
     [
       "redis",
       7
     ],
     [
-      "fastapi",
-      7
-    ],
-    [
-      "uvicorn",
-      7
+      "torch",
+      6
     ],
     [
       "requests",
-      7
+      5
     ],
     [
-      "torch",
-      6
+      "fastapi",
+      3
+    ],
+    [
+      "uvicorn",
+      3
     ],
     [
       "scipy",
@@ -183,8 +183,8 @@
   ],
   "merged_dependencies": {
     "pydantic": [
-      "pydantic==2.5.0",
-      "pydantic"
+      "pydantic",
+      "pydantic==2.5.0"
     ],
     "redis": [
       "redis"
@@ -193,8 +193,8 @@
       "psutil"
     ],
     "pyzmq": [
-      "pyzmq",
-      "pyzmq==25.1.1"
+      "pyzmq==25.1.1",
+      "pyzmq"
     ],
     "torch": [
       "torch==2.1.1+cu118",
@@ -208,8 +208,8 @@
       "enum"
     ],
     "numpy": [
-      "numpy",
-      "numpy==1.24.3"
+      "numpy==1.24.3",
+      "numpy"
     ],
     "importlib": [
       "importlib"
@@ -248,8 +248,8 @@
       "transformers==4.35.2"
     ],
     "scipy": [
-      "scipy==1.11.4",
-      "scipy"
+      "scipy",
+      "scipy==1.11.4"
     ],
     "heapq": [
       "heapq"
@@ -274,6 +274,9 @@
     ],
     "tkinter": [
       "tkinter"
+    ],
+    "pyyaml": [
+      "pyyaml==6.0.1"
     ],
     "plugp100": [
       "plugp100"
