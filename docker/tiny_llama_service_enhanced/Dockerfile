@@ -1,4 +1,8 @@
 FROM nvidia/cuda:11.8-devel-ubuntu22.04
+# -- common-req-layer
+ARG COMMON_REQ=/workspace/requirements.common.txt
+COPY ${COMMON_REQ} /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.common.txt
 
 # Install Python 3.11
 RUN apt-get update && apt-get install -y \

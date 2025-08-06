@@ -1,4 +1,8 @@
 FROM python:3.10-slim
+# -- common-req-layer
+ARG COMMON_REQ=/workspace/requirements.common.txt
+COPY ${COMMON_REQ} /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.common.txt
 RUN apt-get update && apt-get install -y --no-install-recommends curl gcc build-essential && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.txt

@@ -1,5 +1,9 @@
 # Optimized Dockerfile - slim base image with pip cache disabled
 FROM python:3.10-slim-bullseye
+# -- common-req-layer
+ARG COMMON_REQ=/workspace/requirements.common.txt
+COPY ${COMMON_REQ} /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.common.txt
 RUN apt-get update && apt-get install \
     && rm -rf /var/lib/apt/lists/* -y --no-install-recommends curl gcc build-essential && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt /tmp/
