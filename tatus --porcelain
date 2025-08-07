@@ -1,0 +1,5 @@
+[33m1121458[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/cursor/run-and-read-todo-manager-output-ea7f[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add CentralErrorBus service configuration to startup configs
+[33m7880309[m Checkpoint before follow-up message
+[33m05b1d3b[m central_error_bus_setup
+[33m3f51ad1[m[33m ([m[1;31morigin/cursor/run-todo-manager-script-and-read-output-8f31[m[33m, [m[1;32mcursor/run-todo-manager-script-and-read-output-8f31[m[33m)[m cursor/run-todo-manager-script-and-read-output-8f31
+[33m010bda6[m Add CrossMachineGPUScheduler to startup config for GPU load balancing

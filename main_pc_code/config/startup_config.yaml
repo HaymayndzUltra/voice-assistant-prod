@@ -132,12 +132,6 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
-    CentralErrorBus:
-      script_path: services/central_error_bus/error_bus.py
-      port: "${PORT_OFFSET}+7150"
-      health_check_port: "${PORT_OFFSET}+8150"
-      required: true
-      dependencies: []
   memory_system:
     MemoryClient:
       script_path: main_pc_code/agents/memory_client.py
@@ -574,6 +568,14 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
+    StreamingTranslationProxy:
+      script_path: services/streaming_translation_proxy/proxy.py
+      port: "${PORT_OFFSET}+5596"
+      health_check_port: "${PORT_OFFSET}+6596"
+      required: true
+      dependencies:
+      - CloudTranslationService
+      - SystemDigitalTwin
 
 # -----------------------------------------------------------------------------
 # Logical Docker deployment group definitions (added 2025-07-31)
@@ -675,8 +677,8 @@ docker_groups:
     description: Cross-machine GPU load balancer
     agents:
       - CrossMachineGPUScheduler
-  error_bus:
-    description: Centralised error event bus
+  translation_proxy:
+    description: Low-latency WebSocket translation proxy
     agents:
-      - CentralErrorBus
+      - StreamingTranslationProxy
 # -----------------------------------------------------------------------------
