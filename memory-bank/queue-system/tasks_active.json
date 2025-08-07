@@ -33,11 +33,11 @@
       },
       {
         "text": "PHASE 7: Final Verification, Deployment & Decommissioning\n\n**Explanations:**\nPerform the final pre-production checks, containerize and deploy the service, and transition downstream agents before decommissioning the seven legacy systems.\n\n**Technical Artifacts / Tasks:**\n**I. Dockerize Application:**\nCreate a `Dockerfile` using a CUDA base image. Configure it to share the GPU with other services like the ModelOps Coordinator, for example by setting `CUDA_MPS_ACTIVE_THREAD_PERCENTAGE`.\n\n**II. Execute Final Verification Gate:**\n*   **Accuracy:** Compare the generated ECV against a ground-truth dataset. Target a Pearson correlation of r ≥ 0.85 versus the legacy system.\n*   **Latency:** Confirm end-to-end audio → ECV p95 latency is < 70 ms.\n*   **GPU Utilization:** Ensure GPU usage is ≤ 60% under a 100 rps load.\n*   **Stability:** Run an 8-hour soak test and verify memory growth is < 3% with no uncaught exceptions.\n*   **Failover:** Test that killing and restarting the process is handled gracefully by downstream consumers.\n*   **Security:** Verify ZMQ sockets are bound to localhost or use CURVE encryption in production.\n\n**III. Deploy & Decommission:**\n1.  Deploy one instance per GPU on the cluster.\n2.  Confirm downstream agents are correctly consuming the ECV from the new APC.\n3.  Once stability is confirmed, safely decommission the seven superseded emotion-related agents.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_apc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_apc_implementation 7`\n\n──────────────────────────────────\nIMPORTANT NOTE: This is the final gate before the project is considered complete. Be methodical and rigorous during the verification and deployment process. Successful completion of this phase means the APC is production-ready.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T05:53:53.808654+08:00"
+    "updated": "2025-08-08T06:03:51.006838+08:00"
   }
 ]
