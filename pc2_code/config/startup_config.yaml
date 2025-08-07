@@ -17,6 +17,16 @@ global_settings:
 
 # PC2 Services (Agents)
 pc2_services:
+  # Infrastructure Services
+  - {
+      name: CentralErrorBus,
+      script_path: services/central_error_bus/error_bus.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7150",
+      health_check_port: "${PORT_OFFSET}+8150",
+      required: true,
+      dependencies: [],
+    }
   # Phase 1 - Integration Layer Agents
   - {
       name: MemoryOrchestratorService,
@@ -355,4 +365,8 @@ docker_groups:
     description: User-facing web interface agents
     agents:
       - UnifiedWebAgent
+  error_bus:
+    description: Centralised error event bus
+    agents:
+      - CentralErrorBus
 # -----------------------------------------------------------------------------
