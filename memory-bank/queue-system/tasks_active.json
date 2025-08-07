@@ -25,7 +25,7 @@
       },
       {
         "text": "PHASE 5: Application Bootstrap & Entry-point\n\n**Explanations:**\nCreate the main application entry-point (`app.py`) that ties everything together: configuration loading, model warm-up, and concurrent startup of the pipeline and transport layers.\n\n**Technical Artifacts / Tasks:**\n**I. Implement `app.py`:**\nThe script must perform the following actions:\n1.  Use `UnifiedConfigLoader` to load configuration.\n2.  Implement an `async def initialize_and_run(cfg)` function.\n3.  Inside this function, warm-up the STT and wake-word models.\n4.  Instantiate the `AudioPipeline`, `ZmqPublisher`, and `WebSocketServer`.\n5.  Use `asyncio.gather` to run the `pipeline.start()`, `zmq_pub.start()`, and `ws_server.serve()` coroutines concurrently.\n6.  Implement graceful shutdown logic to cancel all tasks, close the sound device, and flush any remaining data.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_rtap_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_rtap_implementation 5`\n\n──────────────────────────────────\nIMPORTANT NOTE: The bootstrap process is critical for service stability. Model warm-up is essential to avoid a long delay on the first request, and graceful shutdown prevents resource leaks.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 6: Testing & Profiling\n\n**Explanations:**\nConduct comprehensive testing to ensure the pipeline is correct, meets its strict latency budget, and is performant under load.\n\n**Technical Artifacts / Tasks:**\n**I. Unit Tests:**\nWrite and pass `pytest` unit tests for critical components:\n*   Verify the ring buffer's wraparound behavior.\n*   Test the wake-word engine's false-positive rate to ensure it's < 1%.\n\n**II. Latency & Performance Testing:**\n*   **Latency Test:** Record a 30-second audio clip and measure the end-to-end latency from the first audio sample to the final transcript publication. Ensure the mean is < 120 ms.\n*   **Profiling:** Use `py-spy` to profile the running application. Confirm CPU usage is < 20% per core and GPU utilization is stable.\n\n**III. Static Analysis:**\nRun static analysis tools and ensure they pass without warnings.\n*   `mypy --strict`\n*   `ruff`\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_rtap_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_rtap_implementation 6`\n\n──────────────────────────────────\nIMPORTANT NOTE: Meeting the ≤ 150 ms p95 latency budget is the primary goal of this project. Rigorous testing and profiling are non-negotiable. Do not proceed to deployment without passing these checks.",
@@ -38,6 +38,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T04:17:34.534085+08:00"
+    "updated": "2025-08-08T04:23:02.487786+08:00"
   }
 ]
