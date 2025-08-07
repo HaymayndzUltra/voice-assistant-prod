@@ -201,6 +201,16 @@ pc2_services:
   required: true
   dependencies:
   - MemoryOrchestratorService
+- name: SelfHealingSupervisor
+  script_path: services/self_healing_supervisor/supervisor.py
+  host: 0.0.0.0
+  port: ${PORT_OFFSET}+7009
+  health_check_port: ${PORT_OFFSET}+9008
+  required: true
+  dependencies:
+  - ObservabilityHub
+  config:
+    docker_sock: /var/run/docker.sock
 health_checks:
   start_period_seconds: 300
 pc2_network:
@@ -260,3 +270,7 @@ docker_groups:
     description: Centralised error event bus
     agents:
     - CentralErrorBus
+  self_healing:
+    description: Auto-restart supervisor for failed agents
+    agents:
+    - SelfHealingSupervisor
