@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 import sys
 from pathlib import Path
+import yaml
 
 # Add the project root to Python path
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -17,11 +18,7 @@ if str(project_root) not in sys.path:
 # Import BaseAgent
 from common.core.base_agent import BaseAgent
 
-# Import config loader
-from pc2_code.agents.utils.config_loader import Config
-
 # Standard imports for PC2 agents
-from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
 
@@ -29,22 +26,11 @@ from pc2_code.agents.error_bus_template import setup_error_reporting, report_err
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load configuration at the module level
-try:
-    config = Config().get_config()
-except Exception as e:
-    logger.error(f"Failed to load config: {e}")
-    config = {}
-
 class TutoringServiceAgent(BaseAgent):
     
-    # Parse agent arguments
-    _agent_args = parse_agent_args()
-    
     def __init__(self):
-        # Get host and port from config
-        self.host = config.get('services', {}).get('tutoring_service', {}).get('host', '0.0.0.0')
-        self.port = config.get('services', {}).get('tutoring_service', {}).get('port', 5604)
+        # Load configuration from startup_config.yaml
+        self._load_config()
         
         # Initialize BaseAgent with name and port
         super().__init__(name="TutoringServiceAgent", port=self.port)
@@ -56,6 +42,37 @@ class TutoringServiceAgent(BaseAgent):
         self.service_state = {}
         
         logger.info(f"Tutoring Service Agent initialized on {self.host}:{self.port}")
+        
+    def _load_config(self):
+        """Load configuration from startup_config.yaml"""
+        try:
+            config_path = project_root / "pc2_code" / "config" / "startup_config.yaml"
+            with open(config_path, 'r') as file:
+                startup_config = yaml.safe_load(file)
+            
+            # Find TutoringServiceAgent configuration in pc2_services list
+            agent_config = None
+            for service in startup_config.get('pc2_services', []):
+                if service.get('name') == 'TutoringServiceAgent':
+                    agent_config = service
+                    break
+            
+            if agent_config:
+                self.host = agent_config.get('host', '0.0.0.0')
+                self.port = agent_config.get('port', 5604)
+                self.health_check_port = agent_config.get('health_check_port', 8108)
+                logger.info(f"Loaded configuration for TutoringServiceAgent: {self.host}:{self.port}")
+            else:
+                logger.warning("TutoringServiceAgent configuration not found in startup_config.yaml. Using default ports.")
+                self.host = '0.0.0.0'
+                self.port = 5604
+                self.health_check_port = 8108
+                
+        except Exception as e:
+            logger.error(f"Error loading configuration: {e}. Using default ports.")
+            self.host = '0.0.0.0'
+            self.port = 5604
+            self.health_check_port = 8108
         
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
