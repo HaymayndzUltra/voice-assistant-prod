@@ -2,6 +2,9 @@ name: Quick Smoke Tests
 
 on:
   pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - 'pc2/docker-opt-shared-base/**'
   push:
     branches: [ main ]
 
