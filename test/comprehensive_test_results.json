@@ -1,0 +1,31 @@
+{
+  "mainpc": {},
+  "pc2": {},
+  "cross_machine": {
+    "zmq_bridge_accessible": false,
+    "mainpc_observability_accessible": false,
+    "pc2_observability_accessible": false,
+    "cross_sync_working": false,
+    "errors": [
+      "ZMQ Bridge (port 5600) not accessible",
+      "MainPC ObservabilityHub (port 9000) not accessible",
+      "PC2 ObservabilityHub (port 9100) not accessible"
+    ]
+  },
+  "summary": {
+    "total_agents": 0,
+    "mainpc_agents": 0,
+    "pc2_agents": 0,
+    "accessible_agents": 0,
+    "healthy_agents": 0,
+    "agents_with_satisfied_deps": 0,
+    "cross_machine_status": "DOWN",
+    "critical_issues": [
+      "NO_SERVICES_RUNNING",
+      "CROSS_MACHINE_COMMUNICATION_DOWN"
+    ],
+    "recommendations": [
+      "Check ObservabilityHub deployment and ZMQ Bridge"
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "zmq_bridge": {
+    "bridge_accessible": false,
+    "pub_sub_working": false,
+    "req_rep_working": false,
+    "message_throughput": 0,
+    "latency_ms": null,
+    "errors": [
+      "ZMQ Bridge port not accessible"
+    ]
+  },
+  "observability_sync": {
+    "mainpc_hub_accessible": false,
+    "pc2_hub_accessible": false,
+    "sync_endpoints_working": false,
+    "metrics_cross_sync": false,
+    "data_consistency": "unknown",
+    "sync_latency_ms": null,
+    "errors": []
+  },
+  "service_discovery": {
+    "mainpc_registry_accessible": false,
+    "service_registration_working": false,
+    "cross_machine_discovery": false,
+    "service_count": 0,
+    "discovery_latency_ms": null,
+    "errors": []
+  },
+  "data_transfer": {
+    "small_transfer_success": false,
+    "large_transfer_success": false,
+    "transfer_rate_mbps": 0,
+    "concurrent_transfers_supported": 0,
+    "errors": [],
+    "transfer_details": {
+      "small": {
+        "success": false,
+        "transfer_rate_mbps": 0.0
+      },
+      "medium": {
+        "success": false,
+        "transfer_rate_mbps": 0.0
+      },
+      "large": {
+        "success": false,
+        "transfer_rate_mbps": 0.0
+      }
+    }
+  },
+  "failover": {
+    "redundant_services_available": false,
+    "graceful_degradation": false,
+    "automatic_failover": false,
+    "recovery_time_seconds": null,
+    "errors": []
+  },
+  "summary": {
+    "total_endpoints": 11,
+    "accessible_endpoints": 0,
+    "critical_systems_status": {
+      "ZMQ_Bridge": "inaccessible",
+      "MainPC_ObservabilityHub": "inaccessible",
+      "PC2_ObservabilityHub": "inaccessible"
+    },
+    "communication_health": "CRITICAL",
+    "performance_rating": "POOR",
+    "reliability_rating": "LOW",
+    "critical_issues": [
+      "ZMQ_BRIDGE_DOWN",
+      "INSUFFICIENT_SERVICES",
+      "CROSS_MACHINE_COMMUNICATION_FAILURE"
+    ],
+    "recommendations": [
+      "Start ZMQ Bridge service immediately",
+      "Optimize network configuration and service performance",
+      "Implement redundancy and failover mechanisms"
+    ]
+  }
+}

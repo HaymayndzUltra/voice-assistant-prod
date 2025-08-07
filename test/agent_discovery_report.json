@@ -1,0 +1,56 @@
+{
+  "timestamp": "2025-08-07 19:55:23",
+  "discovery_summary": {
+    "total_agents_discovered": 0,
+    "port_ranges_scanned": [
+      "mainpc_services",
+      "mainpc_health",
+      "pc2_services",
+      "pc2_health",
+      "observability",
+      "special_services"
+    ],
+    "discovery_duration": "N/A"
+  },
+  "health_summary": {
+    "total_discovered": 0,
+    "healthy": 0,
+    "unhealthy": 0,
+    "unresponsive": 0,
+    "health_percentage": 0,
+    "avg_response_time": 0.0
+  },
+  "dependency_summary": {
+    "total_dependencies_checked": 0,
+    "satisfied_count": 0,
+    "unsatisfied_count": 0,
+    "critical_missing_count": 0
+  },
+  "detailed_results": {
+    "discovered_agents": [],
+    "health_checks": {
+      "healthy_agents": [],
+      "unhealthy_agents": [],
+      "unresponsive_agents": [],
+      "performance_metrics": {},
+      "summary": {
+        "total_discovered": 0,
+        "healthy": 0,
+        "unhealthy": 0,
+        "unresponsive": 0,
+        "health_percentage": 0,
+        "avg_response_time": 0.0
+      }
+    },
+    "dependencies": {
+      "satisfied_dependencies": [],
+      "unsatisfied_dependencies": [],
+      "dependency_chains": {},
+      "critical_missing": []
+    }
+  },
+  "recommendations": [
+    "System health at 0% - consider service restart",
+    "Only 0 agents discovered - consider starting more services"
+  ]
+}
