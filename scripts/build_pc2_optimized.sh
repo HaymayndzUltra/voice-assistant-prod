@@ -50,7 +50,7 @@ echo "🎯 Phase 2: Building PC2 agents (using cached base layers)..."
 
 echo "  → Building minimal agents..."
 docker buildx build \
-    -f docker/pc2_memory_orchestrator/Dockerfile \
+    -f docker/pc2_memory_orchestrator_service/Dockerfile \
     -t ${REGISTRY}/memoryorchestratorservice:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -58,7 +58,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_vision_processing/Dockerfile \
+    -f docker/pc2_vision_processing_agent/Dockerfile \
     -t ${REGISTRY}/visionprocessingagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -66,7 +66,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_dream_world/Dockerfile \
+    -f docker/pc2_dream_world_agent/Dockerfile \
     -t ${REGISTRY}/dreamworldagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -74,7 +74,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_unified_memory_reasoning/Dockerfile \
+    -f docker/pc2_unified_memory_reasoning_agent/Dockerfile \
     -t ${REGISTRY}/unifiedmemoryreasoningagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -82,7 +82,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_tutor/Dockerfile \
+    -f docker/pc2_tutor_agent/Dockerfile \
     -t ${REGISTRY}/tutoragent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -90,7 +90,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_tutoring/Dockerfile \
+    -f docker/pc2_tutor_agenting/Dockerfile \
     -t ${REGISTRY}/tutoringagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -130,7 +130,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_authentication/Dockerfile \
+    -f docker/pc2_authentication_agent/Dockerfile \
     -t ${REGISTRY}/authenticationagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -138,7 +138,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_unified_utils/Dockerfile \
+    -f docker/pc2_unified_utils_agent/Dockerfile \
     -t ${REGISTRY}/unifiedutilsagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -146,7 +146,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_trustscorer/Dockerfile \
+    -f docker/pc2_agent_trust_scorer/Dockerfile \
     -t ${REGISTRY}/agenttrustscorer:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -154,7 +154,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_filesystem_assistant/Dockerfile \
+    -f docker/pc2_filesystem_assistant_agent/Dockerfile \
     -t ${REGISTRY}/filesystemassistantagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -162,7 +162,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_remote_connector/Dockerfile \
+    -f docker/pc2_remote_connector_agent/Dockerfile \
     -t ${REGISTRY}/remoteconnectoragent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -170,7 +170,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_unified_web/Dockerfile \
+    -f docker/pc2_unified_web_agent/Dockerfile \
     -t ${REGISTRY}/unifiedwebagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -178,7 +178,7 @@ docker buildx build \
     --push \
     .
 docker buildx build \
-    -f docker/pc2_dreaming_mode/Dockerfile \
+    -f docker/pc2_dreaming_mode_agent/Dockerfile \
     -t ${REGISTRY}/dreamingmodeagent:${AGENT_TAG} \
     --build-arg BASE_IMAGE=${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
