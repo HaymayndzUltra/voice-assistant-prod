@@ -1,8 +1,8 @@
 {
   "cursor_session": {
-    "disconnected_at": "2025-08-08T03:30:14.638365+08:00",
-    "current_task": "Action plan to implement, test, and deploy the ModelOps Coordinator (MOC), unifying six legacy agents for model lifecycle, inference, and resource management.",
-    "progress": 0.0,
-    "last_activity": "2024-05-24T14:15:00Z"
+    "disconnected_at": "2025-08-08T03:54:03.534549+08:00",
+    "current_task": "Action plan to implement the Real-Time Audio Pipeline (RTAP), merging six legacy agents into a single, ultra-low-latency service with a target latency of \u2264 150 ms.",
+    "progress": 0.25,
+    "last_activity": "2025-08-08T03:54:03.518151+08:00"
   }
 }

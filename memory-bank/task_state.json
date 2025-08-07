@@ -1,8 +1,8 @@
 {
-  "current_task_id": "20250807_moc_implementation",
-  "current_task_description": "Action plan to implement, test, and deploy the ModelOps Coordinator (MOC), unifying six legacy agents for model lifecycle, inference, and resource management.",
+  "current_task_id": "20250807_rtap_implementation",
+  "current_task_description": "Action plan to implement the Real-Time Audio Pipeline (RTAP), merging six legacy agents into a single, ultra-low-latency service with a target latency of \u2264 150 ms.",
   "status": "in_progress",
-  "last_updated": "2024-05-24T14:15:00Z",
+  "last_updated": "2025-08-08T03:54:03.518151+08:00",
   "todos_count": 8,
-  "completed_todos": 0
+  "completed_todos": 2
 }
