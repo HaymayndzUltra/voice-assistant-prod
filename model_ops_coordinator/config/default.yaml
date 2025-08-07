@@ -1,0 +1,41 @@
+title: ModelOpsCoordinatorConfig
+version: 1.0
+
+server:
+  zmq_port: 7211
+  grpc_port: 7212
+  rest_port: 8008
+  max_workers: 16
+
+resources:
+  gpu_poll_interval: 5
+  vram_soft_limit_mb: 22000
+  eviction_threshold_pct: 90
+
+models:
+  preload:
+    - name: "llama-7b-chat"
+      path: "/models/llama-7b-chat.gguf"
+      shards: 1
+    - name: "whisper-base"
+      path: "/models/whisper-base.bin"
+      shards: 1
+  default_dtype: "float16"
+  quantization: true
+
+learning:
+  enable_auto_tune: true
+  max_parallel_jobs: 2
+  job_store: "${LEARNING_STORE:/workspace/learning_jobs.db}"
+
+goals:
+  policy: "priority_queue"
+  max_active_goals: 10
+
+resilience:
+  circuit_breaker:
+    failure_threshold: 4
+    reset_timeout: 20
+  bulkhead:
+    max_concurrent: 64
+    max_queue_size: 256
