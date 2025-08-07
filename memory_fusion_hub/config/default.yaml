@@ -1,2 +1,27 @@
-# Default configuration for Memory Fusion Hub
-# This will be implemented in Phase 2
+title: MemoryFusionHubConfig
+version: 1.0
+
+server:
+  zmq_port: 5713
+  grpc_port: 5714
+  max_workers: 8
+
+storage:
+  write_strategy: "event_sourcing"   # options: direct, event_sourcing
+  sqlite_path: "${MFH_SQLITE:/workspace/memory.db}"
+  postgres_url: "${POSTGRES_URL:}"
+  redis_url: "${REDIS_URL:redis://localhost:6379/0}"
+  cache_ttl_seconds: 900
+
+replication:
+  enabled: true
+  event_topic: "memory_events"
+  nats_url: "${NATS_URL:nats://localhost:4222}"
+
+resilience:
+  circuit_breaker:
+    failure_threshold: 5
+    reset_timeout: 30
+  bulkhead:
+    max_concurrent: 32
+    max_queue_size: 128
