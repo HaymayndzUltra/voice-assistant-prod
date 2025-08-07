@@ -19,13 +19,28 @@ pc2_services:
   health_check_port: ${PORT_OFFSET}+8150
   required: true
   dependencies: []
-- name: MemoryOrchestratorService
-  script_path: pc2_code/agents/memory_orchestrator_service.py
+# DECOMMISSIONED: Legacy memory agents replaced by MemoryFusionHub
+# - name: MemoryOrchestratorService
+#   script_path: pc2_code/agents/memory_orchestrator_service.py
+#   host: 0.0.0.0
+#   port: ${PORT_OFFSET}+7140
+#   health_check_port: ${PORT_OFFSET}+8140
+#   required: true
+#   dependencies: []
+- name: MemoryFusionHub
+  script_path: memory_fusion_hub/app.py
   host: 0.0.0.0
-  port: ${PORT_OFFSET}+7140
-  health_check_port: ${PORT_OFFSET}+8140
+  port: ${PORT_OFFSET}+5713
+  health_check_port: ${PORT_OFFSET}+6713
   required: true
-  dependencies: []
+  dependencies:
+  - ObservabilityHub
+  config:
+    zmq_port: ${PORT_OFFSET}+5713
+    grpc_port: ${PORT_OFFSET}+5714
+    metrics_port: ${PORT_OFFSET}+8080
+    redis_url: "redis://localhost:6379/0"
+    sqlite_path: "/workspace/memory.db"
 - name: TieredResponder
   script_path: pc2_code/agents/tiered_responder.py
   host: 0.0.0.0
@@ -49,7 +64,7 @@ pc2_services:
   health_check_port: ${PORT_OFFSET}+8102
   required: true
   dependencies:
-  - MemoryOrchestratorService
+  - MemoryFusionHub
 - name: VisionProcessingAgent
   script_path: pc2_code/agents/VisionProcessingAgent.py
   host: 0.0.0.0
@@ -64,32 +79,33 @@ pc2_services:
   port: ${PORT_OFFSET}+7104
   health_check_port: ${PORT_OFFSET}+8104
   dependencies:
-  - MemoryOrchestratorService
+  - MemoryFusionHub
   required: true
-- name: UnifiedMemoryReasoningAgent
-  script_path: pc2_code/agents/unified_memory_reasoning_agent.py
-  host: 0.0.0.0
-  port: ${PORT_OFFSET}+7105
-  health_check_port: ${PORT_OFFSET}+8105
-  dependencies:
-  - MemoryOrchestratorService
-  required: true
-- name: ContextManager
-  script_path: pc2_code/agents/context_manager.py
-  host: 0.0.0.0
-  port: ${PORT_OFFSET}+7111
-  health_check_port: ${PORT_OFFSET}+8111
-  dependencies:
-  - MemoryOrchestratorService
-  required: true
-- name: ExperienceTracker
-  script_path: pc2_code/agents/experience_tracker.py
-  host: 0.0.0.0
-  port: ${PORT_OFFSET}+7112
-  health_check_port: ${PORT_OFFSET}+8112
-  dependencies:
-  - MemoryOrchestratorService
-  required: true
+# DECOMMISSIONED: Legacy memory agents replaced by MemoryFusionHub
+# - name: UnifiedMemoryReasoningAgent
+#   script_path: pc2_code/agents/unified_memory_reasoning_agent.py
+#   host: 0.0.0.0
+#   port: ${PORT_OFFSET}+7105
+#   health_check_port: ${PORT_OFFSET}+8105
+#   dependencies:
+#   - MemoryOrchestratorService
+#   required: true
+# - name: ContextManager
+#   script_path: pc2_code/agents/context_manager.py
+#   host: 0.0.0.0
+#   port: ${PORT_OFFSET}+7111
+#   health_check_port: ${PORT_OFFSET}+8111
+#   dependencies:
+#   - MemoryOrchestratorService
+#   required: true
+# - name: ExperienceTracker
+#   script_path: pc2_code/agents/experience_tracker.py
+#   host: 0.0.0.0
+#   port: ${PORT_OFFSET}+7112
+#   health_check_port: ${PORT_OFFSET}+8112
+#   dependencies:
+#   - MemoryOrchestratorService
+#   required: true
 - name: ResourceManager
   script_path: pc2_code/agents/resource_manager.py
   host: 0.0.0.0
@@ -128,7 +144,7 @@ pc2_services:
   port: ${PORT_OFFSET}+7119
   health_check_port: ${PORT_OFFSET}+8119
   dependencies:
-  - ContextManager
+  - MemoryFusionHub
   required: true
 - name: AgentTrustScorer
   script_path: pc2_code/agents/AgentTrustScorer.py
@@ -162,7 +178,7 @@ pc2_services:
   required: true
   dependencies:
   - FileSystemAssistantAgent
-  - MemoryOrchestratorService
+  - MemoryFusionHub
 - name: DreamingModeAgent
   script_path: pc2_code/agents/DreamingModeAgent.py
   host: 0.0.0.0
@@ -200,7 +216,7 @@ pc2_services:
   health_check_port: ${PORT_OFFSET}+8108
   required: true
   dependencies:
-  - MemoryOrchestratorService
+  - MemoryFusionHub
 - name: SelfHealingSupervisor
   script_path: services/self_healing_supervisor/supervisor.py
   host: 0.0.0.0
@@ -237,14 +253,19 @@ docker_groups:
     agents:
     - ObservabilityHub
     - ResourceManager
-  memory_stack:
-    description: Memory orchestration & reasoning services
+  core_hubs:
+    description: Memory Fusion Hub for unified memory management
     agents:
-    - MemoryOrchestratorService
-    - CacheManager
-    - UnifiedMemoryReasoningAgent
-    - ContextManager
-    - ExperienceTracker
+    - MemoryFusionHub
+  # DECOMMISSIONED: Legacy memory stack replaced by MemoryFusionHub
+  # memory_stack:
+  #   description: Memory orchestration & reasoning services
+  #   agents:
+  #   - MemoryOrchestratorService
+  #   - CacheManager
+  #   - UnifiedMemoryReasoningAgent
+  #   - ContextManager
+  #   - ExperienceTracker
   async_pipeline:
     description: Asynchronous task processing & routing pipeline
     agents:
@@ -252,6 +273,7 @@ docker_groups:
     - TaskScheduler
     - AdvancedRouter
     - TieredResponder
+    - CacheManager
   tutoring_cpu:
     description: Tutoring and educational agents (CPU-bound)
     agents:
