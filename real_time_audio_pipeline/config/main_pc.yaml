@@ -1,0 +1,41 @@
+title: RealTimeAudioPipelineConfig - Main PC
+version: 1.0
+
+# Main PC specific audio configuration
+audio:
+  sample_rate: 16000
+  frame_ms: 20
+  channels: 1
+  device: "${AUDIO_DEVICE:default}"
+  ring_buffer_size_ms: 4000
+
+wakeword:
+  model_path: "/models/porcupine/wake.ppn"
+  sensitivity: 0.55
+
+preprocess:
+  denoise: true
+  vad_aggressiveness: 2
+
+stt:
+  model_name: "whisper-base"
+  device: "cuda"  # Main PC has GPU
+  compute_dtype: "float16"
+  beam_size: 5
+
+language:
+  sentiment: true
+  fasttext_model: "/models/lid.176.bin"
+
+output:
+  zmq_pub_port_events: 6552
+  zmq_pub_port_transcripts: 6553
+  websocket_port: 5802
+
+resilience:
+  circuit_breaker:
+    failure_threshold: 3
+    reset_timeout: 15
+  bulkhead:
+    max_concurrent: 8
+    max_queue_size: 32

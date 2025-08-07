@@ -54,28 +54,49 @@ class RingBuffer:
         self._last_read_time = 0.0
         
     def write(self, frame: np.ndarray) -> bool:
-        """Write a frame to the ring buffer."""
+        """
+        Write a frame to the ring buffer.
+        
+        Args:
+            frame: Audio frame as NumPy array
+            
+        Returns:
+            True if write successful, False if frame was rejected
+            
+        Raises:
+            ValueError: If frame shape doesn't match expected frame_size
+        """
         if frame.size != self.frame_size:
             raise ValueError(f"Frame size {frame.size} doesn't match expected {self.frame_size}")
             
         with self._lock:
+            # Check if we're about to overflow
             if len(self.buffer) == self.max_frames:
                 self._overflows += 1
                 
+            # Convert to correct dtype if needed (minimal copy)
             if frame.dtype != self.dtype:
                 frame = frame.astype(self.dtype)
             
+            # Ensure frame is contiguous for optimal performance
             if not frame.flags.c_contiguous:
                 frame = np.ascontiguousarray(frame)
                 
-            self.buffer.append(frame.copy())
+            # Add to buffer (deque handles overflow automatically)
+            self.buffer.append(frame.copy())  # Copy to avoid external modifications
+            
             self._frames_written += 1
             self._last_write_time = time.perf_counter()
             
         return True
     
     def read_frame(self) -> Optional[np.ndarray]:
-        """Read a single frame from the buffer (FIFO)."""
+        """
+        Read a single frame from the buffer (FIFO).
+        
+        Returns:
+            Audio frame as NumPy array, or None if buffer is empty
+        """
         with self._lock:
             if not self.buffer:
                 return None
@@ -87,14 +108,21 @@ class RingBuffer:
             return frame
     
     def read_all(self) -> np.ndarray:
-        """Read all frames and concatenate into a single array."""
+        """
+        Read all frames and concatenate into a single array.
+        
+        Returns:
+            Concatenated audio data as NumPy array
+        """
         with self._lock:
             if not self.buffer:
                 return np.array([], dtype=self.dtype)
                 
+            # Pre-allocate output array for efficiency
             num_frames = len(self.buffer)
             output = np.empty((num_frames * self.frame_size,), dtype=self.dtype)
             
+            # Copy frames into output array
             for i in range(num_frames):
                 frame = self.buffer.popleft()
                 start_idx = i * self.frame_size
@@ -116,13 +144,23 @@ class RingBuffer:
         with self._lock:
             return len(self.buffer) == 0
     
+    def is_full(self) -> bool:
+        """Check if buffer is at maximum capacity."""
+        with self._lock:
+            return len(self.buffer) == self.max_frames
+    
     def size(self) -> int:
         """Get current number of frames in buffer."""
         with self._lock:
             return len(self.buffer)
     
     def get_stats(self) -> dict:
-        """Get buffer statistics for monitoring and debugging."""
+        """
+        Get buffer statistics for monitoring and debugging.
+        
+        Returns:
+            Dictionary with performance statistics
+        """
         with self._lock:
             return {
                 'frames_written': self._frames_written,
@@ -131,8 +169,14 @@ class RingBuffer:
                 'current_size': len(self.buffer),
                 'max_frames': self.max_frames,
                 'frame_size': self.frame_size,
+                'last_write_time': self._last_write_time,
+                'last_read_time': self._last_read_time,
                 'utilization': len(self.buffer) / self.max_frames if self.max_frames > 0 else 0.0
             }
+    
+    def __len__(self) -> int:
+        """Get current buffer size."""
+        return self.size()
     
     def __repr__(self) -> str:
         """String representation of buffer state."""
@@ -143,11 +187,22 @@ class RingBuffer:
 
 
 class AudioRingBuffer(RingBuffer):
-    """Specialized ring buffer for audio data with additional audio-specific features."""
+    """
+    Specialized ring buffer for audio data with additional audio-specific features.
+    """
     
     def __init__(self, sample_rate: int, buffer_duration_ms: int, channels: int = 1, 
                  frame_duration_ms: int = 20, dtype: np.dtype = np.float32):
-        """Initialize audio ring buffer based on time durations."""
+        """
+        Initialize audio ring buffer based on time durations.
+        
+        Args:
+            sample_rate: Audio sample rate in Hz
+            buffer_duration_ms: Total buffer duration in milliseconds
+            channels: Number of audio channels
+            frame_duration_ms: Duration of each frame in milliseconds
+            dtype: NumPy data type for audio samples
+        """
         self.sample_rate = sample_rate
         self.channels = channels
         self.frame_duration_ms = frame_duration_ms
@@ -176,5 +231,5 @@ class AudioRingBuffer(RingBuffer):
             'frame_duration_ms': self.frame_duration_ms,
             'buffer_duration_ms': self.buffer_duration_ms,
             'audio_duration_ms': audio_duration_ms,
-            'buffer_latency_ms': audio_duration_ms
+            'buffer_latency_ms': audio_duration_ms  # Current latency
         }
