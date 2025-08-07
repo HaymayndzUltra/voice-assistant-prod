@@ -33,11 +33,11 @@
       },
       {
         "text": "PHASE 7: Final Verification, Deployment & Cut-over\n\n**Explanations:**\nPerform final pre-production checks, deploy the service, migrate traffic from legacy agents, and formally decommission them.\n\n**Technical Artifacts / Tasks:**\n**I. Final Verification Gate:**\nExecute and confirm success for every item on this checklist:\n*   **Benchmark:** 1k rps mixed `Infer` + 50 model loads. Verify CPU < 65%, VRAM ≤ soft limit, p99 < 120 ms.\n*   **HA Test:** Kill the primary replica; ensure the second handles traffic seamlessly.\n*   **Rollback Simulation:** Verify a zero-downtime fallback to a legacy agent is possible.\n*   **Security:** Confirm gRPC TLS is enabled and REST endpoints are protected.\n*   **Documentation:** Generate OpenAPI spec, gRPC docs, and a Prometheus metrics list.\n\n**II. Review Risk Mitigation Checklist:**\nConfirm mitigations are in place for all identified risks (VRAM fragmentation, load storms, etc.).\n\n**III. Deployment & Cut-over:**\n1.  Deploy two replicas per host using the Docker image (via `docker-compose` or Kubernetes).\n2.  Update dependent agents' environment variables to point to the new MOC ports.\n3.  Monitor system stability.\n4.  Once stable, decommission the six superseded agents.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_moc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_moc_implementation 7`\n\n──────────────────────────────────\nIMPORTANT NOTE: This is the final production-readiness gate. Be methodical during verification and migration. Successful completion of this phase marks the project as complete and the legacy systems as retired.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T04:06:04.870765+08:00"
+    "updated": "2025-08-08T04:11:52.018357+08:00"
   }
 ]
