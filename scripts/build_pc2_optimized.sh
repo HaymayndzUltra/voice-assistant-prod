@@ -12,8 +12,7 @@ echo "🚀 PC2 Optimized Build Strategy - Shared Base Images"
 echo "Expected time reduction: 70-80% vs individual builds"
 echo "========================================================="
 
-# Login to registry
-echo "$GITHUB_TOKEN" | docker login ghcr.io -u haymayndzultra --password-stdin
+# Registry already logged in
 
 echo "📦 Phase 1: Building shared base images..."
 

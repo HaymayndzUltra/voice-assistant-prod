@@ -39,7 +39,7 @@ BASE_IMAGES = {
     },
     "ml_heavy": {
         "description": "Machine learning with GPU support",
-        "base_image": "nvidia/cuda:12.2-runtime-ubuntu22.04",
+        "base_image": "nvidia/cuda:12.2.0-runtime-ubuntu22.04",
         "packages": ["requests", "pydantic", "click", "python-dotenv", "torch", "pyzmq", "PyYAML", "psutil"],
         "agents": []
     },
