@@ -21,7 +21,7 @@
       },
       {
         "text": "PHASE 4: Transport Layer Implementation\n\n**Explanations:**\nImplement the server façades (gRPC, ZMQ, REST) that expose the kernel's functionality to the outside world.\n\n**Technical Artifacts / Tasks:**\n**I. Implement gRPC Server (`transport/grpc_server.py`):**\nUsing the stubs generated in Phase 2, implement the `ModelOps` service. Each RPC call should delegate to the appropriate method in the `kernel`'s modules.\n\n**II. Implement ZMQ Server (`transport/zmq_server.py`):**\nCreate a REQ/REP server as a compatibility façade for legacy agents. It should parse `{ \"action\": \"...\", \"payload\": ... }` messages and call the kernel.\n\n**III. Implement REST API (`transport/rest_api.py`):**\nUse FastAPI to create the REST server. Expose the following endpoints:\n*   `/health`\n*   `/metrics` (for Prometheus)\n*   `/goals/*`\n*   `/learning/jobs/*`\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_moc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_moc_implementation 4`\n\n──────────────────────────────────\nIMPORTANT NOTE: The transport layer is the public interface of your service. Ensure all three servers correctly initialize and delegate requests to the kernel to avoid communication bottlenecks.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 5: Application Bootstrap & Entry-point\n\n**Explanations:**\nCreate the main application entry-point (`app.py`) that loads configuration, initializes the kernel, and starts all servers concurrently with graceful shutdown handling.\n\n**Technical Artifacts / Tasks:**\n**I. Implement `app.py`:**\nThe script must perform the following actions:\n1.  Use `UnifiedConfigLoader` to load configuration from YAML files and environment variables.\n2.  Instantiate the `Kernel(cfg)`.\n3.  Create an `async def start_servers(cfg, kernel)` function that gathers tasks for starting the gRPC, ZMQ, and REST servers.\n4.  Run the `start_servers` function using `asyncio.run()`.\n5.  Implement graceful shutdown handlers for `SIGTERM`/`SIGINT` to flush the executor and save job states.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_moc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_moc_implementation 5`\n\n──────────────────────────────────\nIMPORTANT NOTE: The bootstrap process is critical for service stability. Thoroughly test the startup sequence and the graceful shutdown logic to prevent resource leaks or data corruption.",
@@ -38,6 +38,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T03:43:32.704778+08:00"
+    "updated": "2025-08-08T03:52:25.729574+08:00"
   }
 ]
