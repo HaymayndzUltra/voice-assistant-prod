@@ -35,11 +35,18 @@ class Scheduler(pb_grpc.GPUSchedulerServicer):
         return pb.ScheduleReply(target_gpu=idx)
 
 async def serve() -> None:
+    # Get PORT_OFFSET from environment, default to 0
+    port_offset = int(os.getenv("PORT_OFFSET", "0"))
+    
+    # Calculate ports based on PORT_OFFSET
+    grpc_port = 7155 + port_offset
+    metrics_port = 8155 + port_offset  # Changed from 8000 to 8155 to match config
+    
     server = grpc.aio.server()
     pb_grpc.add_GPUSchedulerServicer_to_server(Scheduler(), server)
-    server.add_insecure_port("[::]:7155")          # gRPC
-    start_http_server(8000)                        # Prometheus
-    LOGGER.info("GPU Scheduler running on :7155  (metrics :8000)")
+    server.add_insecure_port(f"[::]:{grpc_port}")  # gRPC with PORT_OFFSET
+    start_http_server(metrics_port)                # Prometheus with PORT_OFFSET
+    LOGGER.info(f"GPU Scheduler running on :{grpc_port}  (metrics :{metrics_port})")
     await server.start()
     await server.wait_for_termination()
 
