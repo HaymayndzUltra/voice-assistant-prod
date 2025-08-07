@@ -25,7 +25,7 @@
 
 ### ML_HEAVY Base Image
 - **Agents**: 2
-- **Base**: nvidia/cuda:12.2-runtime-ubuntu22.04
+- **Base**: nvidia/cuda:12.2.0-runtime-ubuntu22.04
 - **Packages**: 8
 - **Description**: Machine learning with GPU support
 - **Agents**: TieredResponder, AsyncProcessor
