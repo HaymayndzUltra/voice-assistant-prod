@@ -33,11 +33,11 @@
       },
       {
         "text": "PHASE 7: Final Verification, Deployment & Decommissioning\n\n**Explanations:**\nPerform the final pre-production checks, containerize and deploy the service, and transition downstream agents to the new pipeline before decommissioning the legacy systems.\n\n**Technical Artifacts / Tasks:**\n**I. Dockerize Application:**\nCreate a `Dockerfile` for the service. Ensure it handles audio device access correctly, for example by using `--device /dev/snd` or host networking with ALSA passthrough.\n\n**II. Review Risk Mitigation Checklist:**\nConfirm that mitigations are in place for all identified risks (e.g., buffer overflow, model load delays, GPU starvation, memory leaks).\n\n**III. Execute Final Verification Gate:**\n*   **Latency Benchmark:** Verify end-to-end latency is < 150 ms p95.\n*   **Accuracy Regression:** Ensure Word Error Rate (WER) is ≤ the legacy pipeline and sentiment accuracy is within ±1%.\n*   **Stress Test:** Run with 2 hours of continuous audio. Verify zero unhandled exceptions and memory growth < 5%.\n*   **Failover Test:** Kill the primary pipeline and ensure the hot standby instance takes over correctly.\n*   **Security Check:** Confirm WebSocket is protected and ZMQ sockets are bound to localhost.\n\n**IV. Deploy & Decommission:**\n1.  Deploy one instance on `main_pc` and an optional hot standby on `pc2`.\n2.  Verify downstream agents continue to function correctly with the new pipeline's output on port 6553.\n3.  Once stability is confirmed, safely decommission the six superseded agents.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_rtap_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_rtap_implementation 7`\n\n──────────────────────────────────\nIMPORTANT NOTE: This is the final gate before the project is considered complete. Be methodical and rigorous during the verification and deployment process. Successful completion of this phase means the RTAP is production-ready.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T04:35:47.139170+08:00"
+    "updated": "2025-08-08T04:48:12.537898+08:00"
   }
 ]
