@@ -100,6 +100,167 @@ Intelligent task routing based on complexity:
 - **Self-Healing** - Automatic agent restart
 - **Health Monitoring** - Continuous health checks
 
+## New Services (Phases 1-7)
+
+The following services have been implemented to enhance the AI system's capabilities:
+
+### Phase 1: Cross-Machine GPU Scheduler
+**Location:** `services/cross_gpu_scheduler/`
+**Purpose:** Coordinates GPU resource allocation across multiple machines (MainPC and PC2)
+**Key Features:**
+- Intelligent workload distribution based on GPU availability
+- Real-time resource monitoring
+- Dynamic task scheduling with priority queues
+- Prometheus metrics for GPU utilization tracking
+- RESTful API for external integration
+
+**Configuration:** Added to MainPC `startup_config.yaml` under `resource_management` group
+**Ports:** Service: `${PORT_OFFSET}+7050`, Health: `${PORT_OFFSET}+9005`
+
+### Phase 2: Central Error Bus
+**Location:** `services/central_error_bus/`
+**Purpose:** Centralized error collection, aggregation, and notification system
+**Key Features:**
+- Multi-protocol error ingestion (HTTP, gRPC, ZMQ)
+- Error categorization and severity classification
+- Real-time alerts and notifications
+- Integration with monitoring systems
+- Persistent error logging and analytics
+
+**Configuration:** Added to PC2 `startup_config.yaml` under `foundation_services` group
+**Ports:** Service: `${PORT_OFFSET}+7150`, Health: `${PORT_OFFSET}+8150`
+
+### Phase 3: Streaming Translation Proxy
+**Location:** `services/streaming_translation_proxy/`
+**Purpose:** Real-time translation proxy for multi-language communication
+**Key Features:**
+- WebSocket-based streaming translation
+- Support for 100+ languages via cloud APIs
+- Automatic language detection
+- Translation caching for performance
+- Bidirectional translation support
+
+**Configuration:** Added to MainPC `startup_config.yaml` under `language_processing` group
+**Ports:** Service: `${PORT_OFFSET}+7080`, Health: `${PORT_OFFSET}+9006`
+
+### Phase 4: Tutoring Service Agent (Unified)
+**Location:** `pc2_code/agents/TutoringServiceAgent.py`
+**Purpose:** Unified tutoring agent consolidating multiple tutoring functionalities
+**Key Features:**
+- Adaptive learning path generation
+- Student progress tracking
+- Multi-subject support (STEM, languages, etc.)
+- Interactive assessment capabilities
+- Integration with educational content APIs
+
+**Configuration:** Added to PC2 `startup_config.yaml` under `tutoring_services` group
+**Ports:** Service: `${PORT_OFFSET}+7108`, Health: `${PORT_OFFSET}+8108`
+
+**Notable Fix:** Resolved configuration loading bug where the agent incorrectly read from `config.get('services', {})` instead of parsing the `pc2_services` list structure.
+
+### Phase 5: Observability Dashboard (UI + API)
+**Location:** `services/obs_dashboard_api/` and `dashboard/`
+**Purpose:** Web-based monitoring dashboard for system observability
+**Key Features:**
+- Real-time metrics visualization
+- System health monitoring
+- Performance analytics and trends
+- Agent status tracking
+- Custom alert configuration
+
+**Components:**
+- **Backend API** (`obs_dashboard_api/`): FastAPI-based REST API
+- **Frontend** (`dashboard/`): React TypeScript application
+- **Integration:** Connects to ObservabilityHub for metrics
+
+**Configuration:** Added to MainPC `startup_config.yaml` under `observability_ui` group
+**Ports:** API: `${PORT_OFFSET}+8001`, Health: `${PORT_OFFSET}+9007`
+
+### Phase 6: Self-Healing Supervisor
+**Location:** `services/self_healing_supervisor/`
+**Purpose:** Automated container monitoring and recovery system
+**Key Features:**
+- Health check monitoring for all containers
+- Automatic restart of failed services
+- Docker integration with socket mounting
+- Prometheus metrics for restart events
+- Configurable health check intervals
+
+**Configuration:** Added to both MainPC and PC2 `startup_config.yaml` under `self_healing` group
+**Ports:** Service: `${PORT_OFFSET}+7009`, Health: `${PORT_OFFSET}+9008`
+
+### Phase 7: Speech Relay Service (PC2)
+**Location:** `services/speech_relay/`
+**Purpose:** gRPC bridge forwarding speech events from PC2 to MainPC
+**Key Features:**
+- gRPC-based communication protocol
+- Speech event forwarding from Vision/Dream agents
+- Integration with MainPC StreamingTTSAgent
+- Prometheus metrics for message tracking
+- Asynchronous message processing
+
+**Configuration:** Added to PC2 `startup_config.yaml` under `vision_dream_gpu` group
+**Ports:** Service: `${PORT_OFFSET}+7130`, Health: `${PORT_OFFSET}+8130`
+
+## Configuration Changes Summary
+
+### MainPC (`main_pc_code/config/startup_config.yaml`)
+- **New Agent Groups:** `resource_management`, `language_processing`, `observability_ui`, `self_healing`
+- **New Docker Groups:** `resource_management`, `language_processing`, `observability_ui`, `self_healing`
+- **Services Added:** CrossGPUScheduler, StreamingTranslationProxy, ObservabilityDashboardAPI, SelfHealingSupervisor
+
+### PC2 (`pc2_code/config/startup_config.yaml`)
+- **New Agent Groups:** `foundation_services`, `tutoring_services`, `self_healing`, `vision_dream_gpu`
+- **New Docker Groups:** `foundation_services`, `tutoring_services`, `self_healing`, `vision_dream_gpu`
+- **Services Added:** CentralErrorBus, TutoringServiceAgent, SelfHealingSupervisor, SpeechRelayService
+
+## System Architecture Updates
+
+```
+Enhanced System Architecture (Post-Phases 1-7)
+├── MainPC Services
+│   ├── CrossGPUScheduler (Phase 1) → Resource coordination
+│   ├── StreamingTranslationProxy (Phase 3) → Multi-language support
+│   ├── ObservabilityDashboardAPI (Phase 5) → Monitoring backend
+│   └── SelfHealingSupervisor (Phase 6) → Auto-recovery
+├── PC2 Services
+│   ├── CentralErrorBus (Phase 2) → Error aggregation
+│   ├── TutoringServiceAgent (Phase 4) → Educational AI
+│   ├── SelfHealingSupervisor (Phase 6) → Auto-recovery
+│   └── SpeechRelayService (Phase 7) → Speech bridging
+└── Frontend
+    └── Dashboard (Phase 5) → React monitoring UI
+```
+
+## Service Dependencies
+
+```mermaid
+graph TD
+    A[ObservabilityHub] --> B[ObservabilityDashboardAPI]
+    A --> C[SelfHealingSupervisor]
+    D[VisionProcessingAgent] --> E[SpeechRelayService]
+    F[StreamingTTSAgent] --> E
+    G[ModelManagerAgent] --> H[CrossGPUScheduler]
+    I[CentralErrorBus] --> J[All Services]
+```
+
+## Deployment Notes
+
+### Docker Requirements
+- All services include Dockerfiles for containerized deployment
+- Self-Healing Supervisor requires `/var/run/docker.sock` mount
+- Observability Dashboard requires network access between API and UI containers
+
+### Environment Variables
+- `PORT_OFFSET`: Base port offset for all services
+- `MAINPC_TTS_ENDPOINT`: Required for Speech Relay Service
+- `METRICS_PORT`: Prometheus metrics exposure port for each service
+
+### Known Issues
+1. **Docker Permissions:** Some environments may require adding user to docker group for Self-Healing Supervisor
+2. **Node.js Vulnerabilities:** Dashboard dependencies may have security warnings (non-critical)
+3. **gRPC Dependencies:** Speech Relay Service requires grpcio-tools for protobuf compilation
+
 ## Installation
 
 ### Prerequisites

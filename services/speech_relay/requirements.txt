@@ -1,0 +1,4 @@
+grpcio>=1.63.0
+grpcio-tools>=1.63.0
+prometheus-client>=0.20.0
+uvloop>=0.19.0
