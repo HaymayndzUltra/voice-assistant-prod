@@ -1,4 +1,9 @@
-"""Speech-to-Text Stage (Stub)"""
+"""
+Real-Time Audio Pipeline - Preprocessing Stage (Stub)
+
+This is a stub implementation for the preprocessing stage.
+Full implementation with VAD, denoising, and resampling will be completed later.
+"""
 
 import asyncio
 import logging
@@ -6,8 +11,8 @@ from typing import Dict, Any
 from ..telemetry import get_global_metrics
 
 
-class SpeechToTextStage:
-    """Stub implementation for speech-to-text stage."""
+class PreprocessStage:
+    """Stub implementation for preprocessing stage."""
     
     def __init__(self, config: Dict[str, Any], output_queue: asyncio.Queue):
         self.config = config
@@ -16,16 +21,16 @@ class SpeechToTextStage:
         self.metrics = get_global_metrics()
         self.is_running = False
         
-        self.logger.info("SpeechToTextStage initialized (stub)")
+        self.logger.info("PreprocessStage initialized (stub)")
     
     async def warmup(self) -> None:
         """Stub warmup."""
-        self.logger.info("SpeechToTextStage warmup (stub)")
+        self.logger.info("PreprocessStage warmup (stub)")
         await asyncio.sleep(0.01)
     
     async def run(self) -> None:
         """Stub run loop."""
-        self.logger.info("SpeechToTextStage running (stub)")
+        self.logger.info("PreprocessStage running (stub)")
         self.is_running = True
         
         try:
@@ -33,11 +38,11 @@ class SpeechToTextStage:
                 await asyncio.sleep(1.0)
                 
         except asyncio.CancelledError:
-            self.logger.info("SpeechToTextStage cancelled")
+            self.logger.info("PreprocessStage cancelled")
         finally:
             self.is_running = False
     
     async def cleanup(self) -> None:
         """Stub cleanup."""
         self.is_running = False
-        self.logger.info("SpeechToTextStage cleaned up (stub)")
+        self.logger.info("PreprocessStage cleaned up (stub)")

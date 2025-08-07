@@ -1,4 +1,9 @@
-"""Wake Word Detection Stage (Stub)"""
+"""
+Real-Time Audio Pipeline - Wake Word Detection Stage (Stub)
+
+This is a stub implementation for the wake word detection stage.
+Full implementation with pvporcupine will be completed in the next iteration.
+"""
 
 import asyncio
 import logging
@@ -33,8 +38,8 @@ class WakeWordStage:
         
         try:
             while self.is_running:
-                # Simulate wake word detection every 15 seconds
-                await asyncio.sleep(15.0)
+                # Simulate wake word detection every 10 seconds
+                await asyncio.sleep(10.0)
                 
                 if not self.is_running:
                     break

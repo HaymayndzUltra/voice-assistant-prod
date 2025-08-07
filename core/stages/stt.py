@@ -1,4 +1,9 @@
-"""Speech-to-Text Stage (Stub)"""
+"""
+Real-Time Audio Pipeline - Speech-to-Text Stage (Stub)
+
+This is a stub implementation for the STT stage.
+Full implementation with Whisper in ThreadPoolExecutor will be completed later.
+"""
 
 import asyncio
 import logging
