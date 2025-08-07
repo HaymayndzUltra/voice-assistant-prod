@@ -25,7 +25,7 @@
       },
       {
         "text": "PHASE 5: Application Bootstrap & Entry-point\n\n**Explanations:**\nCreate the main application entry-point (`app.py`) that loads configuration, initializes the kernel, and starts all servers concurrently with graceful shutdown handling.\n\n**Technical Artifacts / Tasks:**\n**I. Implement `app.py`:**\nThe script must perform the following actions:\n1.  Use `UnifiedConfigLoader` to load configuration from YAML files and environment variables.\n2.  Instantiate the `Kernel(cfg)`.\n3.  Create an `async def start_servers(cfg, kernel)` function that gathers tasks for starting the gRPC, ZMQ, and REST servers.\n4.  Run the `start_servers` function using `asyncio.run()`.\n5.  Implement graceful shutdown handlers for `SIGTERM`/`SIGINT` to flush the executor and save job states.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_moc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_moc_implementation 5`\n\n──────────────────────────────────\nIMPORTANT NOTE: The bootstrap process is critical for service stability. Thoroughly test the startup sequence and the graceful shutdown logic to prevent resource leaks or data corruption.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 6: Testing & Containerization\n\n**Explanations:**\nConduct comprehensive testing to ensure the service is correct and robust. Package the application into a Docker container for deployment.\n\n**Technical Artifacts / Tasks:**\n**I. Static Analysis:**\nRun and pass checks with `ruff`, `flake8`, and `mypy --strict`.\n\n**II. Unit & Integration Testing:**\n*   Write `pytest` unit tests for core modules (lifecycle, GPU manager with mocks, etc.).\n*   Write an integration test sending 500 concurrent gRPC `Infer` calls, and verify the p95 latency is < 50 ms.\n\n**III. Containerize Application:**\nCreate a `Dockerfile` using a multi-stage build approach (e.g., using `python:3.10` for building and `python:3.10-slim` for the final production image).\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_moc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_moc_implementation 6`\n\n──────────────────────────────────\nIMPORTANT NOTE: Do not proceed to deployment without passing all tests and having a functional Docker image. This step ensures the application is reliable and portable.",
@@ -38,6 +38,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T03:52:25.729574+08:00"
+    "updated": "2025-08-08T03:57:50.738430+08:00"
   }
 ]
