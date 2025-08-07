@@ -513,11 +513,11 @@ agent_groups:
   translation_services:
     CloudTranslationService:
       script_path: main_pc_code/agents/cloud_translation_service.py
-      port: ${PORT_OFFSET}+5590
-      health_check_port: ${PORT_OFFSET}+6590
+      port: ${PORT_OFFSET}+5592
+      health_check_port: ${PORT_OFFSET}+6592
       required: true
       dependencies:
-      - SystemDigitalTwin
+        - SystemDigitalTwin
     StreamingTranslationProxy:
       script_path: services/streaming_translation_proxy/proxy.py
       port: ${PORT_OFFSET}+5596
