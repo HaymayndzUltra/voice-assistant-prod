@@ -1,7 +1,6 @@
 """Remote worker adapter for ModelOps Coordinator."""
 
 import zmq
-import json
 import time
 import threading
 import uuid
@@ -218,7 +217,7 @@ class RemoteWorkerAdapter:
         while not self._shutdown_event.wait(self.heartbeat_interval):
             try:
                 self._send_heartbeats()
-            except Exception as e:
+            except Exception:
                 # Log error but continue
                 pass
     
@@ -284,7 +283,7 @@ class RemoteWorkerAdapter:
             # Reconnect
             self._connect_worker(endpoint)
             
-        except Exception as e:
+        except Exception:
             with self._socket_lock:
                 self._connection_states[endpoint] = ConnectionState.ERROR
     

@@ -1,17 +1,17 @@
 """REST API implementation using FastAPI for ModelOps Coordinator."""
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uvicorn
 import threading
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 from datetime import datetime
 from pydantic import BaseModel
 
 from ..core.kernel import Kernel
-from ..core.schemas import InferenceRequest, InferenceResponse
+from ..core.schemas import InferenceRequest
 from ..core.errors import ModelOpsError
 from ..adapters.local_worker import LocalWorkerAdapter
 

@@ -1,16 +1,14 @@
 """GPU resource management and VRAM allocation for ModelOps Coordinator."""
 
-import time
 import json
-import psutil
 import threading
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
 import redis
 
-from .errors import GPUUnavailable, VRAMExhausted, ConfigurationError
+from .errors import GPUUnavailable, ConfigurationError
 from .telemetry import Telemetry
 from .schemas import Config
 
@@ -125,7 +123,7 @@ class GPUManager:
             try:
                 self._update_gpu_metrics()
                 self._check_eviction_threshold()
-            except Exception as e:
+            except Exception:
                 self.telemetry.record_error("gpu_polling_error", "gpu_manager")
     
     def _update_gpu_metrics(self):
@@ -145,7 +143,7 @@ class GPUManager:
                         gpu_info.free_memory_mb = int(gpu.memoryFree)
                         gpu_info.utilization_percent = gpu.load * 100
                         gpu_info.temperature_celsius = int(gpu.temperature) if gpu.temperature else 0
-                    except:
+                    except Exception:
                         pass  # Keep existing values on error
                 
                 total_used += gpu_info.used_memory_mb
@@ -343,7 +341,7 @@ class GPUManager:
                 'access_count': allocation.access_count
             }
             self.redis_client.setex(key, 86400, json.dumps(data))  # 24h TTL
-        except Exception as e:
+        except Exception:
             self.telemetry.record_error("redis_store_error", "gpu_manager")
     
     def _remove_allocation_from_redis(self, model_name: str):
@@ -351,7 +349,7 @@ class GPUManager:
         try:
             key = f"moc:allocation:{model_name}"
             self.redis_client.delete(key)
-        except Exception as e:
+        except Exception:
             self.telemetry.record_error("redis_delete_error", "gpu_manager")
     
     def _load_allocations_from_redis(self):
@@ -375,11 +373,11 @@ class GPUManager:
                     
                     self._allocations[model_name] = allocation
                     
-                except Exception as e:
+                except Exception:
                     # Skip corrupted entries
                     self.redis_client.delete(key)
                     
-        except Exception as e:
+        except Exception:
             self.telemetry.record_error("redis_load_error", "gpu_manager")
     
     def shutdown(self):

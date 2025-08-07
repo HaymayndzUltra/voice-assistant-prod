@@ -69,7 +69,6 @@ class Kernel:
         def update_system_metrics():
             """Background task to update system metrics."""
             import psutil
-            import time
             
             while not self._shutdown_event.is_set():
                 try:
@@ -89,7 +88,7 @@ class Kernel:
                     # Sleep for 30 seconds between updates
                     self._shutdown_event.wait(30)
                     
-                except Exception as e:
+                except Exception:
                     self.metrics.record_error("system_metrics_error", "kernel")
                     self._shutdown_event.wait(30)
         
@@ -347,7 +346,7 @@ class Kernel:
             
             self._initialized = False
             
-        except Exception as e:
+        except Exception:
             # Log error but continue shutdown
             if hasattr(self, 'metrics'):
                 self.metrics.record_error("shutdown_error", "kernel")

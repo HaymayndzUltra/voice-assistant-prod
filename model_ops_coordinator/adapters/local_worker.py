@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from ..core.kernel import Kernel
-from ..core.schemas import Config, InferenceRequest, InferenceResponse
+from ..core.schemas import InferenceRequest, InferenceResponse
 from ..core.errors import ModelOpsError
 
 
@@ -83,7 +83,7 @@ class LocalWorkerAdapter:
             # Notify status change
             self._notify_status_change()
             
-        except Exception as e:
+        except Exception:
             self._status = "error"
             self.kernel.metrics.record_error("worker_init_failed", "local_worker")
             raise
@@ -102,7 +102,7 @@ class LocalWorkerAdapter:
         while not self._shutdown_event.wait(self.heartbeat_interval):
             try:
                 self._send_heartbeat()
-            except Exception as e:
+            except Exception:
                 self.kernel.metrics.record_error("heartbeat_failed", "local_worker")
                 # Continue heartbeat loop even if individual heartbeat fails
     
@@ -135,7 +135,7 @@ class LocalWorkerAdapter:
         for callback in self._status_callbacks:
             try:
                 callback(heartbeat_data)
-            except Exception as e:
+            except Exception:
                 self.kernel.metrics.record_error("heartbeat_callback_failed", "local_worker")
     
     def register_status_callback(self, callback: Callable[[Dict], None]):
@@ -172,8 +172,6 @@ class LocalWorkerAdapter:
         Returns:
             Inference response
         """
-        task_id = f"inf-{int(time.time() * 1000)}"
-        
         try:
             with self._task_lock:
                 self._active_tasks += 1

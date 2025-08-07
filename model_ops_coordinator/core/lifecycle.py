@@ -2,7 +2,7 @@
 
 import time
 import threading
-from typing import Dict, Optional, Set
+from typing import Dict, Optional
 from enum import Enum
 from datetime import datetime
 from pathlib import Path
@@ -78,7 +78,7 @@ class LifecycleModule:
                     model_path=model_config.path,
                     shards=model_config.shards
                 )
-            except Exception as e:
+            except Exception:
                 self.telemetry.record_error("preload_failed", "lifecycle")
     
     def load(self, model_name: str, model_path: str, shards: int = 1, 
@@ -192,7 +192,7 @@ class LifecycleModule:
             # Free any allocated VRAM
             try:
                 self.gpu_manager.free_vram(model_name)
-            except:
+            except Exception:
                 pass
             
             # Record metrics
@@ -253,7 +253,7 @@ class LifecycleModule:
             self._simulate_model_unload(model_name)
             
             # Free VRAM
-            freed_mb = self.gpu_manager.free_vram(model_name)
+            self.gpu_manager.free_vram(model_name)
             
             # Remove from loaded models
             with self._lock:

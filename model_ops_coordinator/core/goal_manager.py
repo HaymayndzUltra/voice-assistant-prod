@@ -6,7 +6,7 @@ import time
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from queue import PriorityQueue
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from .errors import GoalError
 from .learning import LearningModule
@@ -240,13 +240,13 @@ class GoalModule:
                 # Get next goal from queue (blocking with timeout)
                 try:
                     goal = self._goal_queue.get(timeout=1.0)
-                except:
+                except Exception:
                     continue  # Timeout, check shutdown
                 
                 # Start processing goal
                 self._start_goal_execution(goal)
                 
-            except Exception as e:
+            except Exception:
                 self.telemetry.record_error("goal_processor_error", "goals")
                 time.sleep(1.0)
     

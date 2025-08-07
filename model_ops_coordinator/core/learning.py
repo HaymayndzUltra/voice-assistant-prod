@@ -111,7 +111,7 @@ class LearningModule:
                         job.status = JobStatus.PENDING
                         self._update_job_in_db(job)
                         
-        except Exception as e:
+        except Exception:
             self.telemetry.record_error("job_load_error", "learning")
     
     def _row_to_job(self, row) -> LearningJob:
@@ -216,12 +216,11 @@ class LearningModule:
                     job.progress, job.error_message, job.result_path
                 ))
                 conn.commit()
-        except Exception as e:
+        except Exception:
             self.telemetry.record_error("job_store_error", "learning")
     
     def _update_job_in_db(self, job: LearningJob):
         """Update job in SQLite database."""
-        import json
         
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -238,7 +237,7 @@ class LearningModule:
                     job.job_id
                 ))
                 conn.commit()
-        except Exception as e:
+        except Exception:
             self.telemetry.record_error("job_update_error", "learning")
     
     def _try_start_next_job(self):

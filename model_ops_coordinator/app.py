@@ -3,10 +3,8 @@
 import asyncio
 import signal
 import sys
-import os
-import threading
 import time
-from typing import Optional, List, Any
+from typing import Optional, Any
 from datetime import datetime
 from pathlib import Path
 
@@ -14,12 +12,12 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from config.loader import load_config
-from core.kernel import Kernel
-from core.errors import ConfigurationError, ModelOpsError
-from transport.zmq_server import ZMQServer
-from transport.grpc_server import GRPCServer
-from transport.rest_api import RESTAPIServer
+from config.loader import load_config  # noqa: E402
+from core.kernel import Kernel  # noqa: E402
+from core.errors import ConfigurationError, ModelOpsError  # noqa: E402
+from transport.zmq_server import ZMQServer  # noqa: E402
+from transport.grpc_server import GRPCServer  # noqa: E402
+from transport.rest_api import RESTAPIServer  # noqa: E402
 
 
 class ModelOpsCoordinatorApp:
@@ -246,12 +244,12 @@ class ModelOpsCoordinatorApp:
         print("\n" + "="*60)
         print("🎉 ModelOps Coordinator - Startup Complete")
         print("="*60)
-        print(f"📊 System Status:")
+        print("📊 System Status:")
         print(f"   • Startup Time: {uptime.total_seconds():.2f}s")
         print(f"   • Kernel Health: {'✅ Healthy' if self.kernel.is_healthy() else '❌ Unhealthy'}")
         print(f"   • Configuration: {len(self.config.__dict__)} sections loaded")
         
-        print(f"\n🌐 Transport Endpoints:")
+        print("\n🌐 Transport Endpoints:")
         print(f"   • ZMQ Server:  tcp://localhost:{self.config.server.zmq_port}")
         print(f"   • gRPC Server: localhost:{self.config.server.grpc_port}")
         print(f"   • REST API:    http://localhost:{self.config.server.rest_port}")
@@ -259,7 +257,7 @@ class ModelOpsCoordinatorApp:
         
         # Get system status
         system_status = self.kernel.get_system_status()
-        print(f"\n📈 Resource Status:")
+        print("\n📈 Resource Status:")
         print(f"   • GPU Available: {'✅' if system_status.get('gpu', {}).get('available', False) else '❌'}")
         print(f"   • Models Loaded: {system_status.get('models', {}).get('loaded_count', 0)}")
         print(f"   • Active Jobs: {system_status.get('learning', {}).get('running_jobs', 0)}")

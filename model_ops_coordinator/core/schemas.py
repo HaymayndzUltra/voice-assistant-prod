@@ -214,7 +214,8 @@ class Goal(BaseModel):
     priority: GoalPriority = Field(default=GoalPriority.MEDIUM, description="Goal priority")
     status: str = Field(default="active", description="Goal status")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
-    target_completion: Optional[datetime] = Field(default=None, description="Target completion time")
+    target_completion: Optional[datetime] = Field(
+        default=None, description="Target completion time")
     progress: float = Field(default=0.0, description="Goal progress (0.0-1.0)")
     metadata: Dict[str, Any] = Field(default={}, description="Additional metadata")
 
@@ -223,8 +224,11 @@ class GoalRequest(BaseModel):
     """Goal creation/update request."""
     title: str = Field(description="Goal title")
     description: str = Field(description="Goal description")
-    priority: Optional[GoalPriority] = Field(default=GoalPriority.MEDIUM, description="Goal priority")
-    target_completion: Optional[datetime] = Field(default=None, description="Target completion time")
+    priority: Optional[GoalPriority] = Field(
+        default=GoalPriority.MEDIUM,
+        description="Goal priority")
+    target_completion: Optional[datetime] = Field(
+        default=None, description="Target completion time")
     metadata: Optional[Dict[str, Any]] = Field(default={}, description="Additional metadata")
 
 

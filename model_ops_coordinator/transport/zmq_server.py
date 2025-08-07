@@ -1,17 +1,15 @@
 """ZMQ server implementation for ModelOps Coordinator."""
 
 import zmq
-import json
 import asyncio
 import threading
-import time
-from typing import Dict, Optional, Any, Callable, List
+from typing import Dict, Optional, Any
 from datetime import datetime
 from dataclasses import dataclass
 import uuid
 
 from ..core.kernel import Kernel
-from ..core.schemas import InferenceRequest, InferenceResponse
+from ..core.schemas import InferenceRequest
 from ..core.errors import ModelOpsError
 from ..adapters.local_worker import LocalWorkerAdapter
 
@@ -324,7 +322,7 @@ class ZMQServer:
                     # Log error but continue
                     with self._stats_lock:
                         self._stats['messages_failed'] += 1
-            except Exception as e:
+            except Exception:
                 # Log unexpected error but continue
                 with self._stats_lock:
                     self._stats['messages_failed'] += 1
@@ -362,7 +360,7 @@ class ZMQServer:
             
             try:
                 self.socket.send_json(error_response, zmq.NOBLOCK)
-            except:
+            except Exception:
                 pass  # Best effort
             
             with self._stats_lock:
@@ -401,7 +399,7 @@ class ZMQServer:
             
             try:
                 self.socket.send_json(error_response)
-            except:
+            except Exception:
                 pass  # Best effort
             
             with self._stats_lock:

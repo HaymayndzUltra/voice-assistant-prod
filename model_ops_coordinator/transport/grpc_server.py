@@ -1,7 +1,6 @@
 """gRPC server implementation for ModelOps Coordinator."""
 
 import grpc
-import asyncio
 import threading
 from concurrent import futures
 from typing import Dict, Optional, Any

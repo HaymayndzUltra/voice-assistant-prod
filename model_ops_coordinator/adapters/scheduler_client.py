@@ -1,16 +1,13 @@
 """Scheduler client adapter for ModelOps Coordinator."""
 
-import json
-import time
 import threading
 import uuid
 from typing import Dict, Optional, Any, List, Callable
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 import requests
 
-from ..core.schemas import Config
 from ..core.errors import ModelOpsError
 
 
@@ -155,7 +152,7 @@ class SchedulerClientAdapter:
                 status_update = self._get_task_status(task.task_id)
                 if status_update:
                     self._update_task_status(task.task_id, status_update)
-            except Exception as e:
+            except Exception:
                 # Log error for individual task but continue
                 pass
     
