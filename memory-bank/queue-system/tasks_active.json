@@ -25,7 +25,7 @@
       },
       {
         "text": "PHASE 5: Application Bootstrap & Entry-point\n\n**Explanations:**\nCreate the main application entry-point (`app.py`) that loads configuration, initializes all core components (cache, modules, fusion, executor), and starts the main processing loop.\n\n**Technical Artifacts / Tasks:**\n**I. Implement `app.py`:**\nThe script must perform the following actions in order:\n1.  Use `UnifiedConfigLoader` to load configuration.\n2.  Initialize the `EmbeddingCache`.\n3.  Dynamically load the enabled modules from the `modules/` directory.\n4.  Build the `Fusion` instance based on the config.\n5.  Instantiate the `DAGExecutor` with all the components.\n6.  Set up a ZMQ SUB socket to subscribe to input from RTAP (e.g., transcripts on port 6553).\n7.  Create a main `run_apc` loop that receives input, passes it to the `executor.run()`, and publishes the result.\n8.  Implement graceful shutdown logic.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_apc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_apc_implementation 5`\n\n──────────────────────────────────\nIMPORTANT NOTE: The bootstrap process is critical for service stability. Ensure all components are initialized in the correct order and that the main loop handles errors and shutdown signals gracefully.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 6: Testing & Performance Validation\n\n**Explanations:**\nConduct comprehensive testing to ensure the service is correct, performant, and robust. This includes unit tests for individual modules and load tests for the entire system.\n\n**Technical Artifacts / Tasks:**\n**I. Unit Tests:**\nWrite and pass `pytest` unit tests for each module in `modules/` using small, fixed audio and text inputs. Test the cache and fusion logic in isolation.\n\n**II. Load & Latency Testing:**\n*   **Load Test:** Subject the service to 200 ECV requests per second.\n*   **Latency Benchmark:** Measure the end-to-end latency from input receipt to ECV publication. The target is a p95 latency of < 60 ms.\n\n**III. Static Analysis:**\nRun `mypy --strict` and `ruff` to ensure code quality and type safety.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_apc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_apc_implementation 6`\n\n──────────────────────────────────\nIMPORTANT NOTE: Rigorous testing is essential for a complex system like the APC. Do not proceed to deployment without passing all unit tests and meeting the specified performance targets.",
@@ -38,6 +38,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T05:32:06.563065+08:00"
+    "updated": "2025-08-08T05:38:41.135415+08:00"
   }
 ]
