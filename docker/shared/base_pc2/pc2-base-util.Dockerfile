@@ -7,7 +7,6 @@ FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04 AS pc2_base_ml_heavy
 # System dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        git \
         build-essential \
         curl \
         wget \
@@ -37,4 +36,3 @@ LABEL registry="ghcr.io/haymayndzultra"
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python --version || exit 1
-RUN apt-get update && apt-get install -y git

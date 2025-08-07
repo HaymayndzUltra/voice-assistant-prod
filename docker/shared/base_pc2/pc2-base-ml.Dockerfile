@@ -7,7 +7,6 @@ FROM python:3.10-slim-bullseye AS pc2_base_cache_redis
 # System dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        git \
         build-essential \
         curl \
         wget \
@@ -31,4 +30,3 @@ LABEL registry="ghcr.io/haymayndzultra"
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python --version || exit 1
-RUN apt-get update && apt-get install -y git
