@@ -1,0 +1,41 @@
+title: RealTimeAudioPipelineConfig - PC2
+version: 1.0
+
+# PC2 specific audio configuration
+audio:
+  sample_rate: 16000
+  frame_ms: 20
+  channels: 1
+  device: "${AUDIO_DEVICE:default}"
+  ring_buffer_size_ms: 4000
+
+wakeword:
+  model_path: "/models/porcupine/wake.ppn"
+  sensitivity: 0.55
+
+preprocess:
+  denoise: true
+  vad_aggressiveness: 2
+
+stt:
+  model_name: "whisper-base"
+  device: "cpu"  # PC2 uses CPU for inference
+  compute_dtype: "float32"  # CPU prefers float32
+  beam_size: 3  # Reduced beam size for CPU performance
+
+language:
+  sentiment: true
+  fasttext_model: "/models/lid.176.bin"
+
+output:
+  zmq_pub_port_events: 6552
+  zmq_pub_port_transcripts: 6553
+  websocket_port: 5802
+
+resilience:
+  circuit_breaker:
+    failure_threshold: 5  # More tolerant on slower hardware
+    reset_timeout: 20
+  bulkhead:
+    max_concurrent: 4  # Reduced concurrency for CPU
+    max_queue_size: 16

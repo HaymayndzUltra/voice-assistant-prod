@@ -1,0 +1,204 @@
+# RTAP Docker Compose Configuration
+# Production deployment with primary and standby instances
+
+version: '3.8'
+
+services:
+  # Primary RTAP instance (main_pc)
+  rtap-main:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rtap-main
+    hostname: rtap-main-pc
+    restart: unless-stopped
+    
+    environment:
+      - RTAP_ENVIRONMENT=main_pc
+      - RTAP_LOG_LEVEL=INFO
+      - AUDIO_DEVICE=default
+      
+    ports:
+      - "6552:6552"  # ZMQ Events
+      - "6553:6553"  # ZMQ Transcripts (primary output)
+      - "5802:5802"  # WebSocket
+      - "8080:8080"  # Health check
+      
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+      # Audio device access
+      - /dev/snd:/dev/snd:rw
+      
+    devices:
+      # Grant access to audio devices
+      - /dev/snd
+      
+    cap_add:
+      # Required for audio access
+      - SYS_NICE
+      
+    group_add:
+      # Add to audio group
+      - audio
+      
+    networks:
+      - rtap-network
+      
+    depends_on:
+      - rtap-monitoring
+      
+    healthcheck:
+      test: ["/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Standby RTAP instance (pc2)
+  rtap-standby:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rtap-standby
+    hostname: rtap-pc2
+    restart: unless-stopped
+    
+    environment:
+      - RTAP_ENVIRONMENT=pc2
+      - RTAP_LOG_LEVEL=INFO
+      - AUDIO_DEVICE=default
+      
+    ports:
+      - "7552:6552"  # ZMQ Events (standby ports)
+      - "7553:6553"  # ZMQ Transcripts (standby ports)
+      - "6802:5802"  # WebSocket (standby port)
+      - "8081:8080"  # Health check (standby port)
+      
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+      # Audio device access
+      - /dev/snd:/dev/snd:rw
+      
+    devices:
+      # Grant access to audio devices
+      - /dev/snd
+      
+    cap_add:
+      # Required for audio access
+      - SYS_NICE
+      
+    group_add:
+      # Add to audio group
+      - audio
+      
+    networks:
+      - rtap-network
+      
+    depends_on:
+      - rtap-monitoring
+      
+    healthcheck:
+      test: ["/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Monitoring and metrics
+  rtap-monitoring:
+    image: prom/prometheus:latest
+    container_name: rtap-monitoring
+    restart: unless-stopped
+    
+    ports:
+      - "9090:9090"
+      
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+      
+    networks:
+      - rtap-network
+      
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  # Log aggregation
+  rtap-logs:
+    image: grafana/loki:latest
+    container_name: rtap-logs
+    restart: unless-stopped
+    
+    ports:
+      - "3100:3100"
+      
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/tmp/loki
+      
+    networks:
+      - rtap-network
+
+  # Dashboard
+  rtap-dashboard:
+    image: grafana/grafana:latest
+    container_name: rtap-dashboard
+    restart: unless-stopped
+    
+    ports:
+      - "3000:3000"
+      
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=rtap-admin
+      
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana-datasources:/etc/grafana/provisioning/datasources:ro
+      
+    networks:
+      - rtap-network
+      
+    depends_on:
+      - rtap-monitoring
+      - rtap-logs
+
+networks:
+  rtap-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  prometheus-data:
+  loki-data:
+  grafana-data:
