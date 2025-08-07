@@ -1,0 +1,14 @@
+syntax = "proto3";
+package scheduler;
+
+service GPUScheduler {
+  rpc Query (ScheduleRequest) returns (ScheduleReply);
+}
+
+message ScheduleRequest {
+  string job_id = 1;
+}
+
+message ScheduleReply {
+  int32 target_gpu = 1;
+}
