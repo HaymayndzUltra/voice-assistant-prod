@@ -23,68 +23,63 @@ global_settings:
     batch_optimization: true
     memory_optimization: true
     gpu_memory_fraction: 0.9
-
 hybrid_inference_policy:
   strategy: local_first
   quality_check:
     method: score_threshold
     threshold: 0.85
-    evaluation_model: gpt-3.5-turbo  # Model used for internal evaluation of local outputs
+    evaluation_model: gpt-3.5-turbo
   local_backend:
     engine: llama_cpp
     gpu_device: RTX_4090
     models:
       text_generation:
-        - name: phi-2
-          path: models/phi-2.Q4_0.gguf
-        - name: phi-3-mini-128k-instruct
-          path: models/phi-3-mini-128k-instruct.gguf
+      - name: phi-2
+        path: models/phi-2.Q4_0.gguf
+      - name: phi-3-mini-128k-instruct
+        path: models/phi-3-mini-128k-instruct.gguf
       speech_to_text:
-        - name: whisper-large-v3
-          path: models/whisper-large-v3
+      - name: whisper-large-v3
+        path: models/whisper-large-v3
       text_to_speech:
-        - name: xtts-v2
-          path: models/xtts-v2
+      - name: xtts-v2
+        path: models/xtts-v2
   cloud_backends:
-    - provider: openai
-      model: gpt-4o
-      api_key_env: OPENAI_API_KEY
-    - provider: anthropic
-      model: claude-3-opus
-      api_key_env: ANTHROPIC_API_KEY
+  - provider: openai
+    model: gpt-4o
+    api_key_env: OPENAI_API_KEY
+  - provider: anthropic
+    model: claude-3-opus
+    api_key_env: ANTHROPIC_API_KEY
   log_fallbacks: true
   fallback_log_path: logs/cloud_fallbacks.log
-
 agent_groups:
-  foundation_services: &foundation
+  foundation_services:
     ServiceRegistry:
       script_path: main_pc_code/agents/service_registry_agent.py
-      port: "${PORT_OFFSET}+7200"
-      health_check_port: "${PORT_OFFSET}+8200"
+      port: ${PORT_OFFSET}+7200
+      health_check_port: ${PORT_OFFSET}+8200
       required: true
       dependencies: []
       config:
-        backend: memory  # Options: memory, redis
+        backend: memory
         redis:
           url: redis://localhost:6379/0
-          prefix: "service_registry:"
-
-      # For HA deployment with Redis backend, uncomment and adjust:
-      # command_args: --backend redis --redis-url redis://redis:6379/0
+          prefix: 'service_registry:'
     SystemDigitalTwin:
       script_path: main_pc_code/agents/system_digital_twin.py
-      port: "${PORT_OFFSET}+7220"
-      health_check_port: "${PORT_OFFSET}+8220"
+      port: ${PORT_OFFSET}+7220
+      health_check_port: ${PORT_OFFSET}+8220
       config:
         db_path: data/unified_memory.db
         redis:
           host: localhost
-          port: "${PORT_OFFSET}+6379"
+          port: ${PORT_OFFSET}+6379
           db: 0
         zmq_request_timeout: 5000
       required: true
       dependencies:
-        - ServiceRegistry
+      - ServiceRegistry
     RequestCoordinator:
       script_path: main_pc_code/agents/request_coordinator.py
       port: 26002
@@ -94,8 +89,8 @@ agent_groups:
       - SystemDigitalTwin
     ModelManagerSuite:
       script_path: main_pc_code/model_manager_suite.py
-      port: "${PORT_OFFSET}+7211"
-      health_check_port: "${PORT_OFFSET}+8211"
+      port: ${PORT_OFFSET}+7211
+      health_check_port: ${PORT_OFFSET}+8211
       required: true
       dependencies:
       - SystemDigitalTwin
@@ -103,11 +98,11 @@ agent_groups:
         models_dir: models
         vram_budget_percentage: 80
         idle_timeout: 300
-        hybrid_inference_policy_ref: global  # Enables the hybrid local-first, cloud-backed routing
+        hybrid_inference_policy_ref: global
     VRAMOptimizerAgent:
       script_path: main_pc_code/agents/vram_optimizer_agent.py
-      port: "${PORT_OFFSET}+5572"
-      health_check_port: "${PORT_OFFSET}+6572"
+      port: ${PORT_OFFSET}+5572
+      health_check_port: ${PORT_OFFSET}+6572
       required: true
       dependencies:
       - ModelManagerSuite
@@ -115,8 +110,8 @@ agent_groups:
       - SystemDigitalTwin
     ObservabilityHub:
       script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
-      port: "${PORT_OFFSET}+9000"
-      health_check_port: "${PORT_OFFSET}+9001"
+      port: ${PORT_OFFSET}+9000
+      health_check_port: ${PORT_OFFSET}+9001
       required: true
       dependencies:
       - SystemDigitalTwin
@@ -127,23 +122,32 @@ agent_groups:
         dynamic_batch_tuning: true
     UnifiedSystemAgent:
       script_path: main_pc_code/agents/unified_system_agent.py
-      port: "${PORT_OFFSET}+7201"
-      health_check_port: "${PORT_OFFSET}+8201"
+      port: ${PORT_OFFSET}+7201
+      health_check_port: ${PORT_OFFSET}+8201
       required: true
       dependencies:
       - SystemDigitalTwin
+    SelfHealingSupervisor:
+      script_path: services/self_healing_supervisor/supervisor.py
+      port: ${PORT_OFFSET}+7009
+      health_check_port: ${PORT_OFFSET}+9008
+      required: true
+      dependencies:
+      - ObservabilityHub
+      config:
+        docker_sock: /var/run/docker.sock
   memory_system:
     MemoryClient:
       script_path: main_pc_code/agents/memory_client.py
-      port: "${PORT_OFFSET}+5713"
-      health_check_port: "${PORT_OFFSET}+6713"
+      port: ${PORT_OFFSET}+5713
+      health_check_port: ${PORT_OFFSET}+6713
       required: true
       dependencies:
       - SystemDigitalTwin
     SessionMemoryAgent:
       script_path: main_pc_code/agents/session_memory_agent.py
-      port: "${PORT_OFFSET}+5574"
-      health_check_port: "${PORT_OFFSET}+6574"
+      port: ${PORT_OFFSET}+5574
+      health_check_port: ${PORT_OFFSET}+6574
       required: true
       dependencies:
       - RequestCoordinator
@@ -151,8 +155,8 @@ agent_groups:
       - MemoryClient
     KnowledgeBase:
       script_path: main_pc_code/agents/knowledge_base.py
-      port: "${PORT_OFFSET}+5715"
-      health_check_port: "${PORT_OFFSET}+6715"
+      port: ${PORT_OFFSET}+5715
+      health_check_port: ${PORT_OFFSET}+6715
       required: true
       dependencies:
       - MemoryClient
@@ -160,48 +164,39 @@ agent_groups:
   utility_services:
     CodeGenerator:
       script_path: main_pc_code/agents/code_generator_agent.py
-      port: "${PORT_OFFSET}+5650"
-      health_check_port: "${PORT_OFFSET}+6650"
+      port: ${PORT_OFFSET}+5650
+      health_check_port: ${PORT_OFFSET}+6650
       required: true
       dependencies:
       - SystemDigitalTwin
       - ModelManagerSuite
-    # SelfTrainingOrchestrator:
-    #   # DISABLED: Local training orchestration - moved to cloud
-    #   script_path: main_pc_code/FORMAINPC/self_training_orchestrator.py
-    #   port: "${PORT_OFFSET}+5660"
-    #   health_check_port: "${PORT_OFFSET}+6660"
-    #   required: true
-    #   dependencies:
-    #   - SystemDigitalTwin
-    #   - ModelManagerSuite
     PredictiveHealthMonitor:
       script_path: main_pc_code/agents/predictive_health_monitor.py
-      port: "${PORT_OFFSET}+5613"
-      health_check_port: "${PORT_OFFSET}+6613"
+      port: ${PORT_OFFSET}+5613
+      health_check_port: ${PORT_OFFSET}+6613
       required: true
       dependencies:
       - SystemDigitalTwin
     Executor:
       script_path: main_pc_code/agents/executor.py
-      port: "${PORT_OFFSET}+5606"
-      health_check_port: "${PORT_OFFSET}+6606"
+      port: ${PORT_OFFSET}+5606
+      health_check_port: ${PORT_OFFSET}+6606
       required: true
       dependencies:
       - CodeGenerator
       - SystemDigitalTwin
     TinyLlamaServiceEnhanced:
       script_path: main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py
-      port: "${PORT_OFFSET}+5615"
-      health_check_port: "${PORT_OFFSET}+6615"
+      port: ${PORT_OFFSET}+5615
+      health_check_port: ${PORT_OFFSET}+6615
       required: false
       dependencies:
       - ModelManagerSuite
       - SystemDigitalTwin
     SmartHomeAgent:
       script_path: main_pc_code/agents/smart_home_agent.py
-      port: "${PORT_OFFSET}+7125"
-      health_check_port: "${PORT_OFFSET}+8125"
+      port: ${PORT_OFFSET}+7125
+      health_check_port: ${PORT_OFFSET}+8125
       required: false
       dependencies:
       - SystemDigitalTwin
@@ -209,21 +204,11 @@ agent_groups:
         voice_control: enabled
         intelligent_control: enabled
         device_scan_interval: 60
-    # LocalFineTunerAgent:
-    #   # DISABLED: Local model fine-tuning - moved to cloud
-    #   script_path: main_pc_code/FORMAINPC/local_fine_tuner_agent.py
-    #   port: "${PORT_OFFSET}+5642"
-    #   health_check_port: "${PORT_OFFSET}+6642"
-    #   required: true
-    #   dependencies:
-    #   - SelfTrainingOrchestrator
-    #   - SystemDigitalTwin    
   gpu_infrastructure:
-    # VRAMOptimizerAgent moved to foundation_services to avoid duplication
     CrossMachineGPUScheduler:
       script_path: services/cross_gpu_scheduler/app.py
-      port: "${PORT_OFFSET}+7155"
-      health_check_port: "${PORT_OFFSET}+8155"
+      port: ${PORT_OFFSET}+7155
+      health_check_port: ${PORT_OFFSET}+8155
       required: true
       dependencies:
       - ModelManagerSuite
@@ -231,16 +216,16 @@ agent_groups:
   reasoning_services:
     ChainOfThoughtAgent:
       script_path: main_pc_code/FORMAINPC/chain_of_thought_agent.py
-      port: "${PORT_OFFSET}+5612"
-      health_check_port: "${PORT_OFFSET}+6612"
+      port: ${PORT_OFFSET}+5612
+      health_check_port: ${PORT_OFFSET}+6612
       required: true
       dependencies:
       - ModelManagerSuite
       - SystemDigitalTwin
     GoTToTAgent:
       script_path: main_pc_code/FORMAINPC/got_tot_agent.py
-      port: "${PORT_OFFSET}+5646"
-      health_check_port: "${PORT_OFFSET}+6646"
+      port: ${PORT_OFFSET}+5646
+      health_check_port: ${PORT_OFFSET}+6646
       required: false
       dependencies:
       - ModelManagerSuite
@@ -248,8 +233,8 @@ agent_groups:
       - ChainOfThoughtAgent
     CognitiveModelAgent:
       script_path: main_pc_code/FORMAINPC/cognitive_model_agent.py
-      port: "${PORT_OFFSET}+5641"
-      health_check_port: "${PORT_OFFSET}+6641"
+      port: ${PORT_OFFSET}+5641
+      health_check_port: ${PORT_OFFSET}+6641
       required: false
       dependencies:
       - ChainOfThoughtAgent
@@ -257,8 +242,8 @@ agent_groups:
   vision_processing:
     FaceRecognitionAgent:
       script_path: main_pc_code/agents/face_recognition_agent.py
-      port: "${PORT_OFFSET}+5610"
-      health_check_port: "${PORT_OFFSET}+6610"
+      port: ${PORT_OFFSET}+5610
+      health_check_port: ${PORT_OFFSET}+6610
       required: true
       dependencies:
       - RequestCoordinator
@@ -267,16 +252,16 @@ agent_groups:
   learning_knowledge:
     LearningOrchestrationService:
       script_path: main_pc_code/agents/learning_orchestration_service.py
-      port: "${PORT_OFFSET}+7210"
-      health_check_port: "${PORT_OFFSET}+8212"
+      port: ${PORT_OFFSET}+7210
+      health_check_port: ${PORT_OFFSET}+8212
       required: true
       dependencies:
       - ModelManagerSuite
       - SystemDigitalTwin
     LearningOpportunityDetector:
       script_path: main_pc_code/agents/learning_opportunity_detector.py
-      port: "${PORT_OFFSET}+7202"
-      health_check_port: "${PORT_OFFSET}+8202"
+      port: ${PORT_OFFSET}+7202
+      health_check_port: ${PORT_OFFSET}+8202
       required: true
       dependencies:
       - LearningOrchestrationService
@@ -284,8 +269,8 @@ agent_groups:
       - SystemDigitalTwin
     LearningManager:
       script_path: main_pc_code/agents/learning_manager.py
-      port: "${PORT_OFFSET}+5580"
-      health_check_port: "${PORT_OFFSET}+6580"
+      port: ${PORT_OFFSET}+5580
+      health_check_port: ${PORT_OFFSET}+6580
       required: true
       dependencies:
       - MemoryClient
@@ -293,26 +278,17 @@ agent_groups:
       - SystemDigitalTwin
     ActiveLearningMonitor:
       script_path: main_pc_code/agents/active_learning_monitor.py
-      port: "${PORT_OFFSET}+5638"
-      health_check_port: "${PORT_OFFSET}+6638"
+      port: ${PORT_OFFSET}+5638
+      health_check_port: ${PORT_OFFSET}+6638
       required: true
       dependencies:
       - LearningManager
       - SystemDigitalTwin
-    # LearningAdjusterAgent:
-    #   # DISABLED: Local learning parameter optimization - moved to cloud
-    #   script_path: main_pc_code/FORMAINPC/learning_adjuster_agent.py
-    #   port: "${PORT_OFFSET}+5643"
-    #   health_check_port: "${PORT_OFFSET}+6643"
-    #   required: true
-    #   dependencies:
-    #   - SelfTrainingOrchestrator
-    #   - SystemDigitalTwin
   language_processing:
     ModelOrchestrator:
       script_path: main_pc_code/agents/model_orchestrator.py
-      port: "${PORT_OFFSET}+7213"
-      health_check_port: "${PORT_OFFSET}+8213"
+      port: ${PORT_OFFSET}+7213
+      health_check_port: ${PORT_OFFSET}+8213
       required: true
       dependencies:
       - RequestCoordinator
@@ -320,8 +296,8 @@ agent_groups:
       - SystemDigitalTwin
     GoalManager:
       script_path: main_pc_code/agents/goal_manager.py
-      port: "${PORT_OFFSET}+7205"
-      health_check_port: "${PORT_OFFSET}+8205"
+      port: ${PORT_OFFSET}+7205
+      health_check_port: ${PORT_OFFSET}+8205
       required: true
       dependencies:
       - RequestCoordinator
@@ -330,23 +306,23 @@ agent_groups:
       - MemoryClient
     IntentionValidatorAgent:
       script_path: main_pc_code/agents/IntentionValidatorAgent.py
-      port: "${PORT_OFFSET}+5701"
-      health_check_port: "${PORT_OFFSET}+6701"
+      port: ${PORT_OFFSET}+5701
+      health_check_port: ${PORT_OFFSET}+6701
       required: true
       dependencies:
       - RequestCoordinator
       - SystemDigitalTwin
     NLUAgent:
       script_path: main_pc_code/agents/nlu_agent.py
-      port: "${PORT_OFFSET}+5709"
-      health_check_port: "${PORT_OFFSET}+6709"
+      port: ${PORT_OFFSET}+5709
+      health_check_port: ${PORT_OFFSET}+6709
       required: true
       dependencies:
       - SystemDigitalTwin
     AdvancedCommandHandler:
       script_path: main_pc_code/agents/advanced_command_handler.py
-      port: "${PORT_OFFSET}+5710"
-      health_check_port: "${PORT_OFFSET}+6710"
+      port: ${PORT_OFFSET}+5710
+      health_check_port: ${PORT_OFFSET}+6710
       required: true
       dependencies:
       - NLUAgent
@@ -354,24 +330,24 @@ agent_groups:
       - SystemDigitalTwin
     ChitchatAgent:
       script_path: main_pc_code/agents/chitchat_agent.py
-      port: "${PORT_OFFSET}+5711"
-      health_check_port: "${PORT_OFFSET}+6711"
+      port: ${PORT_OFFSET}+5711
+      health_check_port: ${PORT_OFFSET}+6711
       required: true
       dependencies:
       - NLUAgent
       - SystemDigitalTwin
     FeedbackHandler:
       script_path: main_pc_code/agents/feedback_handler.py
-      port: "${PORT_OFFSET}+5636"
-      health_check_port: "${PORT_OFFSET}+6636"
+      port: ${PORT_OFFSET}+5636
+      health_check_port: ${PORT_OFFSET}+6636
       required: true
       dependencies:
       - NLUAgent
       - SystemDigitalTwin
     Responder:
       script_path: main_pc_code/agents/responder.py
-      port: "${PORT_OFFSET}+5637"
-      health_check_port: "${PORT_OFFSET}+6637"
+      port: ${PORT_OFFSET}+5637
+      health_check_port: ${PORT_OFFSET}+6637
       required: true
       dependencies:
       - EmotionEngine
@@ -382,16 +358,16 @@ agent_groups:
       - TTSService
     DynamicIdentityAgent:
       script_path: main_pc_code/agents/DynamicIdentityAgent.py
-      port: "${PORT_OFFSET}+5802"
-      health_check_port: "${PORT_OFFSET}+6802"
+      port: ${PORT_OFFSET}+5802
+      health_check_port: ${PORT_OFFSET}+6802
       required: true
       dependencies:
       - RequestCoordinator
       - SystemDigitalTwin
     EmotionSynthesisAgent:
       script_path: main_pc_code/agents/emotion_synthesis_agent.py
-      port: "${PORT_OFFSET}+5706"
-      health_check_port: "${PORT_OFFSET}+6706"
+      port: ${PORT_OFFSET}+5706
+      health_check_port: ${PORT_OFFSET}+6706
       required: true
       dependencies:
       - RequestCoordinator
@@ -400,16 +376,16 @@ agent_groups:
   speech_services:
     STTService:
       script_path: main_pc_code/services/stt_service.py
-      port: "${PORT_OFFSET}+5800"
-      health_check_port: "${PORT_OFFSET}+6800"
+      port: ${PORT_OFFSET}+5800
+      health_check_port: ${PORT_OFFSET}+6800
       required: true
       dependencies:
       - ModelManagerSuite
       - SystemDigitalTwin
     TTSService:
       script_path: main_pc_code/services/tts_service.py
-      port: "${PORT_OFFSET}+5801"
-      health_check_port: "${PORT_OFFSET}+6801"
+      port: ${PORT_OFFSET}+5801
+      health_check_port: ${PORT_OFFSET}+6801
       required: true
       dependencies:
       - ModelManagerSuite
@@ -417,23 +393,23 @@ agent_groups:
   audio_interface:
     AudioCapture:
       script_path: main_pc_code/agents/streaming_audio_capture.py
-      port: "${PORT_OFFSET}+6550"
-      health_check_port: "${PORT_OFFSET}+7550"
+      port: ${PORT_OFFSET}+6550
+      health_check_port: ${PORT_OFFSET}+7550
       required: true
       dependencies:
       - SystemDigitalTwin
     FusedAudioPreprocessor:
       script_path: main_pc_code/agents/fused_audio_preprocessor.py
-      port: "${PORT_OFFSET}+6551"
-      health_check_port: "${PORT_OFFSET}+7551"
+      port: ${PORT_OFFSET}+6551
+      health_check_port: ${PORT_OFFSET}+7551
       required: true
       dependencies:
       - AudioCapture
       - SystemDigitalTwin
     StreamingInterruptHandler:
       script_path: main_pc_code/agents/streaming_interrupt_handler.py
-      port: "${PORT_OFFSET}+5576"
-      health_check_port: "${PORT_OFFSET}+6576"
+      port: ${PORT_OFFSET}+5576
+      health_check_port: ${PORT_OFFSET}+6576
       required: true
       dependencies:
       - StreamingSpeechRecognition
@@ -441,8 +417,8 @@ agent_groups:
       - SystemDigitalTwin
     StreamingSpeechRecognition:
       script_path: main_pc_code/agents/streaming_speech_recognition.py
-      port: "${PORT_OFFSET}+6553"
-      health_check_port: "${PORT_OFFSET}+7553"
+      port: ${PORT_OFFSET}+6553
+      health_check_port: ${PORT_OFFSET}+7553
       required: true
       dependencies:
       - FusedAudioPreprocessor
@@ -451,8 +427,8 @@ agent_groups:
       - SystemDigitalTwin
     StreamingTTSAgent:
       script_path: main_pc_code/agents/streaming_tts_agent.py
-      port: "${PORT_OFFSET}+5562"
-      health_check_port: "${PORT_OFFSET}+6562"
+      port: ${PORT_OFFSET}+5562
+      health_check_port: ${PORT_OFFSET}+6562
       required: true
       dependencies:
       - RequestCoordinator
@@ -461,8 +437,8 @@ agent_groups:
       - UnifiedSystemAgent
     WakeWordDetector:
       script_path: main_pc_code/agents/wake_word_detector.py
-      port: "${PORT_OFFSET}+6552"
-      health_check_port: "${PORT_OFFSET}+7552"
+      port: ${PORT_OFFSET}+6552
+      health_check_port: ${PORT_OFFSET}+7552
       required: true
       dependencies:
       - AudioCapture
@@ -470,8 +446,8 @@ agent_groups:
       - SystemDigitalTwin
     StreamingLanguageAnalyzer:
       script_path: main_pc_code/agents/streaming_language_analyzer.py
-      port: "${PORT_OFFSET}+5579"
-      health_check_port: "${PORT_OFFSET}+6579"
+      port: ${PORT_OFFSET}+5579
+      health_check_port: ${PORT_OFFSET}+6579
       required: true
       dependencies:
       - StreamingSpeechRecognition
@@ -479,8 +455,8 @@ agent_groups:
       - TranslationService
     ProactiveAgent:
       script_path: main_pc_code/agents/ProactiveAgent.py
-      port: "${PORT_OFFSET}+5624"
-      health_check_port: "${PORT_OFFSET}+6624"
+      port: ${PORT_OFFSET}+5624
+      health_check_port: ${PORT_OFFSET}+6624
       required: true
       dependencies:
       - RequestCoordinator
@@ -488,197 +464,172 @@ agent_groups:
   emotion_system:
     EmotionEngine:
       script_path: main_pc_code/agents/emotion_engine.py
-      port: "${PORT_OFFSET}+5590"
-      health_check_port: "${PORT_OFFSET}+6590"
+      port: ${PORT_OFFSET}+5590
+      health_check_port: ${PORT_OFFSET}+6590
       required: true
       dependencies:
       - SystemDigitalTwin
     MoodTrackerAgent:
       script_path: main_pc_code/agents/mood_tracker_agent.py
-      port: "${PORT_OFFSET}+5704"
-      health_check_port: "${PORT_OFFSET}+6704"
+      port: ${PORT_OFFSET}+5704
+      health_check_port: ${PORT_OFFSET}+6704
       required: true
       dependencies:
       - EmotionEngine
       - SystemDigitalTwin
     HumanAwarenessAgent:
       script_path: main_pc_code/agents/human_awareness_agent.py
-      port: "${PORT_OFFSET}+5705"
-      health_check_port: "${PORT_OFFSET}+6705"
+      port: ${PORT_OFFSET}+5705
+      health_check_port: ${PORT_OFFSET}+6705
       required: true
       dependencies:
       - EmotionEngine
       - SystemDigitalTwin
     ToneDetector:
       script_path: main_pc_code/agents/tone_detector.py
-      port: "${PORT_OFFSET}+5625"
-      health_check_port: "${PORT_OFFSET}+6625"
+      port: ${PORT_OFFSET}+5625
+      health_check_port: ${PORT_OFFSET}+6625
       required: true
       dependencies:
       - EmotionEngine
       - SystemDigitalTwin
     VoiceProfilingAgent:
       script_path: main_pc_code/agents/voice_profiling_agent.py
-      port: "${PORT_OFFSET}+5708"
-      health_check_port: "${PORT_OFFSET}+6708"
+      port: ${PORT_OFFSET}+5708
+      health_check_port: ${PORT_OFFSET}+6708
       required: true
       dependencies:
       - EmotionEngine
       - SystemDigitalTwin
     EmpathyAgent:
       script_path: main_pc_code/agents/EmpathyAgent.py
-      port: "${PORT_OFFSET}+5703"
-      health_check_port: "${PORT_OFFSET}+6703"
+      port: ${PORT_OFFSET}+5703
+      health_check_port: ${PORT_OFFSET}+6703
       required: true
       dependencies:
       - EmotionEngine
       - StreamingTTSAgent
       - SystemDigitalTwin
-
   translation_services:
-    # DISABLED: Local translation services (moved to cloud)
-    # TranslationService:
-    #   script_path: main_pc_code/agents/translation_service.py
-    #   port: "${PORT_OFFSET}+5595"
-    #   health_check_port: "${PORT_OFFSET}+6595"
-    #   required: true
-    #   dependencies:
-    #   - SystemDigitalTwin
-    # FixedStreamingTranslation:
-    #   script_path: main_pc_code/agents/fixed_streaming_translation.py
-    #   port: "${PORT_OFFSET}+5584"
-    #   health_check_port: "${PORT_OFFSET}+6584"
-    #   required: true
-    #   dependencies:
-    #   - ModelManagerSuite
-    #   - SystemDigitalTwin
-    # NLLBAdapter:
-    #   script_path: main_pc_code/FORMAINPC/nllb_adapter.py
-    #   port: "${PORT_OFFSET}+5582"
-    #   health_check_port: "${PORT_OFFSET}+6582"
-    #   required: true
-    #   dependencies:
-    #   - SystemDigitalTwin
-    
-    # New cloud-only translation service
     CloudTranslationService:
       script_path: main_pc_code/agents/cloud_translation_service.py
-      port: "${PORT_OFFSET}+5590"
-      health_check_port: "${PORT_OFFSET}+6590"
+      port: ${PORT_OFFSET}+5590
+      health_check_port: ${PORT_OFFSET}+6590
       required: true
       dependencies:
       - SystemDigitalTwin
     StreamingTranslationProxy:
       script_path: services/streaming_translation_proxy/proxy.py
-      port: "${PORT_OFFSET}+5596"
-      health_check_port: "${PORT_OFFSET}+6596"
+      port: ${PORT_OFFSET}+5596
+      health_check_port: ${PORT_OFFSET}+6596
       required: true
       dependencies:
       - CloudTranslationService
       - SystemDigitalTwin
-
-# -----------------------------------------------------------------------------
-# Logical Docker deployment group definitions (added 2025-07-31)
-# These groups are used by the Docker compose generator to build production
-# stacks optimised for the RTX-4090 hardware.  They do NOT affect existing
-# agent_groups and are purely declarative.
-# -----------------------------------------------------------------------------
+  observability_ui:
+    ObservabilityDashboardAPI:
+      script_path: services/obs_dashboard_api/server.py
+      port: ${PORT_OFFSET}+8001
+      health_check_port: ${PORT_OFFSET}+9007
+      required: true
+      dependencies:
+      - ObservabilityHub
 docker_groups:
   infra_core:
     description: Core service discovery & digital-twin infrastructure
     agents:
-      - ServiceRegistry
-      - SystemDigitalTwin
+    - ServiceRegistry
+    - SystemDigitalTwin
   coordination:
     description: Request routing, GPU model lifecycle & VRAM optimisation
     agents:
-      - RequestCoordinator
-      - ModelManagerSuite
-      - VRAMOptimizerAgent
+    - RequestCoordinator
+    - ModelManagerSuite
+    - VRAMOptimizerAgent
   observability:
     description: Centralised telemetry, metrics, prediction & health
     agents:
-      - ObservabilityHub
+    - ObservabilityHub
   memory_stack:
     description: Short/long-term memory services
     agents:
-      - MemoryClient
-      - SessionMemoryAgent
-      - KnowledgeBase
+    - MemoryClient
+    - SessionMemoryAgent
+    - KnowledgeBase
   vision_gpu:
     description: GPU-bound vision processing services
     agents:
-      - FaceRecognitionAgent
+    - FaceRecognitionAgent
   speech_gpu:
     description: GPU-bound STT/TTS & audio streaming pipeline
     agents:
-      - STTService
-      - TTSService
-      - AudioCapture
-      - FusedAudioPreprocessor
-      - StreamingSpeechRecognition
-      - StreamingTTSAgent
-      - WakeWordDetector
-      - StreamingInterruptHandler
-      - StreamingLanguageAnalyzer
+    - STTService
+    - TTSService
+    - AudioCapture
+    - FusedAudioPreprocessor
+    - StreamingSpeechRecognition
+    - StreamingTTSAgent
+    - WakeWordDetector
+    - StreamingInterruptHandler
+    - StreamingLanguageAnalyzer
   learning_gpu:
     description: Active/self learning pipeline using GPU training slices
     agents:
-      # Cloud-delegated learning services (lightweight local coordinators only)
-      - LearningManager
-      - LearningOrchestrationService
-      - LearningOpportunityDetector
-      - ActiveLearningMonitor
-      # Disabled heavy local services (moved to cloud):
-      # - SelfTrainingOrchestrator (local training orchestration)
-      # - LocalFineTunerAgent (model fine-tuning)
-      # - LearningAdjusterAgent (parameter optimization)
+    - LearningManager
+    - LearningOrchestrationService
+    - LearningOpportunityDetector
+    - ActiveLearningMonitor
   reasoning_gpu:
     description: Large-context reasoning agents utilising GPU inference
     agents:
-      - ChainOfThoughtAgent  # Lightweight local reasoning
-      - CognitiveModelAgent
-      # Disabled heavy reasoning (moved to cloud LLM):
-      # - GoTToTAgent (Graph/Tree-of-Thought reasoning)
+    - ChainOfThoughtAgent
+    - CognitiveModelAgent
   language_stack:
     description: High-level dialogue, NLU, identity & emotional synthesis
     agents:
-      - NLUAgent
-      - IntentionValidatorAgent
-      - AdvancedCommandHandler
-      - ChitchatAgent
-      - FeedbackHandler
-      - Responder
-      - DynamicIdentityAgent
-      - EmotionSynthesisAgent
-      - GoalManager
-      - ModelOrchestrator
-      - ProactiveAgent
+    - NLUAgent
+    - IntentionValidatorAgent
+    - AdvancedCommandHandler
+    - ChitchatAgent
+    - FeedbackHandler
+    - Responder
+    - DynamicIdentityAgent
+    - EmotionSynthesisAgent
+    - GoalManager
+    - ModelOrchestrator
+    - ProactiveAgent
   utility_cpu:
     description: Miscellaneous CPU-bound utility agents
     agents:
-      - CodeGenerator
-      - Executor
-      - PredictiveHealthMonitor
-      - SmartHomeAgent
-      - TranslationService
-      - FixedStreamingTranslation
-      - NLLBAdapter
+    - CodeGenerator
+    - Executor
+    - PredictiveHealthMonitor
+    - SmartHomeAgent
+    - TranslationService
+    - FixedStreamingTranslation
+    - NLLBAdapter
   emotion_system:
     description: Emotional state modelling & awareness
     agents:
-      - EmotionEngine
-      - MoodTrackerAgent
-      - HumanAwarenessAgent
-      - ToneDetector
-      - VoiceProfilingAgent
-      - EmpathyAgent
+    - EmotionEngine
+    - MoodTrackerAgent
+    - HumanAwarenessAgent
+    - ToneDetector
+    - VoiceProfilingAgent
+    - EmpathyAgent
   gpu_scheduler:
     description: Cross-machine GPU load balancer
     agents:
-      - CrossMachineGPUScheduler
+    - CrossMachineGPUScheduler
   translation_proxy:
     description: Low-latency WebSocket translation proxy
     agents:
-      - StreamingTranslationProxy
-# -----------------------------------------------------------------------------
+    - StreamingTranslationProxy
+  observability_ui:
+    description: Dashboard UI + API for system metrics
+    agents:
+    - ObservabilityDashboardAPI
+  self_healing:
+    description: Auto-restart supervisor for failed agents
+    agents:
+    - SelfHealingSupervisor
