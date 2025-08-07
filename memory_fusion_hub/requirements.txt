@@ -1,0 +1,12 @@
+pydantic==1.10.13
+pyzmq==26.0.3
+grpcio==1.63.0
+grpcio-tools==1.63.0
+redis==5.0.1
+sqlalchemy==2.0.30
+aiosqlite==0.19.0
+prometheus-client==0.20.0
+tenacity==8.2.3
+PyYAML==6.0.2
+pytest==7.4.4
+pytest-asyncio==0.21.1

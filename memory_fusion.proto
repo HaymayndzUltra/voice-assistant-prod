@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package memory_fusion;
+
+// Memory Fusion Hub gRPC Service Definition
+service MemoryFusionService {
+    // Get a single memory item by key
+    rpc Get(GetRequest) returns (GetResponse);
+    
+    // Store a memory item
+    rpc Put(PutRequest) returns (PutResponse);
+    
+    // Delete a memory item by key
+    rpc Delete(DeleteRequest) returns (DeleteResponse);
+    
+    // Get multiple memory items in a single request
+    rpc BatchGet(BatchGetRequest) returns (BatchGetResponse);
+    
+    // Check if a memory item exists
+    rpc Exists(ExistsRequest) returns (ExistsResponse);
+    
+    // List keys matching a prefix
+    rpc ListKeys(ListKeysRequest) returns (ListKeysResponse);
+    
+    // Get service health status
+    rpc GetHealth(HealthRequest) returns (HealthResponse);
+}
+
+// Request and Response Messages
+
+message GetRequest {
+    string key = 1;
+    optional string agent_id = 2;
+}
+
+message GetResponse {
+    bool found = 1;
+    optional MemoryItem item = 2;
+    string error = 3;
+}
+
+message PutRequest {
+    string key = 1;
+    MemoryItem item = 2;
+    optional string agent_id = 3;
+}
+
+message PutResponse {
+    bool success = 1;
+    string error = 2;
+}
+
+message DeleteRequest {
+    string key = 1;
+    optional string agent_id = 2;
+}
+
+message DeleteResponse {
+    bool success = 1;
+    bool found = 2;
+    string error = 3;
+}
+
+message BatchGetRequest {
+    repeated string keys = 1;
+    optional string agent_id = 2;
+}
+
+message BatchGetResponse {
+    map<string, MemoryItem> items = 1;
+    repeated string missing_keys = 2;
+    string error = 3;
+}
+
+message ExistsRequest {
+    string key = 1;
+}
+
+message ExistsResponse {
+    bool exists = 1;
+    string error = 2;
+}
+
+message ListKeysRequest {
+    string prefix = 1;
+    int32 limit = 2;
+}
+
+message ListKeysResponse {
+    repeated string keys = 1;
+    string error = 2;
+}
+
+message HealthRequest {
+    // Empty request
+}
+
+message HealthResponse {
+    string status = 1;  // "healthy", "degraded", "unhealthy"
+    string service = 2;
+    string timestamp = 3;
+    map<string, ComponentHealth> components = 4;
+    string error = 5;
+}
+
+// Data Models
+
+message MemoryItem {
+    string key = 1;
+    oneof content {
+        string text_content = 2;
+        string json_content = 3;  // JSON-serialized complex content
+    }
+    string memory_type = 4;  // "conversation", "knowledge", "session", "context", "metadata"
+    string timestamp = 5;    // ISO format timestamp
+    optional string updated_at = 6;
+    map<string, string> metadata = 7;
+    repeated string tags = 8;
+    optional string source_agent = 9;
+    optional string expiry_timestamp = 10;
+}
+
+message SessionData {
+    string session_id = 1;
+    optional string user_id = 2;
+    string created_at = 3;
+    string last_activity = 4;
+    map<string, string> context = 5;
+    repeated string conversation_history = 6;
+    map<string, string> preferences = 7;
+    bool active = 8;
+}
+
+message KnowledgeRecord {
+    string knowledge_id = 1;
+    string title = 2;
+    oneof content {
+        string text_content = 3;
+        string json_content = 4;
+    }
+    string category = 5;
+    float confidence_score = 6;
+    string created_at = 7;
+    optional string updated_at = 8;
+    optional string source = 9;
+    repeated string related_items = 10;
+    int32 access_count = 11;
+    optional string last_accessed = 12;
+}
+
+message MemoryEvent {
+    string event_id = 1;
+    string event_type = 2;  // "CREATE", "UPDATE", "DELETE", "READ"
+    string target_key = 3;
+    string timestamp = 4;
+    optional string agent_id = 5;
+    optional string payload = 6;  // JSON-serialized payload
+    optional string previous_value = 7;  // JSON-serialized previous value
+    optional int32 sequence_number = 8;
+    optional string correlation_id = 9;
+}
+
+message ComponentHealth {
+    bool healthy = 1;
+    map<string, string> info = 2;
+}
