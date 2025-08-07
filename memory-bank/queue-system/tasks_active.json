@@ -21,7 +21,7 @@
       },
       {
         "text": "PHASE 4: Transport Layer Implementation\n\n**Explanations:**\nImplement the external interfaces for publishing events and transcripts, including ZeroMQ PUB sockets and an optional FastAPI WebSocket server for browser-based clients.\n\n**Technical Artifacts / Tasks:**\n**I. Implement ZMQ Publishers (`transport/zmq_pub.py`):**\nCreate a `ZmqPublisher` class that starts two PUB sockets on the configured ports (6552 for events, 6553 for transcripts). It should consume from an async generator provided by the pipeline.\n\n**II. Implement WebSocket Server (`transport/ws_server.py`):**\nUsing FastAPI, create a WebSocket endpoint at `/stream`. This server will also consume from the pipeline's async generator and push real-time transcript chunks to connected clients.\n\n**III. Define Transcript Schema:**\nUse a Pydantic model to define the structure of the JSON transcripts published on the ZMQ socket and WebSocket.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_rtap_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_rtap_implementation 4`\n\n──────────────────────────────────\nIMPORTANT NOTE: The transport layer is the public API of the service. Ensure that data serialization is efficient and the sockets are configured correctly to prevent becoming a performance bottleneck.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 5: Application Bootstrap & Entry-point\n\n**Explanations:**\nCreate the main application entry-point (`app.py`) that ties everything together: configuration loading, model warm-up, and concurrent startup of the pipeline and transport layers.\n\n**Technical Artifacts / Tasks:**\n**I. Implement `app.py`:**\nThe script must perform the following actions:\n1.  Use `UnifiedConfigLoader` to load configuration.\n2.  Implement an `async def initialize_and_run(cfg)` function.\n3.  Inside this function, warm-up the STT and wake-word models.\n4.  Instantiate the `AudioPipeline`, `ZmqPublisher`, and `WebSocketServer`.\n5.  Use `asyncio.gather` to run the `pipeline.start()`, `zmq_pub.start()`, and `ws_server.serve()` coroutines concurrently.\n6.  Implement graceful shutdown logic to cancel all tasks, close the sound device, and flush any remaining data.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_rtap_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_rtap_implementation 5`\n\n──────────────────────────────────\nIMPORTANT NOTE: The bootstrap process is critical for service stability. Model warm-up is essential to avoid a long delay on the first request, and graceful shutdown prevents resource leaks.",
@@ -38,6 +38,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T04:09:38.468003+08:00"
+    "updated": "2025-08-08T04:17:34.534085+08:00"
   }
 ]
