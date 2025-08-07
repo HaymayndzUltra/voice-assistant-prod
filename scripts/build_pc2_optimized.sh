@@ -1,12 +1,9 @@
 #!/bin/bash
 # PC2 Optimized Build Script - 70-80% Build Time Reduction
-# Production-ready shared base image strategy
+# Change to optimized build context
+cd docker/base
 
-set -euo pipefail
-
-REGISTRY="ghcr.io/haymayndzultra"
-BASE_TAG="latest"
-AGENT_TAG="pc2-latest"
+# Registry already logged in
 
 echo "🚀 PC2 Optimized Build Strategy - Shared Base Images"
 echo "Expected time reduction: 70-80% vs individual builds"
@@ -18,7 +15,7 @@ echo "📦 Phase 1: Building shared base images..."
 
 echo "  → Building minimal base (18 agents)..."
 docker buildx build \
-    -f docker/base/pc2_base_minimal.Dockerfile \
+    -f pc2_base_minimal.Dockerfile \
     -t ${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --cache-from ${REGISTRY}/pc2-base-minimal:${BASE_TAG} \
@@ -27,7 +24,7 @@ docker buildx build \
 
 echo "  → Building cache_redis base (3 agents)..."
 docker buildx build \
-    -f docker/base/pc2_base_cache_redis.Dockerfile \
+    -f pc2_base_cache_redis.Dockerfile \
     -t ${REGISTRY}/pc2-base-cache_redis:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --cache-from ${REGISTRY}/pc2-base-cache_redis:${BASE_TAG} \
@@ -36,7 +33,7 @@ docker buildx build \
 
 echo "  → Building ml_heavy base (2 agents)..."
 docker buildx build \
-    -f docker/base/pc2_base_ml_heavy.Dockerfile \
+    -f pc2_base_ml_heavy.Dockerfile \
     -t ${REGISTRY}/pc2-base-ml_heavy:${BASE_TAG} \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --cache-from ${REGISTRY}/pc2-base-ml_heavy:${BASE_TAG} \

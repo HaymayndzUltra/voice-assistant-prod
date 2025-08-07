@@ -1,0 +1,179 @@
+{
+  "mainpc_agents": 0,
+  "docker_directories": 56,
+  "base_image_strategy": {
+    "foundation": {
+      "description": "Core foundation services (minimal dependencies)",
+      "base_image": "python:3.10-slim-bullseye",
+      "directories": [
+        "predictive_health_monitor",
+        "streaming_tts_agent"
+      ]
+    },
+    "ml_gpu_heavy": {
+      "description": "ML/GPU intensive services (PyTorch, CUDA)",
+      "base_image": "python:3.10-slim-bullseye",
+      "directories": [
+        "face_recognition_agent",
+        "fused_audio_preprocessor",
+        "go_t_to_t_agent",
+        "streaming_speech_recognition",
+        "tiny_llama_service_enhanced"
+      ]
+    },
+    "speech_processing": {
+      "description": "Speech/Audio processing (librosa, soundfile)",
+      "base_image": "python:3.10-slim-bullseye",
+      "directories": []
+    },
+    "web_services": {
+      "description": "Web APIs and HTTP services (FastAPI, requests)",
+      "base_image": "python:3.10-slim-bullseye",
+      "directories": [
+        "translation_services"
+      ]
+    },
+    "data_intensive": {
+      "description": "Data processing and databases (pandas, redis)",
+      "base_image": "python:3.10-slim-bullseye",
+      "directories": [
+        "active_learning_monitor",
+        "model_orchestrator",
+        "responder",
+        "system_digital_twin",
+        "unified_system_agent",
+        "wake_word_detector"
+      ]
+    },
+    "minimal": {
+      "description": "Minimal utilities and basic services",
+      "base_image": "python:3.10-slim-bullseye",
+      "directories": [
+        "advanced_command_handler",
+        "audio_capture",
+        "chain_of_thought_agent",
+        "chitchat_agent",
+        "cloud_translation_service",
+        "code_generator",
+        "cognitive_model_agent",
+        "dynamic_identity_agent",
+        "emotion_engine",
+        "emotion_synthesis_agent",
+        "empathy_agent",
+        "executor",
+        "feedback_handler",
+        "goal_manager",
+        "human_awareness",
+        "intention_validator",
+        "knowledge_base",
+        "learning_manager",
+        "learning_opportunity_detector",
+        "learning_orchestration_service",
+        "memory_client",
+        "model_manager_suite",
+        "mood_tracker",
+        "nlu_agent",
+        "observability_hub",
+        "proactive_agent",
+        "reasoning_gpu",
+        "request_coordinator",
+        "scripts",
+        "service_registry",
+        "session_memory_agent",
+        "shared",
+        "smart_home_agent",
+        "speech_gpu",
+        "streaming_interrupt_handler",
+        "streaming_language_analyzer",
+        "stt_service",
+        "tone_detector",
+        "tts_service",
+        "vision_gpu",
+        "voice_profiling",
+        "vram_optimizer"
+      ]
+    }
+  },
+  "consolidated_dependencies": {
+    "foundation": [
+      "PyYAML",
+      "pyttsx3",
+      "pyzmq",
+      "psutil",
+      "signal",
+      "platform",
+      "sounddevice",
+      "win32com"
+    ],
+    "ml_gpu_heavy": [
+      "fastapi",
+      "llama-cpp-python",
+      "xformers",
+      "pyzmq",
+      "onnxruntime",
+      "zmq",
+      "psutil",
+      "numpy",
+      "scipy",
+      "filterpy",
+      "opencv-python",
+      "dataclasses",
+      "noisereduce",
+      "pydantic",
+      "orjson",
+      "insightface",
+      "accelerate",
+      "torch",
+      "bitsandbytes",
+      "wave",
+      "transformers",
+      "requests",
+      "uvicorn"
+    ],
+    "web_services": [
+      "fastapi",
+      "pydantic",
+      "requests",
+      "uvicorn"
+    ],
+    "data_intensive": [
+      "pyttsx3",
+      "dataclasses",
+      "sentence_transformers",
+      "PyYAML",
+      "pyzmq",
+      "pydantic",
+      "psutil",
+      "redis",
+      "pvporcupine",
+      "TTS",
+      "numpy",
+      "enum",
+      "remote_api_adapter",
+      "tkinter",
+      "prometheus_api_client"
+    ],
+    "minimal": [
+      "pydantic",
+      "pyzmq",
+      "psutil",
+      "signal",
+      "importlib",
+      "pyyaml",
+      "plugp100",
+      "remote_api_adapter",
+      "requests",
+      "heapq"
+    ]
+  },
+  "optimization_impact": {
+    "current_directories": 38,
+    "unique_dependencies": 41,
+    "proposed_bases": 5,
+    "current_build_time_hours": 7.6,
+    "optimized_build_time_hours": 3.15,
+    "time_reduction_percent": 58.55263157894737,
+    "storage_reduction_estimate": 50
+  },
+  "analysis_timestamp": "2025-08-07T08:10:00+08:00"
+}
