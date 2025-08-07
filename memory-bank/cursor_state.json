@@ -1,7 +1,7 @@
 {
   "cursor_session": {
-    "disconnected_at": "2025-08-08T02:48:26.392775+08:00",
-    "current_task": "Action plan to implement, test, and deploy the Memory Fusion Hub (MFH) microservice, replacing seven legacy agents.",
+    "disconnected_at": "2025-08-08T03:30:14.638365+08:00",
+    "current_task": "Action plan to implement, test, and deploy the ModelOps Coordinator (MOC), unifying six legacy agents for model lifecycle, inference, and resource management.",
     "progress": 0.0,
     "last_activity": "2024-05-24T14:15:00Z"
   }
