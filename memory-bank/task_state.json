@@ -1,8 +1,8 @@
 {
-  "current_task_id": "central_error_bus_setup",
-  "current_task_description": "Action plan to set up the Central Error Bus service, including scaffolding files, running tests, building a Docker image, and integrating it into both MainPC and PC2 configurations.",
+  "current_task_id": "tutoring_agents_merge_v2",
+  "current_task_description": "Action plan to set up the workspace environment, then merge legacy tutoring agents into a single `TutoringServiceAgent`, refactor the PC2 configuration file, and run verification tests.",
   "status": "in_progress",
-  "last_updated": "2024-05-24T12:05:00Z",
-  "todos_count": 2,
+  "last_updated": "2024-05-24T12:20:00Z",
+  "todos_count": 3,
   "completed_todos": 0
 }
