@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+service SpeechRelay {
+  rpc Forward (SpeechRequest) returns (Ack);
+}
+
+message SpeechRequest {
+  string payload = 1;   // raw JSON from VisionProcessingAgent
+}
+
+message Ack {
+  bool ok = 1;
+}

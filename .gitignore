@@ -196,3 +196,4 @@ secrets/
 .env
 memory-bank/current-session.md
 memory-bank/current-session.md
+dashboard/node_modules/
