@@ -211,6 +211,15 @@ pc2_services:
   - ObservabilityHub
   config:
     docker_sock: /var/run/docker.sock
+- name: SpeechRelayService
+  script_path: services/speech_relay/relay.py
+  host: 0.0.0.0
+  port: ${PORT_OFFSET}+7130
+  health_check_port: ${PORT_OFFSET}+8130
+  required: true
+  dependencies:
+  - VisionProcessingAgent
+  - StreamingTTSAgent
 health_checks:
   start_period_seconds: 300
 pc2_network:
@@ -253,6 +262,7 @@ docker_groups:
     - VisionProcessingAgent
     - DreamWorldAgent
     - DreamingModeAgent
+    - SpeechRelayService
   utility_suite:
     description: Support utilities and miscellaneous helpers
     agents:
