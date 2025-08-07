@@ -1,0 +1,119 @@
+{
+  "critical_blind_spots": {
+    "zmq_bridge_single_point_failure": [
+      "# Check ZMQ Bridge status and dependencies",
+      "netstat -tlnp | grep 5600",
+      "ps aux | grep zmq | grep -v grep",
+      "lsof -i :5600",
+      "# Check for backup communication mechanisms",
+      "grep -r 'backup.*communication\\|failover\\|redundant' main_pc_code/ pc2_code/",
+      "# Test ZMQ Bridge resilience",
+      "python3 -c \"import zmq; ctx=zmq.Context(); sock=ctx.socket(zmq.REQ); sock.connect('tcp://localhost:5600'); print('ZMQ Bridge reachable')\""
+    ],
+    "cross_machine_dependency_failures": [
+      "# Test PC2 behavior when MainPC services are unreachable",
+      "# Check dependency timeout configurations",
+      "grep -r 'timeout' pc2_code/config/",
+      "grep -r 'retry\\|fallback\\|graceful.*degrad' pc2_code/",
+      "# Check cross-machine health check propagation",
+      "curl -s http://192.168.1.27:8000/health 2>/dev/null || echo 'MainPC health unreachable from PC2'",
+      "curl -s http://192.168.1.2:9100/health 2>/dev/null || echo 'PC2 ObservabilityHub unreachable'"
+    ],
+    "gpu_resource_coordination_gaps": [
+      "# Check GPU utilization across machines",
+      "nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total --format=csv",
+      "# Check Cross-GPU Scheduler status",
+      "curl -s http://localhost:8155/health || echo 'Cross-GPU Scheduler health check failed'",
+      "# Check NVML integration",
+      "python3 -c \"import pynvml; pynvml.nvmlInit(); print(f'GPUs: {pynvml.nvmlDeviceGetCount()}')\"",
+      "# Check GPU load balancing mechanism",
+      "grep -r 'gpu.*balanc\\|least.*busy\\|utilization' services/cross_gpu_scheduler/"
+    ]
+  },
+  "architecture_analysis": {
+    "docker_container_overhead": [
+      "# Count total Docker containers",
+      "find docker/ -name Dockerfile | wc -l",
+      "docker images | grep -E 'mainpc|pc2' | wc -l",
+      "# Check container resource usage",
+      "docker stats --no-stream --format 'table {{.Container}}\\t{{.CPUPerc}}\\t{{.MemUsage}}'",
+      "# Check port allocation conflicts",
+      "netstat -tlnp | awk '{print $4}' | cut -d: -f2 | sort -n | uniq -d"
+    ],
+    "service_discovery_hardcoding": [
+      "# Find hardcoded IP addresses",
+      "grep -r '192\\.168\\.[0-9]\\+\\.[0-9]\\+' main_pc_code/ pc2_code/ --include='*.py' --include='*.yaml'",
+      "# Check for service registry implementation",
+      "find . -name '*service*registry*' -o -name '*discovery*'",
+      "# Check DNS resolution capability",
+      "grep -r 'hostname\\|dns\\|resolve' main_pc_code/config/ pc2_code/config/"
+    ],
+    "configuration_consistency": [
+      "# Compare MainPC vs PC2 configurations",
+      "diff -u main_pc_code/config/startup_config.yaml pc2_code/config/startup_config.yaml | head -20",
+      "# Check PORT_OFFSET usage consistency",
+      "grep -r 'PORT_OFFSET' main_pc_code/ pc2_code/ | cut -d: -f1 | sort | uniq -c",
+      "# Validate YAML syntax in all configs",
+      "find . -name '*.yaml' -exec python3 -c 'import yaml,sys; yaml.safe_load(open(sys.argv[1]))' {} \\; 2>&1 | grep -v '^$'"
+    ]
+  },
+  "security_gaps": {
+    "inter_machine_authentication": [
+      "# Check for authentication mechanisms",
+      "grep -r 'auth\\|token\\|cert\\|ssl\\|tls' main_pc_code/config/ pc2_code/config/",
+      "# Check ZMQ security features",
+      "grep -r 'curve\\|encrypt\\|secure' main_pc_code/ pc2_code/ | grep -i zmq",
+      "# Check service exposure",
+      "netstat -tlnp | grep '0\\.0\\.0\\.0' | head -10"
+    ],
+    "service_exposure_risks": [
+      "# Check public-bound services",
+      "ss -tlnp | grep '0\\.0\\.0\\.0'",
+      "# Check firewall rules",
+      "iptables -L -n 2>/dev/null || echo 'iptables not accessible'",
+      "ufw status 2>/dev/null || echo 'ufw not installed/configured'",
+      "# Check for API keys in configs",
+      "grep -r 'api.*key\\|secret\\|password' main_pc_code/config/ pc2_code/config/ | grep -v 'env\\|ENV'"
+    ]
+  },
+  "performance_bottlenecks": {
+    "memory_pressure_handling": [
+      "# Check memory limits in configs",
+      "grep -r 'memory.*limit\\|mem.*mb\\|memory_mb' main_pc_code/config/ pc2_code/config/",
+      "# Check current memory usage",
+      "free -h",
+      "# Check for memory cleanup mechanisms",
+      "grep -r 'cleanup\\|gc\\|garbage.*collect' main_pc_code/ pc2_code/",
+      "# Check PC2 memory constraints (4GB limit)",
+      "grep -r '4096\\|4GB' pc2_code/config/"
+    ],
+    "observability_coverage_gaps": [
+      "# Check ObservabilityHub coverage",
+      "find . -path '*/observability*' -name '*.py' | head -5",
+      "# Check metrics endpoints",
+      "curl -s http://localhost:9000/metrics 2>/dev/null | head -5 || echo 'MainPC metrics unreachable'",
+      "curl -s http://localhost:9100/metrics 2>/dev/null | head -5 || echo 'PC2 metrics unreachable'",
+      "# Check health check coverage",
+      "grep -r 'health.*check\\|/health' main_pc_code/ pc2_code/ | wc -l"
+    ]
+  },
+  "configuration_drift": {
+    "startup_config_alignment": [
+      "# Count agents in each system",
+      "python3 -c \"import yaml; mainpc=yaml.safe_load(open('main_pc_code/config/startup_config.yaml')); print(f'MainPC groups: {len(mainpc.get(\\\"agent_groups\\\", {}))}')\"",
+      "python3 -c \"import yaml; pc2=yaml.safe_load(open('pc2_code/config/startup_config.yaml')); print(f'PC2 services: {len(pc2.get(\\\"pc2_services\\\", []))}')\"",
+      "# Check for configuration drift",
+      "find . -name '*backup*config*' -o -name '*backup*startup*'",
+      "# Validate Docker alignment with configs",
+      "comm -23 <(find docker/ -mindepth 1 -maxdepth 1 -type d | sort) <(grep -r 'script_path.*docker' main_pc_code/config/ pc2_code/config/ | cut -d: -f3 | sort | uniq)"
+    ],
+    "docker_backup_inconsistencies": [
+      "# Check backup Docker directories",
+      "ls -la | grep docker.*backup",
+      "find docker_backup_not_in_startup_config/ -name Dockerfile | wc -l",
+      "find mainpc_docker_backup_not_in_startup_config/ -name Dockerfile | wc -l",
+      "# Compare active vs backup containers",
+      "diff <(ls docker/) <(ls docker_backup_not_in_startup_config/) | head -10"
+    ]
+  }
+}
