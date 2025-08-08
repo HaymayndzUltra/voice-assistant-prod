@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package rtap;
+
+// Real-Time Audio Pipeline Transcript Protocol Buffer Definition
+message TranscriptEvent {
+    // Core transcript data
+    string transcript = 1;
+    double confidence = 2;
+    
+    // Timing information
+    double timestamp = 3;
+    double audio_start_time = 4;
+    double audio_end_time = 5;
+    int64 processing_time_ms = 6;
+    
+    // Language analysis
+    string language = 7;
+    double language_confidence = 8;
+    string sentiment = 9;
+    double sentiment_confidence = 10;
+    
+    // Technical metadata
+    string pipeline_version = 11;
+    string session_id = 12;
+    int64 sequence_number = 13;
+    
+    // Audio characteristics
+    int32 sample_rate = 14;
+    int32 channels = 15;
+    double audio_duration_ms = 16;
+    
+    // Processing stages performance
+    map<string, double> stage_latencies = 17;
+}
+
+message EventNotification {
+    // Event types: wake_word_detected, processing_started, error_occurred
+    string event_type = 1;
+    double timestamp = 2;
+    map<string, string> metadata = 3;
+    string session_id = 4;
+}

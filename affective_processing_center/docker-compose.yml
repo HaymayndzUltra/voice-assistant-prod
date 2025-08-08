@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  # Affective Processing Center - Main Service
+  apc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: apc:1.0.0
+    container_name: affective_processing_center
+    restart: unless-stopped
+    
+    # GPU configuration
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
+    # Environment configuration
+    environment:
+      - APC_ENV=production
+      - APC_LOG_LEVEL=INFO
+      - CUDA_MPS_ACTIVE_THREAD_PERCENTAGE=25
+      - PROMETHEUS_METRICS_PORT=9090
+    
+    # Port mapping
+    ports:
+      - "5591:5591"   # ECV Publisher (ZMQ PUB)
+      - "5706:5706"   # Synthesis Server (ZMQ REP)
+      - "8008:8008"   # Health/Status API
+    
+    # Volume mounts
+    volumes:
+      - ./config:/app/config:ro
+      - ./models:/app/models:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - apc_cache:/app/cache
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Dependencies
+    depends_on:
+      - redis
+      - prometheus
+    
+    # Networks
+    networks:
+      - apc_network
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis for caching and state management
+  redis:
+    image: redis:7-alpine
+    container_name: apc_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - apc_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.40.0
+    container_name: apc_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    networks:
+      - apc_network
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:9.3.0
+    container_name: apc_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=apc_admin_2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - apc_network
+
+  # HAProxy for load balancing (if multiple APC instances)
+  haproxy:
+    image: haproxy:2.6
+    container_name: apc_haproxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "8404:8404"   # HAProxy stats
+    volumes:
+      - ./monitoring/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - apc_network
+    depends_on:
+      - apc
+
+  # Log aggregator
+  fluentd:
+    image: fluent/fluentd:v1.16-1
+    container_name: apc_fluentd
+    restart: unless-stopped
+    ports:
+      - "24224:24224"
+    volumes:
+      - ./monitoring/fluentd.conf:/fluentd/etc/fluent.conf:ro
+      - ./logs:/var/log/apc
+    networks:
+      - apc_network
+
+# Named volumes for persistence
+volumes:
+  apc_cache:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# Networks
+networks:
+  apc_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

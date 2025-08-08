@@ -1,0 +1,51 @@
+title: AffectiveProcessingCenterConfig
+version: 1.0
+
+pipeline:
+  enabled_modules:
+    - tone
+    - mood
+    - empathy
+    - voice_profile
+    - human_awareness
+  fusion:
+    algorithm: "weighted_ensemble"
+    weights:
+      tone: 0.20
+      mood: 0.25
+      empathy: 0.20
+      voice_profile: 0.15
+      human_awareness: 0.20
+
+audio:
+  sample_rate: 16000
+  frame_ms: 40
+  device: "${AUDIO_DEVICE:default}"
+
+models:
+  tone:
+    model_name: "facebook/wav2vec2-base"
+  mood:
+    model_path: "/models/mood-bert"
+  empathy:
+    model_name: "sentence-transformers/all-mpnet-base-v2"
+  voice_profile:
+    embedding_dim: 512
+  synthesis:
+    prosody_model: "/models/prosody-taco.pt"
+
+resources:
+  device: "cuda"
+  max_concurrent_gpu_tasks: 4
+
+output:
+  zmq_pub_port: 5591
+  topic: "affect"
+
+resilience:
+  circuit_breaker:
+    failure_threshold: 4
+    reset_timeout: 20
+  bulkhead:
+    max_concurrent: 8
+    max_queue_size: 32
