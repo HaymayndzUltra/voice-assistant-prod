@@ -129,25 +129,37 @@ class APCApplication:
             # Step 1: Load and validate configuration
             await self._load_configuration()
             
-            # Step 2: Initialize embedding cache
+            # Step 2: Acquire GPU lease before GPU-heavy init
+            try:
+                from core.gpu_lease_client import GpuLeaseClient  # type: ignore
+                lease_client = GpuLeaseClient(os.environ.get('MOC_GRPC_ADDR', 'localhost:7212'))
+                if not lease_client.acquire_for_apc():
+                    raise RuntimeError("APC failed to acquire GPU lease from MOC")
+                self._lease_client = lease_client  # keep for release on cleanup
+                logger.info("✅ APC GPU lease acquired")
+            except Exception as e:
+                logger.warning(f"GPU lease acquisition skipped or failed: {e}")
+                self._lease_client = None
+
+            # Step 3: Initialize embedding cache
             await self._initialize_cache()
             
-            # Step 3: Load and initialize modules
+            # Step 4: Load and initialize modules
             await self._initialize_modules()
             
-            # Step 4: Initialize fusion layer
+            # Step 5: Initialize fusion layer
             await self._initialize_fusion()
             
-            # Step 5: Initialize DAG executor
+            # Step 6: Initialize DAG executor
             await self._initialize_dag_executor()
             
-            # Step 6: Initialize transport layer
+            # Step 7: Initialize transport layer
             await self._initialize_transport()
             
-            # Step 7: Setup input subscription
+            # Step 8: Setup input subscription
             await self._initialize_input_subscriber()
             
-            # Step 8: Warmup all components
+            # Step 9: Warmup all components
             await self._warmup_components()
             
             self.is_initialized = True
@@ -520,6 +532,14 @@ class APCApplication:
             
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
+        finally:
+            # Release GPU lease if held
+            try:
+                if getattr(self, '_lease_client', None):
+                    self._lease_client.release()
+                    logger.info("🔓 Released APC GPU lease")
+            except Exception:
+                pass
     
     def get_stats(self) -> Dict[str, Any]:
         """Get application statistics."""
