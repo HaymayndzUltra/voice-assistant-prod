@@ -5,6 +5,8 @@ import logging
 from typing import Any, Dict
 
 from ..telemetry import get_global_metrics
+import os
+import sys
 
 
 class SpeechToTextStage:
@@ -16,12 +18,24 @@ class SpeechToTextStage:
         self.logger = logging.getLogger(__name__)
         self.metrics = get_global_metrics()
         self.is_running = False
+        self._lease_client = None
 
         self.logger.info("SpeechToTextStage initialized (stub)")
 
     async def warmup(self) -> None:
-        """Stub warmup."""
-        self.logger.info("SpeechToTextStage warmup (stub)")
+        """Warmup stage and acquire GPU lease if available."""
+        try:
+            # Attempt to acquire lease for RTAP-GPU
+            from ..gpu_lease_client import GpuLeaseClient  # type: ignore
+            lease_client = GpuLeaseClient(os.environ.get('MOC_GRPC_ADDR', 'localhost:7212'))
+            if lease_client.acquire_for_rtap():
+                self._lease_client = lease_client
+                self.logger.info("✅ RTAP-GPU lease acquired")
+            else:
+                self.logger.warning("RTAP-GPU lease not granted; continuing without GPU allocation")
+        except Exception as e:
+            self.logger.warning(f"Lease client unavailable or failed: {e}")
+        # Continue with regular warmup
         await asyncio.sleep(0.01)
 
     async def run(self) -> None:
@@ -42,3 +56,9 @@ class SpeechToTextStage:
         """Stub cleanup."""
         self.is_running = False
         self.logger.info("SpeechToTextStage cleaned up (stub)")
+        try:
+            if self._lease_client:
+                self._lease_client.release()
+                self.logger.info("🔓 Released RTAP-GPU lease")
+        except Exception:
+            pass

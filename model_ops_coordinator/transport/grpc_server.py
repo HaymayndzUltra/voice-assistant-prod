@@ -16,7 +16,8 @@ from ..model_ops_pb2 import (
     InferenceResponse as ProtoInferenceResponse,
     ModelLoadRequest, ModelLoadReply,
     ModelUnloadRequest, ModelUnloadReply,
-    ModelList, ModelInfo
+    ModelList, ModelInfo,
+    GpuLeaseRequest, GpuLeaseReply, GpuLeaseRelease, GpuLeaseReleaseAck
 )
 
 
@@ -36,6 +37,18 @@ class ModelOpsGRPCServicer(ModelOpsServicer):
             'start_time': datetime.utcnow()
         }
         self._stats_lock = threading.Lock()
+
+        # GPU Lease state (thread-safe)
+        # Reserve is set to 90% of detected VRAM soft limit by default
+        self._lease_lock = threading.RLock()
+        self._leases: Dict[str, Dict[str, any]] = {}
+        # Capacity based on configured soft limit to align with lifecycle/gpu_manager
+        self._capacity_mb = int(self.kernel.cfg.resources.vram_soft_limit_mb * 0.9)
+        self._used_mb = 0
+        # Background sweeper thread to reclaim expired leases
+        self._lease_sweeper_stop = threading.Event()
+        self._lease_sweeper = threading.Thread(target=self._sweep_expired_leases, name="LeaseSweeper", daemon=True)
+        self._lease_sweeper.start()
     
     def Infer(self, request: ProtoInferenceRequest, context) -> ProtoInferenceResponse:
         """Handle inference requests."""
@@ -196,6 +209,85 @@ class ModelOpsGRPCServicer(ModelOpsServicer):
             context.set_details(f'List models failed: {str(e)}')
             
             return ModelList(models=[])
+
+    # ------------------------------
+    # GPU Lease RPCs
+    # ------------------------------
+    def AcquireGpuLease(self, request: GpuLeaseRequest, context) -> GpuLeaseReply:
+        """Acquire a GPU VRAM lease with TTL.
+
+        Grants if requested VRAM fits within capacity cap. Priority currently unused
+        but reserved for future scheduling. Returns retry hint when denied.
+        """
+        try:
+            with self._lease_lock:
+                now_ms = int(datetime.utcnow().timestamp() * 1000)
+                # Reap before evaluate to keep accounting accurate
+                self._reap_locked(now_ms)
+
+                req_mb = int(max(0, request.vram_estimate_mb))
+                ttl_sec = int(max(1, request.ttl_seconds or 30))
+
+                if self._used_mb + req_mb <= self._capacity_mb:
+                    lease_id = f"{now_ms}_{request.client or 'unknown'}"
+                    expires_ms = now_ms + (ttl_sec * 1000)
+                    self._leases[lease_id] = {
+                        'mb': req_mb,
+                        'client': request.client,
+                        'model': request.model_name,
+                        'expires_ms': expires_ms,
+                        'created_ms': now_ms,
+                        'priority': int(request.priority or 2),
+                    }
+                    self._used_mb += req_mb
+                    return GpuLeaseReply(granted=True, lease_id=lease_id, vram_reserved_mb=req_mb)
+
+                # Denied
+                return GpuLeaseReply(granted=False, reason="Insufficient VRAM", retry_after_ms=250)
+
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f'Lease acquire failed: {e}')
+            return GpuLeaseReply(granted=False, reason=str(e), retry_after_ms=500)
+
+    def ReleaseGpuLease(self, request: GpuLeaseRelease, context) -> GpuLeaseReleaseAck:
+        """Release a previously acquired lease."""
+        try:
+            with self._lease_lock:
+                entry = self._leases.pop(request.lease_id, None)
+                if entry:
+                    self._used_mb = max(0, self._used_mb - int(entry.get('mb', 0)))
+            return GpuLeaseReleaseAck(success=True)
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f'Lease release failed: {e}')
+            return GpuLeaseReleaseAck(success=False)
+
+    # ------------------------------
+    # Internal helpers for lease mgmt
+    # ------------------------------
+    def _sweep_expired_leases(self):
+        import time as _time
+        while not self._lease_sweeper_stop.wait(1.0):
+            try:
+                now_ms = int(datetime.utcnow().timestamp() * 1000)
+                with self._lease_lock:
+                    self._reap_locked(now_ms)
+            except Exception:
+                # best-effort
+                pass
+
+    def _reap_locked(self, now_ms: int):
+        expired_ids = [lid for lid, meta in self._leases.items() if meta.get('expires_ms', 0) <= now_ms]
+        if not expired_ids:
+            return
+        freed = 0
+        for lid in expired_ids:
+            mb = int(self._leases.get(lid, {}).get('mb', 0))
+            freed += mb
+            self._leases.pop(lid, None)
+        if freed:
+            self._used_mb = max(0, self._used_mb - freed)
     
     def get_stats(self) -> Dict[str, Any]:
         """Get servicer statistics."""
@@ -305,6 +397,11 @@ class GRPCServer:
         
         # Shutdown servicer's worker adapter
         if self.servicer:
+            # stop lease sweeper
+            try:
+                self.servicer._lease_sweeper_stop.set()
+            except Exception:
+                pass
             self.servicer.worker_adapter.shutdown()
             self.servicer = None
     

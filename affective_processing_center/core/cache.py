@@ -9,6 +9,15 @@ import threading
 import logging
 
 from .schemas import CacheEntry, Payload, AudioChunk, Transcript
+import os
+import grpc
+from typing import Tuple
+try:
+    import memory_fusion_pb2 as mfh_pb2  # type: ignore
+    import memory_fusion_pb2_grpc as mfh_pb2_grpc  # type: ignore
+except Exception:
+    mfh_pb2 = None
+    mfh_pb2_grpc = None
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +108,18 @@ class EmbeddingCache:
             
             if entry is None:
                 self._stats['misses'] += 1
+                # Read-through: if MFH proxy is configured, try upstream fetch
+                features = self._read_through_fetch(key)
+                if features is not None:
+                    # Insert into local cache for future hits
+                    self._cache[key] = CacheEntry(
+                        key=key,
+                        features=features.copy(),
+                        timestamp=datetime.utcnow(),
+                        access_count=1,
+                    )
+                    self._stats['hits'] += 1
+                    return features
                 return None
             
             # Check if entry has expired
@@ -117,6 +138,29 @@ class EmbeddingCache:
             
             logger.debug(f"Cache hit: {key} (access_count={entry.access_count})")
             return entry.features.copy()  # Return copy to prevent mutation
+
+    def _read_through_fetch(self, key: str) -> Optional[List[float]]:
+        """Fetch from MFH proxy if configured via env.
+
+        Uses env MFH_PROXY_ADDR (host:port). Expects MemoryItem.json_content containing a JSON
+        with 'features': list of floats.
+        """
+        addr = os.environ.get('MFH_PROXY_ADDR')
+        if not addr or mfh_pb2 is None:
+            return None
+        try:
+            channel = grpc.insecure_channel(addr)
+            stub = mfh_pb2_grpc.MemoryFusionServiceStub(channel)
+            resp = stub.Get(mfh_pb2.GetRequest(key=key))
+            if resp.found and resp.item and resp.item.json_content:
+                import json as _json
+                data = _json.loads(resp.item.json_content)
+                feats = data.get('features')
+                if isinstance(feats, list) and all(isinstance(v, (int, float)) for v in feats):
+                    return [float(v) for v in feats]
+        except Exception:
+            return None
+        return None
     
     def put(self, payload: Payload, module_name: str, features: List[float]) -> None:
         """
@@ -149,6 +193,22 @@ class EmbeddingCache:
                 logger.debug(f"Cache eviction: {oldest_key}")
             
             logger.debug(f"Cache store: {key} (features_len={len(features)})")
+        # Write-through to MFH authoritative via proxy if configured
+        addr = os.environ.get('MFH_PROXY_ADDR')
+        if addr and mfh_pb2 is not None:
+            try:
+                channel = grpc.insecure_channel(addr)
+                stub = mfh_pb2_grpc.MemoryFusionServiceStub(channel)
+                import json as _json
+                item = mfh_pb2.MemoryItem(
+                    key=key,
+                    json_content=_json.dumps({'features': [float(v) for v in features]}),
+                    memory_type='embedding',
+                    timestamp=datetime.utcnow().isoformat(),
+                )
+                stub.Put(mfh_pb2.PutRequest(key=key, item=item))
+            except Exception:
+                pass
     
     def clear(self) -> None:
         """Clear all entries from the cache."""

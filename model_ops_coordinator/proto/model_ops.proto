@@ -10,6 +10,9 @@ service ModelOps {
   rpc LoadModel (ModelLoadRequest) returns (ModelLoadReply);
   rpc UnloadModel (ModelUnloadRequest) returns (ModelUnloadReply);
   rpc ListModels (google.protobuf.Empty) returns (ModelList);
+  // GPU lease management for coordinating VRAM contention across services
+  rpc AcquireGpuLease (GpuLeaseRequest) returns (GpuLeaseReply);
+  rpc ReleaseGpuLease (GpuLeaseRelease) returns (GpuLeaseReleaseAck);
 }
 
 // Inference request message
@@ -75,3 +78,25 @@ message ModelList {
   int32 total_count = 2;
   int64 total_vram_mb = 3;
 }
+
+// ------------------------------
+// GPU Lease API messages
+// ------------------------------
+message GpuLeaseRequest  {
+  string client = 1;
+  string model_name = 2;
+  int64  vram_estimate_mb = 3;
+  int32  priority = 4;        // 1 = highest priority
+  int32  ttl_seconds = 5;     // requested lease TTL
+}
+
+message GpuLeaseReply {
+  bool   granted = 1;
+  string lease_id = 2;
+  int64  vram_reserved_mb = 3;
+  string reason = 4;
+  int32  retry_after_ms = 5;
+}
+
+message GpuLeaseRelease   { string lease_id = 1; }
+message GpuLeaseReleaseAck{ bool   success  = 1; }
