@@ -1,0 +1,179 @@
+version: '3.8'
+
+services:
+  # Memory Fusion Hub - Main Service
+  mfh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mfh:1.0.0
+    container_name: memory_fusion_hub
+    restart: unless-stopped
+    
+    # Environment configuration
+    environment:
+      - MFH_ENV=production
+      - MFH_LOG_LEVEL=INFO
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=mfh_db
+      - POSTGRES_USER=mfh_user
+      - POSTGRES_PASSWORD=mfh_secure_password
+      - REDIS_URL=redis://redis:6379/0
+      - PROMETHEUS_METRICS_PORT=9090
+    
+    # Port mapping
+    ports:
+      - "8080:8080"   # HTTP API
+      - "50051:50051" # gRPC Server
+      - "5555:5555"   # ZMQ Server
+    
+    # Volume mounts
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - mfh_cache:/app/cache
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    # Dependencies
+    depends_on:
+      - postgres
+      - redis
+      - prometheus
+    
+    # Networks
+    networks:
+      - mfh_network
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # PostgreSQL for persistent storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: mfh_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=mfh_db
+      - POSTGRES_USER=mfh_user
+      - POSTGRES_PASSWORD=mfh_secure_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - mfh_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # Redis for caching and pub/sub
+  redis:
+    image: redis:7-alpine
+    container_name: mfh_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mfh_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.40.0
+    container_name: mfh_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    networks:
+      - mfh_network
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:9.3.0
+    container_name: mfh_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=mfh_admin_2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - mfh_network
+
+  # PgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:7
+    container_name: mfh_pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mfh.local
+      - PGADMIN_DEFAULT_PASSWORD=pgadmin_secure_password
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - mfh_network
+    profiles:
+      - debug
+
+# Named volumes for persistence
+volumes:
+  mfh_cache:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# Networks
+networks:
+  mfh_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
