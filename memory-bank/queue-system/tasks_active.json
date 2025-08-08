@@ -25,7 +25,7 @@
       },
       {
         "text": "PHASE 5: Application Bootstrap & High Availability\n\n**Explanations:**\nCreate the main application entry-point (`app.py`) that ties everything together and implement the high-availability (HA) mechanism using leader election.\n\n**Technical Artifacts / Tasks:**\n**I. Implement `app.py`:**\nThe script must perform the following actions:\n1.  Load configuration using `UnifiedConfigLoader`.\n2.  Initialize the `Kernel`.\n3.  Start the collector manager, API servers, and all engines.\n4.  Initiate the leader election process. The leader will be responsible for running exclusive tasks like alert evaluation and healing actions.\n5.  Implement graceful shutdown logic to close connections and ensure a clean exit.\n\n**II. Configure Docker Compose for HA:**\nCreate a `docker-compose.ha.yaml` file to run the complete stack locally, including a 3-node NATS cluster and multiple `uoc-core` instances to test the HA setup.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_uoc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_uoc_implementation 5`\n\n──────────────────────────────────\nIMPORTANT NOTE: The bootstrap process and HA logic are critical for the UOC's resilience. Thoroughly test the leader election and failover mechanisms to prevent any gaps in monitoring or alerting.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 6: Testing & Performance Validation\n\n**Explanations:**\nConduct comprehensive testing to ensure the service is correct, performant, and robust. This includes unit tests, integration tests with live containers, and high-volume load tests.\n\n**Technical Artifacts / Tasks:**\n**I. Unit & Integration Tests:**\nWrite `pytest` tests for individual components. Use `testcontainers` to spin up ephemeral NATS and VictoriaMetrics instances for realistic integration testing.\n\n**II. Load Testing:**\nUse a tool like `k6` to push a high volume of metrics (target: 100k metrics/s) to the collectors. Measure the P99 ingest delay and ensure it is ≤ 50 ms.\n\n**III. CI/CD Pipeline:**\nSet up a CI/CD pipeline (e.g., GitHub Actions) that automatically runs linting, type checking, tests, and builds/pushes Docker images on every commit.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_uoc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_uoc_implementation 6`\n\n──────────────────────────────────\nIMPORTANT NOTE: Rigorous, automated testing is non-negotiable for a critical system like the UOC. Ensure the test suite covers functionality, performance, and resilience.",
@@ -38,6 +38,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T17:43:37.549930+08:00"
+    "updated": "2025-08-08T17:50:24.194640+08:00"
   }
 ]
