@@ -4,7 +4,7 @@ import grpc
 import threading
 from concurrent import futures
 from typing import Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ..core.kernel import Kernel
 from ..core.schemas import InferenceRequest
@@ -16,7 +16,8 @@ from ..model_ops_pb2 import (
     InferenceResponse as ProtoInferenceResponse,
     ModelLoadRequest, ModelLoadReply,
     ModelUnloadRequest, ModelUnloadReply,
-    ModelList, ModelInfo
+    ModelList, ModelInfo,
+    GpuLeaseRequest, GpuLeaseReply, GpuLeaseRelease, GpuLeaseReleaseAck,
 )
 
 
@@ -36,6 +37,10 @@ class ModelOpsGRPCServicer(ModelOpsServicer):
             'start_time': datetime.utcnow()
         }
         self._stats_lock = threading.Lock()
+        
+        # Simple in-memory lease tracker guarded by a lock
+        self._lease_lock = threading.Lock()
+        self._leases: Dict[str, Dict[str, Any]] = {}
     
     def Infer(self, request: ProtoInferenceRequest, context) -> ProtoInferenceResponse:
         """Handle inference requests."""
@@ -196,6 +201,61 @@ class ModelOpsGRPCServicer(ModelOpsServicer):
             context.set_details(f'List models failed: {str(e)}')
             
             return ModelList(models=[])
+    
+    # -----------------------------
+    # GPU Lease API
+    # -----------------------------
+    def AcquireGpuLease(self, request: GpuLeaseRequest, context) -> GpuLeaseReply:
+        """Centralized GPU lease acquisition to prevent VRAM contention."""
+        try:
+            with self._lease_lock:
+                # Compute current available MB under soft limit
+                vram = self.kernel.gpu_manager.get_vram_usage()
+                cap_mb = min(vram.get('total_vram_mb', 0), vram.get('soft_limit_mb', 0))
+                gpu_allocated_mb = vram.get('allocated_mb', 0)
+                need_mb = int(request.vram_estimate_mb)
+                now = datetime.utcnow()
+                ttl = max(int(request.ttl_seconds), 1)
+                
+                # Reclaim expired leases
+                expired_ids = []
+                for lease_id, lease in list(self._leases.items()):
+                    if lease['expires_at'] <= now:
+                        expired_ids.append(lease_id)
+                for lid in expired_ids:
+                    del self._leases[lid]
+                
+                # Sum active reserved VRAM
+                reserved_mb = sum(lease['vram_mb'] for lease in self._leases.values())
+                used_total_mb = gpu_allocated_mb + reserved_mb
+                
+                # Check capacity
+                if used_total_mb + need_mb <= cap_mb:
+                    lease_id = f"{int(now.timestamp()*1000)}_{request.client}"
+                    self._leases[lease_id] = {
+                        'client': request.client,
+                        'model_name': request.model_name,
+                        'vram_mb': need_mb,
+                        'priority': int(request.priority),
+                        'expires_at': now + timedelta(seconds=ttl)
+                    }
+                    return GpuLeaseReply(granted=True, lease_id=lease_id, vram_reserved_mb=need_mb)
+                else:
+                    return GpuLeaseReply(granted=False, reason="Insufficient VRAM", retry_after_ms=250)
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f'Lease acquisition failed: {str(e)}')
+            return GpuLeaseReply(granted=False, reason=str(e), retry_after_ms=500)
+
+    def ReleaseGpuLease(self, request: GpuLeaseRelease, context) -> GpuLeaseReleaseAck:
+        """Release a previously acquired GPU lease."""
+        try:
+            with self._lease_lock:
+                if request.lease_id in self._leases:
+                    del self._leases[request.lease_id]
+            return GpuLeaseReleaseAck(success=True)
+        except Exception:
+            return GpuLeaseReleaseAck(success=False)
     
     def get_stats(self) -> Dict[str, Any]:
         """Get servicer statistics."""

@@ -9,6 +9,63 @@ from common.api.contract import (
 )
 import logging
 
+import time
+from typing import Optional
+
+try:
+    import grpc  # type: ignore
+except Exception:  # Fallback if grpc is not available in some envs
+    grpc = None  # type: ignore
+
+try:
+    # Prefer local coordinator stubs
+    from model_ops_coordinator.model_ops_pb2 import (
+        GpuLeaseRequest, GpuLeaseRelease
+    )
+    from model_ops_coordinator.model_ops_pb2_grpc import ModelOpsStub
+except Exception:
+    # Allow import in environments without coordinator available
+    GpuLeaseRequest = None  # type: ignore
+    GpuLeaseRelease = None  # type: ignore
+    ModelOpsStub = None  # type: ignore
+
+
+class GpuLeaseClient:
+    def __init__(self, address: str = "localhost:7212"):
+        if grpc is None or ModelOpsStub is None or GpuLeaseRequest is None:
+            raise RuntimeError("gRPC or ModelOps stubs not available for GpuLeaseClient")
+        self._channel = grpc.insecure_channel(address)
+        self._stub = ModelOpsStub(self._channel)
+        self._lease_id: Optional[str] = None
+
+    def acquire(self, client: str, model_name: str, vram_mb: int, priority: int = 2, ttl_seconds: int = 30,
+                max_retries: int = 6, initial_backoff: float = 0.25) -> bool:
+        backoff = initial_backoff
+        for _ in range(max_retries):
+            req = GpuLeaseRequest(
+                client=client,
+                model_name=model_name,
+                vram_estimate_mb=int(vram_mb),
+                priority=int(priority),
+                ttl_seconds=int(ttl_seconds)
+            )
+            rep = self._stub.AcquireGpuLease(req)
+            if getattr(rep, 'granted', False):
+                self._lease_id = getattr(rep, 'lease_id', None)
+                return True
+            time.sleep(backoff)
+            backoff = min(backoff * 2.0, 2.0)
+        return False
+
+    def release(self):
+        if self._lease_id:
+            req = GpuLeaseRelease(lease_id=self._lease_id)
+            try:
+                self._stub.ReleaseGpuLease(req)
+            finally:
+                self._lease_id = None
+
+
 logger = logging.getLogger(__name__)
 
 class HealthCheckContract(APIContract):

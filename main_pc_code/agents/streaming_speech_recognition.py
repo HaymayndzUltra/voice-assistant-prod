@@ -42,6 +42,12 @@ from common.env_helpers import get_env
 from common.utils.env_standardizer import get_env
 from main_pc_code.agents.error_publisher import ErrorPublisher
 
+# Optional GPU lease client
+try:
+    from common.api.standard_contracts import GpuLeaseClient
+except Exception:
+    GpuLeaseClient = None  # type: ignore
+
 # Parse agent arguments at module level with canonical import
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -899,9 +905,38 @@ class StreamingSpeechRecognition(BaseAgent):
                     "language": detected_lang
                 }
                 
+                # Acquire GPU lease if client available
+                lease_client = None
+                got_lease = True
+                if GpuLeaseClient is not None:
+                    try:
+                        lease_client = GpuLeaseClient(address=os.environ.get("MOC_GRPC_ADDR", "localhost:7212"))
+                        # Conservative VRAM estimate for STT small/bases; adjust as needed
+                        got_lease = lease_client.acquire(
+                            client="StreamingSpeechRecognition",
+                            model_name="stt-service",
+                            vram_mb=int(os.environ.get("STT_VRAM_MB", "1500")),
+                            priority=2,
+                            ttl_seconds=30
+                        )
+                    except Exception as _lease_err:
+                        # Proceed without lease if coordinator is unavailable
+                        lease_client = None
+                        got_lease = True
+                
+                if not got_lease:
+                    raise RuntimeError("GPU lease not granted; backoff and retry later")
+                
                 # Send request to STT service
                 self.stt_service_socket.send_json(request)
                 response = self.stt_service_socket.recv_json()
+                
+                # Release lease
+                try:
+                    if lease_client is not None:
+                        lease_client.release()
+                except Exception:
+                    pass
                 
                 if response.get("status") != "error":
                     transcript = {
@@ -928,6 +963,12 @@ class StreamingSpeechRecognition(BaseAgent):
                     }
                     self.pub_socket.send_json(error_message)
             except Exception as transcribe_error:
+                # Attempt to release any held lease on error
+                try:
+                    if 'lease_client' in locals() and lease_client is not None:
+                        lease_client.release()
+                except Exception:
+                    pass
                 logger.error(f"Error transcribing audio: {str(transcribe_error)}")
                 error_message = {
                     "status": "error",

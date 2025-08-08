@@ -47,11 +47,12 @@ class ModelLoadReply:
     """Model load reply message."""
     
     def __init__(self, success: bool = False, message: str = "",
-                 model_id: str = "", vram_used_mb: int = 0):
+                 model_id: str = "", vram_used_mb: int = 0, error_message: str = ""):
         self.success = success
         self.message = message
         self.model_id = model_id
         self.vram_used_mb = vram_used_mb
+        self.error_message = error_message
 
 
 class ModelUnloadRequest:
@@ -66,23 +67,26 @@ class ModelUnloadReply:
     """Model unload reply message."""
     
     def __init__(self, success: bool = False, message: str = "",
-                 vram_freed_mb: int = 0):
+                 vram_freed_mb: int = 0, error_message: str = ""):
         self.success = success
         self.message = message
         self.vram_freed_mb = vram_freed_mb
+        self.error_message = error_message
 
 
 class ModelInfo:
     """Model info message."""
     
     def __init__(self, name: str = "", path: str = "", status: str = "",
-                 vram_mb: int = 0, shards: int = 0, load_time: int = 0):
+                 vram_mb: int = 0, shards: int = 0, load_time: int = 0, loaded_at: str = "", access_count: int = 0):
         self.name = name
         self.path = path
         self.status = status
         self.vram_mb = vram_mb
         self.shards = shards
         self.load_time = load_time
+        self.loaded_at = loaded_at
+        self.access_count = access_count
 
 
 class ModelList:
@@ -93,3 +97,36 @@ class ModelList:
         self.models = models or []
         self.total_count = total_count
         self.total_vram_mb = total_vram_mb
+
+
+# -----------------
+# GPU Lease API
+# -----------------
+class GpuLeaseRequest:
+    def __init__(self, client: str = "", model_name: str = "", vram_estimate_mb: int = 0,
+                 priority: int = 0, ttl_seconds: int = 0):
+        self.client = client
+        self.model_name = model_name
+        self.vram_estimate_mb = vram_estimate_mb
+        self.priority = priority
+        self.ttl_seconds = ttl_seconds
+
+
+class GpuLeaseReply:
+    def __init__(self, granted: bool = False, lease_id: str = "", vram_reserved_mb: int = 0,
+                 reason: str = "", retry_after_ms: int = 0):
+        self.granted = granted
+        self.lease_id = lease_id
+        self.vram_reserved_mb = vram_reserved_mb
+        self.reason = reason
+        self.retry_after_ms = retry_after_ms
+
+
+class GpuLeaseRelease:
+    def __init__(self, lease_id: str = ""):
+        self.lease_id = lease_id
+
+
+class GpuLeaseReleaseAck:
+    def __init__(self, success: bool = False):
+        self.success = success

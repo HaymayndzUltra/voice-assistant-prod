@@ -23,6 +23,13 @@ class ModelOpsServicer:
     def ListModels(self, request, context):
         """Handle model list requests."""
         raise NotImplementedError('Method not implemented!')
+    
+    # GPU Lease API
+    def AcquireGpuLease(self, request, context):
+        raise NotImplementedError('Method not implemented!')
+    
+    def ReleaseGpuLease(self, request, context):
+        raise NotImplementedError('Method not implemented!')
 
 
 def add_ModelOpsServicer_to_server(servicer, server):
@@ -55,5 +62,14 @@ class ModelOpsStub:
     
     def ListModels(self, request, timeout=None, metadata=None, credentials=None):
         """Call the ListModels RPC."""
+        # Manual implementation - would be auto-generated
+        pass
+    
+    # GPU Lease API
+    def AcquireGpuLease(self, request, timeout=None, metadata=None, credentials=None):
+        # Manual implementation - would be auto-generated
+        pass
+    
+    def ReleaseGpuLease(self, request, timeout=None, metadata=None, credentials=None):
         # Manual implementation - would be auto-generated
         pass
