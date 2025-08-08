@@ -29,15 +29,15 @@
       },
       {
         "text": "PHASE 6: Testing & Performance Validation\n\n**Explanations:**\nConduct comprehensive testing to ensure the service is correct, performant, and robust. This includes unit tests, integration tests with live containers, and high-volume load tests.\n\n**Technical Artifacts / Tasks:**\n**I. Unit & Integration Tests:**\nWrite `pytest` tests for individual components. Use `testcontainers` to spin up ephemeral NATS and VictoriaMetrics instances for realistic integration testing.\n\n**II. Load Testing:**\nUse a tool like `k6` to push a high volume of metrics (target: 100k metrics/s) to the collectors. Measure the P99 ingest delay and ensure it is ≤ 50 ms.\n\n**III. CI/CD Pipeline:**\nSet up a CI/CD pipeline (e.g., GitHub Actions) that automatically runs linting, type checking, tests, and builds/pushes Docker images on every commit.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_uoc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_uoc_implementation 6`\n\n──────────────────────────────────\nIMPORTANT NOTE: Rigorous, automated testing is non-negotiable for a critical system like the UOC. Ensure the test suite covers functionality, performance, and resilience.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 7: Final Verification, Deployment & Operations\n\n**Explanations:**\nPerform the final pre-production checks, deploy the service to Kubernetes, and establish operational procedures like backups and disaster recovery.\n\n**Technical Artifacts / Tasks:**\n**I. Execute Final Verification Checklist:**\n*   **HA Failover:** Manually kill the leader instance; verify that a standby promotes within 5 seconds.\n*   **End-to-End Latency:** Trigger a metric breach and confirm an alert is received via webhook in < 10 seconds.\n*   **Healing Test:** Simulate a container crash and verify the healing engine recovers it successfully.\n*   **Retention Test:** Confirm that data older than the configured retention period is automatically purged from storage.\n*   **Security Scan:** Run a container vulnerability scan (e.g., Trivy) and ensure no critical CVEs are present.\n\n**II. Deploy to Kubernetes:**\nDeploy the entire stack to a Kubernetes cluster. Use a Deployment strategy with `maxUnavailable: 0` for rolling updates to prevent alerting gaps.\n\n**III. Configure Backups:**\nSet up nightly snapshots for VictoriaMetrics (using `vmbackup`) and configure Loki's `boltdb-shipper` to back up indexes to object storage (e.g., S3).\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed, run the following commands to mark this phase as done and prepare for the next one.\n*   **Review Plan Details:** `python3 todo_manager.py show 20250807_uoc_implementation`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 20250807_uoc_implementation 7`\n\n──────────────────────────────────\nIMPORTANT NOTE: This is the final gate before the UOC is considered production-ready. Be methodical during verification and deployment. Successful completion of this phase means the UOC is the new, resilient nervous system for the entire architecture.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-24T14:15:00Z",
-    "updated": "2025-08-08T17:50:24.194640+08:00"
+    "updated": "2025-08-08T18:21:26.300048+08:00"
   }
 ]
