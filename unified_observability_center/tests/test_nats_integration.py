@@ -1,8 +1,22 @@
 import asyncio
 import pytest
-from testcontainers.core.container import DockerContainer
 
+# Detect Docker availability up-front
+_has_docker = True
+try:
+    import docker  # type: ignore
+    _client = docker.from_env()
+    try:
+        _client.ping()
+    except Exception:
+        _has_docker = False
+except Exception:
+    _has_docker = False
+
+from testcontainers.core.container import DockerContainer
 from unified_observability_center.bus.nats_client import NatsClient
+
+pytestmark = pytest.mark.skipif(not _has_docker, reason="Docker not available in this environment")
 
 
 @pytest.mark.asyncio
