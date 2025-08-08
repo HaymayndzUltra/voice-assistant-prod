@@ -1,0 +1,14 @@
+import asyncio
+import os
+import pytest
+from httpx import AsyncClient
+
+from unified_observability_center.api.rest import app
+
+
+@pytest.mark.asyncio
+async def test_health():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        resp = await ac.get("/health")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
