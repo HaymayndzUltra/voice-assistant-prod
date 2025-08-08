@@ -1,0 +1,5 @@
+METRICS = "telemetry.metrics"
+LOGS = "telemetry.logs"
+TRACES = "telemetry.traces"
+ALERTS = "telemetry.alerts"
+ACTIONS = "telemetry.actions"

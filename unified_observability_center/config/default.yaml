@@ -1,0 +1,58 @@
+title: UnifiedObservabilityCenterConfig
+version: 1.0
+
+nats:
+  url: "nats://nats:4222"
+  subjects:
+    metrics: "telemetry.metrics"
+    logs: "telemetry.logs"
+    traces: "telemetry.traces"
+    alerts: "telemetry.alerts"
+    actions: "telemetry.actions"
+
+storage:
+  metrics:
+    type: "victoriametrics"
+    url: "http://vmselect:8481"
+    retention_days: 30
+  logs:
+    type: "loki"
+    url: "http://loki:3100"
+    retention_days: 14
+  traces:
+    type: "otlp"
+    url: "http://jaeger:4318"
+
+collectors:
+  enabled:
+    - prometheus_scrape
+    - otlp_grpc_receiver
+    - zmq_subscriber
+    - docker_stats
+    - custom_gpu
+  scrape_interval_seconds: 15
+
+alerting:
+  rules_path: "/etc/uoc/rules/*.yaml"
+  evaluation_interval_seconds: 30
+
+healing:
+  playbooks_path: "/etc/uoc/playbooks"
+  default_cooldown_seconds: 300
+  actions_topic: "telemetry.actions"
+
+api:
+  rest_port: 9100
+  graphql_port: 9101
+
+resilience:
+  circuit_breaker:
+    failure_threshold: 5
+    reset_timeout: 15
+  bulkhead:
+    max_concurrent: 64
+    max_queue_size: 256
+
+ha:
+  cluster_name: "uoc-cluster"
+  election_ttl: 10
