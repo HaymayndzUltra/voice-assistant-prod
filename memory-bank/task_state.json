@@ -1,6 +1,6 @@
 {
-  "current_task_id": "20250807_moc_implementation",
-  "current_task_description": "Action plan to implement, test, and deploy the ModelOps Coordinator (MOC), unifying six legacy agents for model lifecycle, inference, and resource management.",
+  "current_task_id": "20250807_uoc_implementation",
+  "current_task_description": "Master implementation plan for the Unified Observability Center (UOC), an event-driven system built on OpenTelemetry and NATS to provide unified monitoring, alerting, and self-healing.",
   "status": "in_progress",
   "last_updated": "2024-05-24T14:15:00Z",
   "todos_count": 8,
