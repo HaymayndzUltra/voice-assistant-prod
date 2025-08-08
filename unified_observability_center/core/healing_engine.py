@@ -5,6 +5,7 @@ from typing import Optional
 from unified_observability_center.bus.nats_client import NatsClient
 from unified_observability_center.bus import topics
 from unified_observability_center.core.schemas import Action
+import time
 
 
 class HealingEngine:
@@ -12,6 +13,7 @@ class HealingEngine:
         self._nats_url = nats_url
         self._nc: Optional[NatsClient] = None
         self._sub = None
+        self._cooldowns: dict[str, float] = {}
 
     async def start(self) -> None:
         self._nc = NatsClient(self._nats_url)
@@ -19,6 +21,11 @@ class HealingEngine:
 
         async def on_alert(msg):
             # For now, echo a mock action
+            now = time.time()
+            key = "noop"
+            if self._cooldowns.get(key, 0) > now:
+                return
+            self._cooldowns[key] = now + 30  # 30s default cooldown
             action = Action(name="noop")
             await self._nc.publish(topics.ACTIONS, json.dumps(action.dict()).encode())
 
