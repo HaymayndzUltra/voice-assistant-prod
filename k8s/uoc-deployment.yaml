@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uoc
+  labels:
+    app: uoc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: uoc
+  template:
+    metadata:
+      labels:
+        app: uoc
+    spec:
+      containers:
+        - name: uoc
+          image: uoc:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: UOC_API_TOKENS
+              value: devtoken
+          ports:
+            - containerPort: 9100
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9100
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9100
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: uoc
+spec:
+  selector:
+    app: uoc
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9100
+      protocol: TCP
