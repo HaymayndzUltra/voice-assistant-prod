@@ -9,27 +9,21 @@ server:
 
 resources:
   gpu_poll_interval: 5
-  vram_soft_limit_mb: 22000
+  vram_soft_limit_mb: 24000
   eviction_threshold_pct: 90
 
 models:
-  preload:
-    - name: "llama-7b-chat"
-      path: "/models/llama-7b-chat.gguf"
-      shards: 1
-    - name: "whisper-base"
-      path: "/models/whisper-base.bin"
-      shards: 1
-  default_dtype: "float16"
+  preload: []
+  default_dtype: float16
   quantization: true
 
 learning:
   enable_auto_tune: true
   max_parallel_jobs: 2
-  job_store: "${LEARNING_STORE:/workspace/learning_jobs.db}"
+  job_store: /workspace/learning_jobs.db
 
 goals:
-  policy: "priority_queue"
+  policy: priority_queue
   max_active_goals: 10
 
 resilience:
@@ -39,3 +33,7 @@ resilience:
   bulkhead:
     max_concurrent: 64
     max_queue_size: 256
+vram:
+  dry_run: true
+  budget_pct: 0.85
+  # JetStream: provide NATS_URL via env; fallback to in-proc bus

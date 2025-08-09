@@ -1061,6 +1061,42 @@ class ModelManagerSuite(BaseAgent):
                         self.models[model_id]['status'] = 'online'
                         
                     logger.info(f"Successfully loaded GGUF model {model_id}")
+                    # Emit event: models.model.loaded (dual-write migration)
+                    try:
+                        # Prefer NATS JetStream if available
+                        nats_url = os.getenv("NATS_URL")
+                        payload = f"{model_id},{model_info.get('type','unknown')},{required_vram},cuda:0,{time.time()}".encode()
+                        if nats_url:
+                            from nats.aio.client import Client as NATS  # type: ignore
+                            n = NATS()
+                            awaitable = getattr(n, 'connect', None)
+                            if callable(awaitable):
+                                import asyncio as _asyncio
+                                async def _pub():
+                                    await n.connect(servers=[nats_url])
+                                    js = n.jetstream()
+                                    try:
+                                        await js.add_stream(name="MODELS", subjects=["models.*"])  # type: ignore
+                                    except Exception:
+                                        pass
+                                    await js.publish("models.model.loaded", payload)  # type: ignore
+                                    await n.drain()
+                                _asyncio.get_event_loop().create_task(_pub())
+                        else:
+                            # Fallback: best-effort in-proc event bus if running in same process
+                            try:
+                                from events.event_bus import EventBus  # type: ignore
+                                from events.model_events import BaseModelEvent, ModelEventType  # type: ignore
+                                bus = EventBus()
+                                class _E(BaseModelEvent):
+                                    def __init__(self):
+                                        self.event_type = ModelEventType.MODEL_LOADED
+                                        self.source_agent = "ModelManagerSuite"
+                                bus.publish(_E())
+                            except Exception:
+                                pass
+                    except Exception as _e:
+                        logger.warning(f"models.model.loaded emit failed (non-fatal): {_e}")
                     return True
                 else:
                     logger.error("llama-cpp-python not available")

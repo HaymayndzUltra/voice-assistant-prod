@@ -12,6 +12,8 @@ from .inference import InferenceModule
 from .learning import LearningModule
 from .goal_manager import GoalModule
 from .errors import ConfigurationError
+from ..adapters.event_bus_adapter import EventBusAdapter
+from .vram_module import VramOptimizationModule
 
 
 class Kernel:
@@ -50,6 +52,9 @@ class Kernel:
             self._init_inference()
             self._init_learning()
             self._init_goals()
+            # New: Event bus and VRAM optimization module
+            self._init_event_bus()
+            self._init_vram_module()
             
             self._initialized = True
             
@@ -119,6 +124,25 @@ class Kernel:
     def _init_goals(self):
         """Initialize goal management system."""
         self.goals = GoalModule(self.cfg, self.learning, self.metrics)
+
+    def _init_event_bus(self):
+        """Initialize event bus adapter."""
+        self.event_bus = EventBusAdapter()
+
+    def _init_vram_module(self):
+        """Initialize the event-driven VRAM optimization module (dry-run)."""
+        self.vram_module = VramOptimizationModule(
+            bus=self.event_bus,
+            logger=self.metrics.logger if hasattr(self.metrics, 'logger') else None or __import__('logging').getLogger(__name__),
+            dry_run=True,
+            budget_pct=0.85,
+        )
+
+    async def initialize(self):
+        """Async initialization of modules that require event loops."""
+        # Start event bus and vram module subscribers
+        await self.event_bus.start()
+        await self.vram_module.start()
     
     def _cleanup_on_error(self):
         """Cleanup resources when initialization fails."""
