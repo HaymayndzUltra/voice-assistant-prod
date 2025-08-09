@@ -1,3 +1,51 @@
+workspace $ python3 tpython3 tools/validate_yaml_no_dupes.py | cat && python3 tools/validate_ports_unique.py | cat && python3 tools/validate_dependencies.py | cat && flake8 --select=F401,F811 main_pc_code pc2_code unified_observability_center tools | cat
+OK: No YAML issues (compose/k8s/goss skipped; multi-doc supported)
+OK: No port-base collisions detected
+OK: Dependencies and gating validated
+main_pc_code/FORMAINPC/ConsolidatedTranslator.py:2:1: F401 'common.utils.env_standardizer.get_env' imported but unused
+main_pc_code/FORMAINPC/ConsolidatedTranslator.py:3:1: F401 'common.core.base_agent.BaseAgent' imported but unused
+main_pc_code/FORMAINPC/ConsolidatedTranslator.py:5:1: F401 'main_pc_code.agents.error_publisher.ErrorPublisher' imported but unused
+main_pc_code/NEWMUSTFOLLOW/check_mvs_health.py:21:1: F811 redefinition of unused 'sys' from line 11
+main_pc_code/NEWMUSTFOLLOW/check_mvs_health.py:22:1: F811 redefinition of unused 'os' from line 10
+main_pc_code/NEWMUSTFOLLOW/find_agent_files.py:16:1: F811 redefinition of unused 'sys' from line 10
+main_pc_code/NEWMUSTFOLLOW/find_agent_files.py:17:1: F811 redefinition of unused 'os' from line 9
+main_pc_code/agents/DynamicIdentityAgent.py:21:1: F401 'common.utils.env_standardizer.get_env' imported but unused
+main_pc_code/agents/DynamicIdentityAgent.py:22:1: F401 'common.utils.log_setup.configure_logging' imported but unused
+main_pc_code/agents/DynamicIdentityAgent.py:23:1: F401 'main_pc_code.agents.error_publisher.ErrorPublisher' imported but unused
+main_pc_code/agents/DynamicIdentityAgent.py:435:5: F811 redefinition of unused 'asyncio' from line 12
+main_pc_code/agents/EmpathyAgent.py:6:1: F811 redefinition of unused 'sys' from line 1
+main_pc_code/agents/EmpathyAgent.py:7:1: F811 redefinition of unused 'os' from line 2
+main_pc_code/agents/EmpathyAgent.py:8:1: F811 redefinition of unused 'os' from line 7
+main_pc_code/agents/EmpathyAgent.py:9:1: F811 redefinition of unused 'sys' from line 6
+main_pc_code/agents/EmpathyAgent.py:9:1: F401 'sys' imported but unused
+main_pc_code/agents/EmpathyAgent.py:14:1: F401 'logging' imported but unused
+main_pc_code/agents/EmpathyAgent.py:21:1: F401 'common.utils.env_standardizer.get_env' imported but unused
+main_pc_code/agents/EmpathyAgent.py:22:1: F401 'main_pc_code.agents.error_publisher.ErrorPublisher' imported but unused
+main_pc_code/agents/IntentionValidatorAgent.py:21:1: F401 'common.utils.env_standardizer.get_env' imported but unused
+main_pc_code/agents/IntentionValidatorAgent.py:22:1: F401 'common.utils.log_setup.configure_logging' imported but unused
+main_pc_code/agents/IntentionValidatorAgent.py:23:1: F401 'main_pc_code.agents.error_publisher.ErrorPublisher' imported but unused
+main_pc_code/agents/IntentionValidatorAgent.py:441:5: F811 redefinition of unused 'asyncio' from line 7
+main_pc_code/agents/ProactiveAgent.py:22:1: F401 'common.utils.env_standardizer.get_env' imported but unused
+main_pc_code/agents/ProactiveAgent.py:23:1: F401 'common.utils.log_setup.configure_logging' imported but unused
+main_pc_code/agents/ProactiveAgent.py:24:1: F401 'main_pc_code.agents.error_publisher.ErrorPublisher' imported but unused
+main_pc_code/agents/ProactiveAgent.py:573:5: F811 redefinition of unused 'asyncio' from line 7
+main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_agent.py:10:1: F811 redefinition of unused 'datetime' from line 6
+main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/unified_memory_reasoning_agent.py:9:1: F811 redefinition of unused 'datetime' from line 5
+main_pc_code/agents/active_learning_monitor.py:21:1: F401 'common.utils.env_standardizer.get_env' imported but unused
+main_pc_code/agents/active_learning_monitor.py:22:1: F401 'common.utils.log_setup.configure_logging' imported but unused
+main_pc_code/agents/active_learning_monitor.py:23:1: F401 'main_pc_code.agents.error_publisher.ErrorPublisher' imported but unused
+main_pc_code/agents/active_learning_monitor.py:707:5: F811 redefinition of unused 'asyncio' from line 7
+main_pc_code/agents/advanced_command_handler.py:15:1: F401 'logging' imported but unused
+main_pc_code/agents/advanced_command_handler.py:17:1: F811 redefinition of unused 'sys' from line 12
+main_pc_code/agents/advanced_command_handler.py:17:1: F401 'sys' imported but unused
+main_pc_code/agents/advanced_command_handler.py:18:1: F811 redefinition of unused 'os' from line 13
+main_pc_code/agents/advanced_command_handler.py:26:1: F401 'common.utils.env_standardizer.get_env' imported but unused
+main_pc_code/agents/advanced_command_handler.py:27:1: F401 'main_pc_code.agents.error_publisher.ErrorPublisher' imported but unused
+main_pc_code/agents/chitchat_agent.py:10:1: F401 'common.config_manager.get_service_ip' imported but unused
+main_pc_code/agents/chitchat_agent.py:10:1: F401 'common.config_manager.get_service_url' imported but unused
+main_pc_code/agents/chitchat_agent.py:10:1: F401 'common.config_manager.get_redis_url' imported but unused
+main_pc_code/agents/chitchat_agent.py:15:1: F401 'sys' imported but unused
+main_pc_code/agents/chitchat_agent.py:17:1: F401 'pathlib.Path' imported but unused
 main_pc_code/agents/chitchat_agent.py:20:1: F401 'json' imported but unused
 main_pc_code/agents/chitchat_agent.py:21:1: F401 'logging' imported but unused
 main_pc_code/agents/chitchat_agent.py:25:1: F401 'psutil' imported but unused
@@ -473,3 +521,4 @@ unified_observability_center/core/kernel.py:6:1: F401 'unified_observability_cen
 unified_observability_center/core/storage.py:1:1: F401 'asyncio' imported but unused
 unified_observability_center/core/storage.py:2:1: F401 'json' imported but unused
 unified_observability_center/resiliency/circuit_breaker.py:3:1: F401 'typing.Coroutine' imported but unused
+workspace $ 
