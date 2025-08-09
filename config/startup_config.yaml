@@ -132,31 +132,6 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
-  memory_system:
-    MemoryClient:
-      script_path: main_pc_code/agents/memory_client.py
-      port: "${PORT_OFFSET}+5713"
-      health_check_port: "${PORT_OFFSET}+6713"
-      required: true
-      dependencies:
-      - SystemDigitalTwin
-    SessionMemoryAgent:
-      script_path: main_pc_code/agents/session_memory_agent.py
-      port: "${PORT_OFFSET}+5574"
-      health_check_port: "${PORT_OFFSET}+6574"
-      required: true
-      dependencies:
-      - RequestCoordinator
-      - SystemDigitalTwin
-      - MemoryClient
-    KnowledgeBase:
-      script_path: main_pc_code/agents/knowledge_base.py
-      port: "${PORT_OFFSET}+5715"
-      health_check_port: "${PORT_OFFSET}+6715"
-      required: true
-      dependencies:
-      - MemoryClient
-      - SystemDigitalTwin
   utility_services:
     CodeGenerator:
       script_path: main_pc_code/agents/code_generator_agent.py
@@ -259,7 +234,7 @@ agent_groups:
       required: true
       dependencies:
       - LearningOrchestrationService
-      - MemoryClient
+      - MemoryFusionHub
       - SystemDigitalTwin
     LearningManager:
       script_path: main_pc_code/agents/learning_manager.py
@@ -267,7 +242,7 @@ agent_groups:
       health_check_port: "${PORT_OFFSET}+6580"
       required: true
       dependencies:
-      - MemoryClient
+      - MemoryFusionHub
       - RequestCoordinator
       - SystemDigitalTwin
     ActiveLearningMonitor:
@@ -559,12 +534,11 @@ docker_groups:
     description: Centralised telemetry, metrics, prediction & health
     agents:
       - ObservabilityHub
-  memory_stack:
-    description: Short/long-term memory services
+  core_hubs:
+    description: Unified core service hubs (Memory & ModelOps)
     agents:
-      - MemoryClient
-      - SessionMemoryAgent
-      - KnowledgeBase
+      - MemoryFusionHub
+      - ModelManagerSuite
   vision_gpu:
     description: GPU-bound vision processing services
     agents:

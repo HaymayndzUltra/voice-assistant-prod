@@ -11,7 +11,7 @@ This module provides:
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, BaseModel
 from datetime import datetime
 
 import grpc
@@ -20,24 +20,16 @@ from pydantic import ValidationError
 
 from ..core.fusion_service import FusionService
 from ..core.models import MemoryItem, SessionData, KnowledgeRecord, MemoryEvent
-try:
-    from ..memory_fusion_pb2 import (
-        GetResponse, PutResponse, DeleteResponse, BatchGetResponse,
-        ExistsResponse, ListKeysResponse, HealthResponse,
-        MemoryItem as ProtoMemoryItem, ComponentHealth
-    )
-    from ..memory_fusion_pb2_grpc import MemoryFusionServiceServicer, add_MemoryFusionServiceServicer_to_server
-except ImportError:
-    # Fallback for direct execution
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from memory_fusion_pb2 import (
-        GetResponse, PutResponse, DeleteResponse, BatchGetResponse,
-        ExistsResponse, ListKeysResponse, HealthResponse,
-        MemoryItem as ProtoMemoryItem, ComponentHealth
-    )
-    from memory_fusion_pb2_grpc import MemoryFusionServiceServicer, add_MemoryFusionServiceServicer_to_server
+# Prefer relative generated modules for typing consistency
+from ..memory_fusion_pb2 import (
+    GetResponse, PutResponse, DeleteResponse, BatchGetResponse,
+    ExistsResponse, ListKeysResponse, HealthResponse,
+    MemoryItem as ProtoMemoryItem, ComponentHealth,
+)
+from ..memory_fusion_pb2_grpc import (
+    MemoryFusionServiceServicer,
+    add_MemoryFusionServiceServicer_to_server,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +57,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
         self.fusion_service = fusion_service
         logger.info("gRPC servicer initialized")
     
-    async def Get(self, request, context):
+    async def Get(self, request, context) -> GetResponse:  # type: ignore[override]
         """Handle Get RPC."""
         try:
             logger.debug(f"gRPC Get request: key={request.key}")
@@ -92,7 +84,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
             context.set_details(str(e))
             return response
     
-    async def Put(self, request, context):
+    async def Put(self, request, context) -> PutResponse:  # type: ignore[override]
         """Handle Put RPC."""
         try:
             logger.debug(f"gRPC Put request: key={request.key}")
@@ -119,7 +111,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
             context.set_details(str(e))
             return response
     
-    async def Delete(self, request, context):
+    async def Delete(self, request, context) -> DeleteResponse:  # type: ignore[override]
         """Handle Delete RPC."""
         try:
             logger.debug(f"gRPC Delete request: key={request.key}")
@@ -145,7 +137,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
             context.set_details(str(e))
             return response
     
-    async def BatchGet(self, request, context):
+    async def BatchGet(self, request, context) -> BatchGetResponse:  # type: ignore[override]
         """Handle BatchGet RPC."""
         try:
             logger.debug(f"gRPC BatchGet request: {len(request.keys)} keys")
@@ -174,7 +166,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
             context.set_details(str(e))
             return response
     
-    async def Exists(self, request, context):
+    async def Exists(self, request, context) -> ExistsResponse:  # type: ignore[override]
         """Handle Exists RPC."""
         try:
             logger.debug(f"gRPC Exists request: key={request.key}")
@@ -197,7 +189,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
             context.set_details(str(e))
             return response
     
-    async def ListKeys(self, request, context):
+    async def ListKeys(self, request, context) -> ListKeysResponse:  # type: ignore[override]
         """Handle ListKeys RPC."""
         try:
             logger.debug(f"gRPC ListKeys request: prefix={request.prefix}, limit={request.limit}")
@@ -220,7 +212,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
             context.set_details(str(e))
             return response
     
-    async def GetHealth(self, request, context):
+    async def GetHealth(self, request, context) -> HealthResponse:  # type: ignore[override]
         """Handle GetHealth RPC."""
         try:
             logger.debug("gRPC GetHealth request")
@@ -260,7 +252,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
             context.set_details(str(e))
             return response
     
-    def _pydantic_to_proto_memory_item(self, item) -> ProtoMemoryItem:
+    def _pydantic_to_proto_memory_item(self, item: BaseModel) -> ProtoMemoryItem:
         """
         Convert Pydantic model to protobuf MemoryItem.
         
@@ -309,7 +301,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
         
         return proto_item
     
-    def _proto_to_pydantic_memory_item(self, proto_item) -> MemoryItem:
+    def _proto_to_pydantic_memory_item(self, proto_item: ProtoMemoryItem) -> MemoryItem:
         """
         Convert protobuf MemoryItem to Pydantic MemoryItem.
         
@@ -322,7 +314,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
         try:
             # Determine content
             if proto_item.HasField('text_content'):
-                content = proto_item.text_content
+                content: Any = proto_item.text_content
             elif proto_item.HasField('json_content'):
                 try:
                     content = json.loads(proto_item.json_content)
@@ -340,7 +332,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
                 try:
                     updated_at = datetime.fromisoformat(proto_item.updated_at)
                 except ValueError:
-                    pass
+                    updated_at = None
             
             # Convert expiry_timestamp if present
             expiry_timestamp = None
@@ -348,7 +340,7 @@ class MemoryFusionServicer(MemoryFusionServiceServicer):
                 try:
                     expiry_timestamp = datetime.fromisoformat(proto_item.expiry_timestamp)
                 except ValueError:
-                    pass
+                    expiry_timestamp = None
             
             # Create MemoryItem
             return MemoryItem(
@@ -391,7 +383,7 @@ class GRPCServer:
         self.fusion_service = fusion_service
         self.port = port
         self.max_workers = max_workers
-        self.server = None
+        self.server: Optional[aio.Server] = None
         
         logger.info(f"gRPC server initialized on port {port}")
     
@@ -420,6 +412,7 @@ class GRPCServer:
     async def serve(self) -> None:
         """Start server and wait for termination."""
         await self.start()
+        assert self.server is not None
         await self.server.wait_for_termination()
     
     async def stop(self, grace_period: int = 5) -> None:
@@ -453,7 +446,7 @@ async def run_grpc_server(fusion_service: FusionService, port: int = 5714, max_w
     
     try:
         await server.serve()
-    except KeyboardInterrupt:
+    except KeyboardInterrupt:  # pragma: no cover
         logger.info("gRPC server interrupted by user")
     except Exception as e:
         logger.error(f"gRPC server error: {e}")

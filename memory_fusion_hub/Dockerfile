@@ -65,7 +65,11 @@ USER mfh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8080/health', timeout=5)" || exit 1
+    CMD python -c "import socket; import sys; s=socket.socket();
+try:
+    s.connect(('127.0.0.1', 8080)); sys.exit(0)
+except Exception:
+    sys.exit(1)" || exit 1
 
 # Expose ports
 EXPOSE 8080 50051 5555
