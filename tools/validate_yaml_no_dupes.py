@@ -14,29 +14,30 @@ TARGETS = [
   "**/*.yaml",
 ]
 
-SKIP_PATTERNS = [
-  os.path.normpath("k8s"),
-  os.path.normpath("common/service_mesh/k8s"),
-  os.path.normpath("tests/goss"),
-]
+SKIP_DIR_PREFIXES = (
+  os.path.normpath("k8s/"),
+  os.path.normpath("common/service_mesh/k8s/"),
+  os.path.normpath("tests/goss/"),
+)
+COMPOSE_BASENAMES = {"compose.yaml", "compose.yml"}
 
-def is_compose_file(path: str) -> bool:
-  base = os.path.basename(path)
-  return base.startswith("docker-compose") or base in {"compose.yml", "compose.yaml"}
-
-def should_skip_path(path: str) -> bool:
+def should_skip(path: str) -> bool:
   norm = os.path.normpath(path)
-  # Skip docker compose files and known unused infra dirs
-  if is_compose_file(norm):
+  base = os.path.basename(norm)
+  # Skip docker compose files
+  if base.startswith("docker-compose") or base in COMPOSE_BASENAMES:
     return True
-  return any(sp in norm for sp in SKIP_PATTERNS)
+  # Skip unused k8s and goss dirs
+  for p in SKIP_DIR_PREFIXES:
+    if norm.startswith(p) or (os.sep + p) in norm:
+      return True
+  return False
 
 def validate_yaml(path: str) -> int:
   """Return number of issues found (0 if ok). Supports multi-document YAML."""
   issues = 0
   try:
     with open(path, 'r', encoding='utf-8') as f:
-      # Iterate all documents; ruamel will raise DuplicateKeyError if dupes
       for _ in yaml.load_all(f):
         pass
   except DuplicateKeyError as e:
@@ -51,13 +52,13 @@ def main():
   errors = 0
   for pattern in TARGETS:
     for path in glob.glob(pattern, recursive=True):
-      if should_skip_path(path):
+      if should_skip(path):
         continue
       errors += validate_yaml(path)
   if errors:
     print(f"FAIL: Found {errors} YAML issues")
     sys.exit(1)
-  print("OK: No duplicate YAML keys detected (compose/k8s/goss skipped; multi-doc supported)")
+  print("OK: No YAML issues (compose/k8s/goss skipped; multi-doc supported)")
 
 if __name__ == "__main__":
   main()
