@@ -266,9 +266,9 @@ error_bus_port: ${PORT_OFFSET}+7150
 docker_groups:
   infra_core:
     description: Core observability & resource management infrastructure
-      agents:
-  - UnifiedObservabilityCenter
-  - ResourceManager
+    agents:
+    - UnifiedObservabilityCenter
+    - ResourceManager
   core_hubs:
     description: Memory Fusion Hub for unified memory management
     agents:
