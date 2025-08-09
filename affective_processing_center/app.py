@@ -2,9 +2,8 @@
 """
 Affective Processing Center (APC) - Main Application Bootstrap
 
-This is the main entry point for the APC service that unifies emotional
-processing modules into a DAG-based pipeline for real-time emotional
-context analysis and synthesis.
+This module provides the Affective Processing Center service that inherits from BaseAgent
+and uses the approved golden utilities from the common directory.
 """
 
 import asyncio
@@ -18,9 +17,13 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-# Adjust Python path for internal imports
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, current_dir)
+# Add common to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import BaseAgent and golden utilities
+from common.core.base_agent import BaseAgent
+from common.utils.unified_config_loader import UnifiedConfigLoader
+from common.utils.path_manager import PathManager
 
 # Import APC core components
 from core.cache import EmbeddingCache
@@ -31,27 +34,10 @@ from modules.base import module_registry
 from transport.zmq_pub import ZmqPublisher, BroadcastManager
 from transport.zmq_req import ZmqSynthesisServer, SynthesisRequestHandler
 
-# Configuration loading with fallback
-import yaml
-
-def load_unified_config(config_path: str = None) -> Dict[str, Any]:
-    """Load configuration with fallback to direct YAML loading."""
-    try:
-        # Try to import common config manager if available
-        sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common'))
-        from config_manager import load_unified_config as _load_unified_config
-        return _load_unified_config(config_path)
-    except ImportError:
-        # Fallback to direct YAML loading
-        config_path = config_path or "config/default.yaml"
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                return yaml.safe_load(f)
-        return {}
-
 # ZMQ for input subscription
 import zmq
 import zmq.asyncio
+import yaml
 
 # Set up logging
 logging.basicConfig(
@@ -61,9 +47,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class APCApplication:
+class AffectiveProcessingCenter(BaseAgent):
     """
-    Main Affective Processing Center application.
+    Affective Processing Center - Unified emotional processing hub.
+    
+    Inherits from BaseAgent to leverage standardized health checking,
+    error handling, metrics, and configuration management.
     
     This class orchestrates the entire APC pipeline including:
     - Configuration loading and validation
@@ -73,15 +62,19 @@ class APCApplication:
     - Graceful shutdown handling
     """
     
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, **kwargs):
         """
-        Initialize the APC application.
+        Initialize the APC with BaseAgent foundation.
         
         Args:
-            config_path: Optional path to configuration file
+            **kwargs: Arguments passed to BaseAgent
         """
-        self.config_path = config_path or "affective_processing_center/config/default.yaml"
-        self.config: Optional[APCConfig] = None
+        # Initialize BaseAgent with all standard features
+        super().__init__(name='AffectiveProcessingCenter', **kwargs)
+        
+        # Load hub-specific configuration using UnifiedConfigLoader
+        config_loader = UnifiedConfigLoader()
+        self.hub_config = self._load_hub_config(config_loader)
         
         # Core components
         self.cache: Optional[EmbeddingCache] = None
@@ -98,522 +91,422 @@ class APCApplication:
         
         # State management
         self.is_running = False
-        self.is_initialized = False
-        self.startup_time = datetime.utcnow()
-        
-        # Statistics
-        self.stats = {
-            'messages_processed': 0,
-            'ecvs_published': 0,
-            'synthesis_requests': 0,
-            'processing_errors': 0,
-            'avg_processing_time_ms': 0.0,
-            'startup_time': self.startup_time
-        }
-        
-        # Async tasks
-        self._main_loop_task: Optional[asyncio.Task] = None
         self._shutdown_event = asyncio.Event()
+        self._startup_time = None
+        self._processed_messages = 0
+        self._error_count = 0
         
-        logger.info(f"APC Application initialized with config: {self.config_path}")
+        # Initialize hub components
+        self._initialize_hub_components()
+        
+        self.logger.info(f"AffectiveProcessingCenter initialized on port {self.port}")
     
-    async def initialize(self) -> None:
-        """Initialize all APC components in the correct order."""
-        if self.is_initialized:
-            logger.warning("APC already initialized")
-            return
+    def _load_hub_config(self, config_loader: UnifiedConfigLoader) -> APCConfig:
+        """
+        Load hub-specific configuration using the golden UnifiedConfigLoader.
         
+        Args:
+            config_loader: The unified config loader instance
+            
+        Returns:
+            APCConfig object with merged configuration
+        """
         try:
-            logger.info("🚀 Starting APC initialization...")
+            # Get base configuration
+            base_config = config_loader.get_agent_config('AffectiveProcessingCenter')
             
-            # Step 1: Load and validate configuration
-            await self._load_configuration()
+            # Build APC-specific configuration
+            config_dict = {
+                'app': {
+                    'name': 'AffectiveProcessingCenter',
+                    'version': '2.0.0'
+                },
+                'modules': base_config.get('modules', {
+                    'enabled': [
+                        'audio_emotion',
+                        'text_emotion',
+                        'face_emotion',
+                        'context_fusion'
+                    ]
+                }),
+                'cache': {
+                    'redis_url': os.getenv('REDIS_URL', base_config.get('redis_url', 'redis://localhost:6379/0')),
+                    'ttl_seconds': int(os.getenv('CACHE_TTL', base_config.get('cache_ttl', 3600))),
+                    'max_size': int(os.getenv('CACHE_MAX_SIZE', base_config.get('cache_max_size', 1000)))
+                },
+                'zmq': {
+                    'subscriber': {
+                        'endpoints': base_config.get('zmq_endpoints', [
+                            'tcp://localhost:5555',
+                            'tcp://localhost:5556'
+                        ])
+                    },
+                    'publisher': {
+                        'bind_address': os.getenv('APC_PUB_ADDRESS', base_config.get('pub_address', 'tcp://*:5560'))
+                    },
+                    'synthesis_server': {
+                        'bind_address': os.getenv('APC_SYNTH_ADDRESS', base_config.get('synth_address', 'tcp://*:5561'))
+                    }
+                },
+                'pipeline': {
+                    'batch_size': int(os.getenv('BATCH_SIZE', base_config.get('batch_size', 10))),
+                    'timeout_seconds': int(os.getenv('PIPELINE_TIMEOUT', base_config.get('timeout', 30)))
+                },
+                'fusion': {
+                    'weights': base_config.get('fusion_weights', {
+                        'audio': 0.3,
+                        'text': 0.4,
+                        'face': 0.3
+                    })
+                }
+            }
             
-            # Step 2: Acquire GPU lease before GPU-heavy init
-            try:
-                from core.gpu_lease_client import GpuLeaseClient  # type: ignore
-                lease_client = GpuLeaseClient(os.environ.get('MOC_GRPC_ADDR', 'localhost:7212'))
-                if not lease_client.acquire_for_apc():
-                    raise RuntimeError("APC failed to acquire GPU lease from MOC")
-                self._lease_client = lease_client  # keep for release on cleanup
-                logger.info("✅ APC GPU lease acquired")
-            except Exception as e:
-                logger.warning(f"GPU lease acquisition skipped or failed: {e}")
-                self._lease_client = None
-
-            # Step 3: Initialize embedding cache
-            await self._initialize_cache()
-            
-            # Step 4: Load and initialize modules
-            await self._initialize_modules()
-            
-            # Step 5: Initialize fusion layer
-            await self._initialize_fusion()
-            
-            # Step 6: Initialize DAG executor
-            await self._initialize_dag_executor()
-            
-            # Step 7: Initialize transport layer
-            await self._initialize_transport()
-            
-            # Step 8: Setup input subscription
-            await self._initialize_input_subscriber()
-            
-            # Step 9: Warmup all components
-            await self._warmup_components()
-            
-            self.is_initialized = True
-            
-            initialization_time = (datetime.utcnow() - self.startup_time).total_seconds()
-            logger.info(f"✅ APC initialization complete in {initialization_time:.2f}s")
+            return APCConfig(**config_dict)
             
         except Exception as e:
-            logger.error(f"❌ APC initialization failed: {e}")
-            await self.cleanup()
-            raise
+            self.logger.error(f"Failed to load configuration: {e}")
+            # Return default configuration
+            return APCConfig()
     
-    async def _load_configuration(self) -> None:
-        """Load and validate application configuration."""
-        logger.info("📋 Loading configuration...")
+    def _initialize_hub_components(self):
+        """
+        Initialize hub-specific components.
         
+        Uses inherited features from BaseAgent:
+        - self.health_checker (StandardizedHealthChecker)
+        - self.unified_error_handler (UnifiedErrorHandler)
+        - self.prometheus_exporter (PrometheusExporter)
+        - self.logger (Rotating JSON logger)
+        """
         try:
-            # Load unified config
-            raw_config = load_unified_config(self.config_path)
+            # Register hub capabilities with service discovery
+            self.capabilities = [
+                'emotional_processing',
+                'multimodal_fusion',
+                'audio_emotion_analysis',
+                'text_emotion_analysis',
+                'face_emotion_analysis',
+                'context_synthesis'
+            ]
             
-            if not raw_config:
-                # Fallback to direct YAML loading
-                if os.path.exists(self.config_path):
-                    import yaml
-                    with open(self.config_path, 'r') as f:
-                        raw_config = yaml.safe_load(f)
-                else:
-                    raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
+            # Register with digital twin (inherited from BaseAgent)
+            self._register_with_digital_twin()
             
-            # Validate configuration using Pydantic
-            self.config = APCConfig(**raw_config)
-            
-            logger.info(f"✅ Configuration loaded: {len(self.config.pipeline.enabled_modules)} modules enabled")
-            logger.info(f"   Fusion algorithm: {self.config.pipeline.fusion.algorithm}")
-            logger.info(f"   Device: {self.config.resources.device}")
+            self.logger.info("Hub components initialized successfully")
             
         except Exception as e:
-            logger.error(f"❌ Configuration loading failed: {e}")
-            raise
-    
-    async def _initialize_cache(self) -> None:
-        """Initialize the embedding cache."""
-        logger.info("💾 Initializing embedding cache...")
-        
-        # Cache configuration from config or defaults
-        cache_config = getattr(self.config, 'cache', {})
-        max_size = cache_config.get('max_size', 1000)
-        ttl_minutes = cache_config.get('ttl_minutes', 60)
-        
-        self.cache = EmbeddingCache(
-            max_size=max_size,
-            ttl_minutes=ttl_minutes,
-            auto_cleanup_interval=300
-        )
-        
-        logger.info(f"✅ Cache initialized: max_size={max_size}, ttl={ttl_minutes}min")
-    
-    async def _initialize_modules(self) -> None:
-        """Load and initialize emotion processing modules."""
-        logger.info("🧠 Initializing processing modules...")
-        
-        enabled_modules = self.config.pipeline.enabled_modules
-        device = self.config.resources.device
-        
-        for module_name in enabled_modules:
-            try:
-                # Get module configuration
-                module_config = self.config.models.dict().get(module_name, {})
-                
-                # Create module instance
-                module_instance = module_registry.create_instance(
-                    module_name, 
-                    module_config, 
-                    device
+            # Use inherited error handler
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='ERROR',
+                    context={'component': 'AffectiveProcessingCenter', 'phase': 'initialization'}
                 )
-                
-                self.modules[module_name] = module_instance
-                logger.info(f"   ✅ {module_name} module loaded")
-                
+            self.logger.error(f"Failed to initialize hub components: {e}")
+    
+    async def initialize_components(self):
+        """Initialize all APC components asynchronously."""
+        self.logger.info("Initializing APC components...")
+        
+        try:
+            # Initialize Redis cache
+            self.cache = EmbeddingCache(
+                redis_url=self.hub_config.cache.redis_url,
+                ttl_seconds=self.hub_config.cache.ttl_seconds,
+                max_size=self.hub_config.cache.max_size
+            )
+            await self.cache.connect()
+            self.logger.info("✅ Redis cache connected")
+            
+            # Load and initialize modules
+            self.modules = await self._load_modules()
+            self.logger.info(f"✅ Loaded {len(self.modules)} processing modules")
+            
+            # Initialize fusion component
+            self.fusion = create_fusion(
+                config=self.hub_config.fusion,
+                modules=self.modules
+            )
+            self.logger.info("✅ Fusion component initialized")
+            
+            # Create DAG executor
+            self.dag_executor = DAGExecutor(
+                modules=self.modules,
+                fusion=self.fusion,
+                cache=self.cache
+            )
+            self.logger.info("✅ DAG executor created")
+            
+            # Initialize ZMQ context
+            self.zmq_context = zmq.asyncio.Context()
+            
+            # Set up input subscriber
+            await self._setup_input_subscriber()
+            
+            # Set up output publisher
+            await self._setup_output_publisher()
+            
+            # Set up synthesis server
+            await self._setup_synthesis_server()
+            
+            self.logger.info("✅ All components initialized successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize components: {e}")
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='CRITICAL',
+                    context={'component': 'AffectiveProcessingCenter', 'phase': 'component_init'}
+                )
+            raise
+    
+    async def _load_modules(self) -> Dict[str, Any]:
+        """Load and initialize processing modules."""
+        modules = {}
+        
+        for module_name in self.hub_config.modules.enabled:
+            try:
+                module_class = module_registry.get(module_name)
+                if module_class:
+                    module = module_class()
+                    await module.initialize()
+                    modules[module_name] = module
+                    self.logger.info(f"  • Loaded module: {module_name}")
+                else:
+                    self.logger.warning(f"  ⚠ Module not found: {module_name}")
             except Exception as e:
-                logger.error(f"   ❌ Failed to load {module_name} module: {e}")
-                raise
+                self.logger.error(f"  ✗ Failed to load module {module_name}: {e}")
         
-        logger.info(f"✅ {len(self.modules)} modules initialized")
+        return modules
     
-    async def _initialize_fusion(self) -> None:
-        """Initialize the fusion layer."""
-        logger.info("🔀 Initializing fusion layer...")
-        
-        fusion_config = self.config.pipeline.fusion.dict()
-        self.fusion = create_fusion(fusion_config)
-        
-        logger.info(f"✅ Fusion layer initialized: {fusion_config['algorithm']}")
-    
-    async def _initialize_dag_executor(self) -> None:
-        """Initialize the DAG executor."""
-        logger.info("📊 Initializing DAG executor...")
-        
-        max_concurrent = self.config.resources.max_concurrent_gpu_tasks
-        
-        self.dag_executor = DAGExecutor(
-            modules=self.modules,
-            fusion=self.fusion,
-            cache=self.cache,
-            max_concurrent=max_concurrent
-        )
-        
-        # Get execution order for logging
-        execution_order = self.dag_executor.get_execution_order()
-        logger.info(f"✅ DAG executor initialized with execution order: {execution_order}")
-    
-    async def _initialize_transport(self) -> None:
-        """Initialize transport layer components."""
-        logger.info("🚀 Initializing transport layer...")
-        
-        # Initialize ZMQ context
-        self.zmq_context = zmq.asyncio.Context()
-        
-        # Initialize ECV publisher
-        pub_port = self.config.output.zmq_pub_port
-        topic = self.config.output.topic
-        
-        self.publisher = ZmqPublisher(
-            port=pub_port,
-            topic=topic,
-            bind_address="tcp://*"
-        )
-        await self.publisher.start()
-        
-        # Initialize synthesis server
-        synthesis_port = getattr(self.config.output, 'synthesis_port', 5706)
-        self.synthesis_server = ZmqSynthesisServer(port=synthesis_port)
-        
-        # Create synthesis handler using synthesis module
-        if 'synthesis' in self.modules:
-            self.synthesis_handler = SynthesisRequestHandler(self.modules['synthesis'])
-            self.synthesis_server.set_synthesis_handler(self.synthesis_handler.handle_request)
-        
-        await self.synthesis_server.start()
-        
-        logger.info(f"✅ Transport layer initialized: pub={pub_port}, synthesis={synthesis_port}")
-    
-    async def _initialize_input_subscriber(self) -> None:
-        """Initialize ZMQ subscriber for input data."""
-        logger.info("📡 Initializing input subscriber...")
-        
-        # Create subscriber socket
+    async def _setup_input_subscriber(self):
+        """Set up ZMQ subscriber for input data."""
         self.input_subscriber = self.zmq_context.socket(zmq.SUB)
         
-        # Subscribe to relevant topics (e.g., from RTAP)
-        input_port = getattr(self.config, 'input_port', 6553)
-        input_topics = getattr(self.config, 'input_topics', ['transcript', 'audio'])
+        # Connect to all configured endpoints
+        for endpoint in self.hub_config.zmq.subscriber.endpoints:
+            self.input_subscriber.connect(endpoint)
+            self.logger.info(f"  • Subscribed to: {endpoint}")
         
-        # Connect to input source
-        input_address = f"tcp://localhost:{input_port}"
-        self.input_subscriber.connect(input_address)
-        
-        # Subscribe to topics
-        for topic in input_topics:
-            self.input_subscriber.setsockopt_string(zmq.SUBSCRIBE, topic)
-        
-        # Set receive timeout
-        self.input_subscriber.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-        
-        logger.info(f"✅ Input subscriber initialized: {input_address}, topics={input_topics}")
+        # Subscribe to all topics
+        self.input_subscriber.subscribe(b"")
     
-    async def _warmup_components(self) -> None:
-        """Warmup all components for optimal performance."""
-        logger.info("🔥 Warming up components...")
-        
-        # Warmup DAG executor and modules
-        await self.dag_executor.warmup_modules()
-        
-        # Test publisher connection
-        await self.publisher.test_connection()
-        
-        # Test synthesis server
-        if self.synthesis_server.synthesis_handler:
-            test_result = await self.synthesis_server.test_synthesis()
-            if test_result['success']:
-                logger.info(f"   ✅ Synthesis test: {test_result['processing_time_ms']:.1f}ms")
-        
-        logger.info("✅ Component warmup complete")
+    async def _setup_output_publisher(self):
+        """Set up ZMQ publisher for output data."""
+        self.publisher = ZmqPublisher(
+            bind_address=self.hub_config.zmq.publisher.bind_address,
+            context=self.zmq_context
+        )
+        await self.publisher.start()
+        self.logger.info(f"  • Publisher bound to: {self.hub_config.zmq.publisher.bind_address}")
     
-    async def start(self) -> None:
-        """Start the main APC processing loop."""
-        if not self.is_initialized:
-            await self.initialize()
+    async def _setup_synthesis_server(self):
+        """Set up synthesis request server."""
+        self.synthesis_handler = SynthesisRequestHandler(
+            dag_executor=self.dag_executor,
+            cache=self.cache
+        )
         
-        if self.is_running:
-            logger.warning("APC already running")
-            return
+        self.synthesis_server = ZmqSynthesisServer(
+            handler=self.synthesis_handler,
+            bind_address=self.hub_config.zmq.synthesis_server.bind_address,
+            context=self.zmq_context
+        )
+        await self.synthesis_server.start()
+        self.logger.info(f"  • Synthesis server bound to: {self.hub_config.zmq.synthesis_server.bind_address}")
+    
+    async def process_message(self, message: bytes):
+        """
+        Process an incoming message through the APC pipeline.
         
-        self.is_running = True
-        
-        # Setup signal handlers for graceful shutdown
-        self._setup_signal_handlers()
-        
-        # Start main processing loop
-        self._main_loop_task = asyncio.create_task(self._main_processing_loop())
-        
-        logger.info("🎯 APC main processing loop started")
-        
+        Args:
+            message: Raw message bytes from ZMQ
+        """
         try:
-            # Wait for shutdown signal
-            await self._shutdown_event.wait()
-        except KeyboardInterrupt:
-            logger.info("Keyboard interrupt received")
-        finally:
-            await self.stop()
+            # Parse message
+            data = json.loads(message.decode('utf-8'))
+            
+            # Create payload
+            payload = Payload(
+                timestamp=datetime.utcnow(),
+                source=data.get('source', 'unknown'),
+                data=data
+            )
+            
+            # Process through DAG
+            result = await self.dag_executor.execute(payload)
+            
+            # Publish result
+            if self.publisher and result:
+                await self.publisher.publish(
+                    topic="emotional_context",
+                    data=result.dict()
+                )
+            
+            self._processed_messages += 1
+            
+            # Update metrics
+            if self.prometheus_exporter:
+                self.prometheus_exporter.record_request(
+                    method='process',
+                    endpoint='message',
+                    status='success',
+                    duration=0.0  # TODO: Add timing
+                )
+                
+        except Exception as e:
+            self._error_count += 1
+            self.logger.error(f"Error processing message: {e}")
+            
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='WARNING',
+                    context={'component': 'AffectiveProcessingCenter', 'phase': 'message_processing'}
+                )
+            
+            if self.prometheus_exporter:
+                self.prometheus_exporter.record_error(
+                    error_type='processing_error',
+                    severity='warning'
+                )
     
-    async def _main_processing_loop(self) -> None:
-        """Main processing loop that handles input and publishes results."""
-        logger.info("🔄 Main processing loop active")
-        
-        processing_times = []
+    async def run_processing_loop(self):
+        """Main processing loop for incoming messages."""
+        self.logger.info("Starting message processing loop...")
         
         while self.is_running:
             try:
-                # Receive input with timeout
-                try:
-                    topic_data = await self.input_subscriber.recv_multipart()
+                # Receive message with timeout
+                if await self.input_subscriber.poll(timeout=100):
+                    message = await self.input_subscriber.recv()
+                    await self.process_message(message)
                     
-                    if len(topic_data) >= 2:
-                        topic = topic_data[0].decode('utf-8')
-                        message_data = topic_data[1].decode('utf-8')
-                    else:
-                        continue
-                        
-                except zmq.Again:
-                    # Timeout - publish heartbeat and continue
-                    await self.publisher.publish_heartbeat()
-                    continue
-                
-                # Parse input payload
-                payload = await self._parse_input_payload(topic, message_data)
-                if not payload:
-                    continue
-                
-                # Process through DAG
-                start_time = time.time()
-                
-                try:
-                    emotional_context = await self.dag_executor.run(payload)
-                    processing_time = (time.time() - start_time) * 1000
-                    
-                    # Update processing time for emotional context
-                    emotional_context.processing_latency_ms = processing_time
-                    
-                    # Publish ECV
-                    success = await self.publisher.publish_ecv(emotional_context)
-                    
-                    if success:
-                        # Update statistics
-                        self.stats['messages_processed'] += 1
-                        self.stats['ecvs_published'] += 1
-                        
-                        processing_times.append(processing_time)
-                        if len(processing_times) > 100:
-                            processing_times = processing_times[-100:]
-                        
-                        self.stats['avg_processing_time_ms'] = sum(processing_times) / len(processing_times)
-                        
-                        logger.debug(f"Processed ECV: {emotional_context.primary_emotion.value} "
-                                   f"({processing_time:.1f}ms)")
-                    else:
-                        self.stats['processing_errors'] += 1
-                        logger.warning("Failed to publish ECV")
-                        
-                except Exception as e:
-                    self.stats['processing_errors'] += 1
-                    logger.error(f"DAG processing error: {e}")
-                
+            except asyncio.CancelledError:
+                break
             except Exception as e:
-                logger.error(f"Main loop error: {e}")
-                await asyncio.sleep(0.1)
-        
-        logger.info("Main processing loop stopped")
+                self.logger.error(f"Error in processing loop: {e}")
+                await asyncio.sleep(1)  # Brief pause before retry
     
-    async def _parse_input_payload(self, topic: str, message_data: str) -> Optional[Payload]:
-        """Parse input message into a Payload object."""
+    async def start(self):
+        """Start the Affective Processing Center service."""
         try:
-            data = json.loads(message_data)
+            self.logger.info("🚀 Starting Affective Processing Center...")
+            self._startup_time = datetime.utcnow()
             
-            if topic == 'transcript' or 'text' in data:
-                return Transcript(
-                    text=data.get('text', ''),
-                    confidence=data.get('confidence', 1.0),
-                    timestamp=datetime.fromisoformat(data.get('timestamp', datetime.utcnow().isoformat())),
-                    speaker_id=data.get('speaker_id'),
-                    language=data.get('language', 'en')
-                )
-            elif topic == 'audio' or 'audio_data' in data:
-                return AudioChunk(
-                    audio_data=bytes.fromhex(data.get('audio_data', '')),
-                    sample_rate=data.get('sample_rate', 16000),
-                    timestamp=datetime.fromisoformat(data.get('timestamp', datetime.utcnow().isoformat())),
-                    duration_ms=data.get('duration_ms', 0),
-                    speaker_id=data.get('speaker_id')
-                )
-            else:
-                logger.warning(f"Unknown payload type for topic {topic}")
-                return None
-                
+            # Initialize components
+            await self.initialize_components()
+            
+            # Update health status
+            if self.health_checker:
+                self.health_checker.set_healthy()
+            
+            self.is_running = True
+            
+            # Start processing loop
+            asyncio.create_task(self.run_processing_loop())
+            
+            self.logger.info("✅ Affective Processing Center started successfully")
+            
         except Exception as e:
-            logger.error(f"Failed to parse payload: {e}")
-            return None
+            self.logger.error(f"Failed to start APC: {e}")
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='CRITICAL',
+                    context={'component': 'AffectiveProcessingCenter', 'phase': 'startup'}
+                )
+            raise
     
-    def _setup_signal_handlers(self) -> None:
-        """Setup signal handlers for graceful shutdown."""
-        def signal_handler(signum, frame):
-            logger.info(f"Received signal {signum}, initiating graceful shutdown...")
-            asyncio.create_task(self._trigger_shutdown())
-        
-        signal.signal(signal.SIGTERM, signal_handler)
-        signal.signal(signal.SIGINT, signal_handler)
-    
-    async def _trigger_shutdown(self) -> None:
-        """Trigger graceful shutdown."""
-        self._shutdown_event.set()
-    
-    async def stop(self) -> None:
-        """Stop the APC application gracefully."""
-        if not self.is_running:
-            return
-        
-        logger.info("🛑 Stopping APC application...")
-        
+    async def stop(self):
+        """Stop the Affective Processing Center service gracefully."""
+        self.logger.info("🛑 Stopping Affective Processing Center...")
         self.is_running = False
         
-        # Cancel main loop task
-        if self._main_loop_task:
-            self._main_loop_task.cancel()
-            try:
-                await self._main_loop_task
-            except asyncio.CancelledError:
-                pass
+        # Stop synthesis server
+        if self.synthesis_server:
+            await self.synthesis_server.stop()
         
-        # Cleanup components
-        await self.cleanup()
+        # Stop publisher
+        if self.publisher:
+            await self.publisher.stop()
         
-        uptime = (datetime.utcnow() - self.startup_time).total_seconds()
-        logger.info(f"✅ APC stopped gracefully after {uptime:.1f}s uptime")
+        # Close subscriber
+        if self.input_subscriber:
+            self.input_subscriber.close()
+        
+        # Disconnect cache
+        if self.cache:
+            await self.cache.disconnect()
+        
+        # Cleanup modules
+        for module in self.modules.values():
+            if hasattr(module, 'cleanup'):
+                await module.cleanup()
+        
+        # Close ZMQ context
+        if self.zmq_context:
+            self.zmq_context.term()
+        
+        # Update health status
+        if self.health_checker:
+            self.health_checker.set_unhealthy()
+        
+        # Set shutdown event
+        self._shutdown_event.set()
+        
+        # Log statistics
+        if self._startup_time:
+            runtime = datetime.utcnow() - self._startup_time
+            self.logger.info(f"📊 Statistics:")
+            self.logger.info(f"  • Runtime: {runtime}")
+            self.logger.info(f"  • Messages processed: {self._processed_messages}")
+            self.logger.info(f"  • Errors: {self._error_count}")
+        
+        self.logger.info("✅ Affective Processing Center stopped successfully")
     
-    async def cleanup(self) -> None:
-        """Cleanup all resources."""
-        logger.info("🧹 Cleaning up resources...")
+    async def run(self):
+        """Run the Affective Processing Center service."""
+        # Start the service
+        await self.start()
         
-        try:
-            # Stop transport components
-            if self.synthesis_server:
-                await self.synthesis_server.stop()
-            
-            if self.publisher:
-                await self.publisher.stop()
-            
-            # Close input subscriber
-            if self.input_subscriber:
-                self.input_subscriber.close()
-            
-            # Shutdown DAG executor
-            if self.dag_executor:
-                await self.dag_executor.shutdown_modules()
-            
-            # Close ZMQ context
-            if self.zmq_context:
-                self.zmq_context.term()
-            
-            logger.info("✅ Cleanup complete")
-            
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
-        finally:
-            # Release GPU lease if held
-            try:
-                if getattr(self, '_lease_client', None):
-                    self._lease_client.release()
-                    logger.info("🔓 Released APC GPU lease")
-            except Exception:
-                pass
-    
-    def get_stats(self) -> Dict[str, Any]:
-        """Get application statistics."""
-        uptime = (datetime.utcnow() - self.startup_time).total_seconds()
+        # Wait for shutdown signal
+        await self._shutdown_event.wait()
         
-        stats = self.stats.copy()
-        stats.update({
-            'uptime_seconds': uptime,
-            'is_running': self.is_running,
-            'is_initialized': self.is_initialized,
-            'modules_loaded': len(self.modules),
-            'dag_stats': self.dag_executor.get_stats() if self.dag_executor else {},
-            'cache_stats': self.cache.get_stats() if self.cache else {},
-            'publisher_stats': self.publisher.get_stats() if self.publisher else {},
-            'synthesis_stats': self.synthesis_server.get_stats() if self.synthesis_server else {}
-        })
-        
-        return stats
-    
-    def get_health_status(self) -> Dict[str, Any]:
-        """Get application health status."""
-        is_healthy = (
-            self.is_running and 
-            self.is_initialized and
-            self.dag_executor is not None and
-            self.publisher is not None
-        )
-        
-        return {
-            'status': 'healthy' if is_healthy else 'degraded',
-            'is_running': self.is_running,
-            'is_initialized': self.is_initialized,
-            'components': {
-                'dag_executor': self.dag_executor is not None,
-                'cache': self.cache is not None,
-                'publisher': self.publisher is not None,
-                'synthesis_server': self.synthesis_server is not None,
-                'modules': len(self.modules)
-            },
-            'uptime_seconds': (datetime.utcnow() - self.startup_time).total_seconds()
-        }
+        # Stop the service
+        await self.stop()
 
 
-async def main():
-    """Main entry point for the APC application."""
-    import argparse
+def main():
+    """Main entry point for Affective Processing Center."""
+    # Create and run the hub
+    hub = AffectiveProcessingCenter(
+        port=int(os.getenv('APC_PORT', 5560)),
+        health_check_port=int(os.getenv('APC_HEALTH_PORT', 6560))
+    )
     
-    parser = argparse.ArgumentParser(description='Affective Processing Center')
-    parser.add_argument('--config', '-c', 
-                       help='Configuration file path',
-                       default='config/default.yaml')
-    parser.add_argument('--log-level', '-l',
-                       choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
-                       default='INFO',
-                       help='Log level')
+    # Setup signal handlers
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
-    args = parser.parse_args()
+    def signal_handler(sig, frame):
+        logger.info(f"Received signal {sig}, initiating shutdown...")
+        hub._shutdown_event.set()
     
-    # Set log level
-    logging.getLogger().setLevel(getattr(logging, args.log_level))
-    
-    # Create and start APC application
-    app = APCApplication(config_path=args.config)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     
     try:
-        await app.start()
+        # Run the hub
+        loop.run_until_complete(hub.run())
     except KeyboardInterrupt:
-        logger.info("Application interrupted by user")
-    except Exception as e:
-        logger.error(f"Application error: {e}")
-        return 1
-    
-    return 0
+        logger.info("Keyboard interrupt received")
+    finally:
+        # Cleanup
+        loop.close()
+        logger.info("AffectiveProcessingCenter shutdown complete")
 
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    main()

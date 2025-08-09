@@ -1,638 +1,381 @@
 #!/usr/bin/env python3
 """
-Real-Time Audio Pipeline (RTAP) - Main Application Entry Point
+Real-Time Audio Pipeline (RTAP) - Main Application
 
-Ultra-low-latency real-time audio processing service with ≤150ms p95 latency target.
-Integrates audio capture, wake word detection, speech recognition, language analysis,
-and real-time transcript broadcasting via ZMQ and WebSocket.
-
-Usage:
-    python3 app.py [--environment ENV] [--config CONFIG_FILE] [--log-level LEVEL]
-
-Environment Variables:
-    AUDIO_DEVICE: Audio input device name (default: system default)
-    RTAP_ENVIRONMENT: Runtime environment (default, main_pc, pc2)
-    RTAP_LOG_LEVEL: Logging level (DEBUG, INFO, WARNING, ERROR)
+This module provides the Real-Time Audio Pipeline service that inherits from BaseAgent
+and uses the approved golden utilities from the common directory.
 """
 
-import argparse
 import asyncio
 import logging
-import os
 import signal
 import sys
-import time
+import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Optional, Dict, Any
+from datetime import datetime
 
-import psutil
+# Add common to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Add project root to Python path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
+# Import BaseAgent and golden utilities
+from common.core.base_agent import BaseAgent
+from common.utils.unified_config_loader import UnifiedConfigLoader
+from common.utils.path_manager import PathManager
 
-from config.loader import ConfigurationError, UnifiedConfigLoader
+# Import RTAP core components
 from core.pipeline import AudioPipeline
-from core.telemetry import get_global_metrics
+from core.preprocessor import AudioPreprocessor
+from core.gpu_inference import GPUInferenceEngine
+from core.schemas import RTAPConfig, AudioFrame
+from transport.zmq_stream import StreamingServer
+from transport.grpc_service import RTAPGrpcService
 
-# Import with fallback for compatibility
-try:
-    from transport.schemas import EventTypes, create_event_notification
-    SCHEMAS_AVAILABLE = True
-except ImportError:
-    # Fallback for compatibility issues
-    SCHEMAS_AVAILABLE = False
-    class EventTypes:
-        PIPELINE_STARTED = "pipeline_started"
-        PIPELINE_STOPPED = "pipeline_stopped"
-        WAKE_WORD_DETECTED = "wake_word_detected"
-        PROCESSING_STARTED = "processing_started"
-        ERROR_OCCURRED = "error_occurred"
-
-    def create_event_notification(event_type, metadata=None):
-        return {"event_type": event_type, "metadata": metadata or {}}
-
-try:
-    from transport.schemas import EventTypes, create_event_notification
-except ImportError:
-    # Fallback for compatibility issues
-    class EventTypes:
-        PIPELINE_STARTED = "pipeline_started"
-        PIPELINE_STOPPED = "pipeline_stopped"
-    def create_event_notification(event_type, metadata=None):
-        return {"event_type": event_type, "metadata": metadata or {}}
-
-# Import transport components with graceful fallbacks
-try:
-    from transport.zmq_pub import ZmqPublisher
-    ZMQ_AVAILABLE = True
-except ImportError:
-    ZmqPublisher = None
-    ZMQ_AVAILABLE = False
-
-try:
-    from transport.ws_server import WebSocketServer
-    WEBSOCKET_AVAILABLE = True
-except ImportError:
-    WebSocketServer = None
-    WEBSOCKET_AVAILABLE = False
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
-class RTAPApplication:
+class RealTimeAudioPipeline(BaseAgent):
     """
-    Real-Time Audio Pipeline Application.
-
-    Main orchestrator for the RTAP service, managing configuration loading,
-    component initialization, concurrent startup, and graceful shutdown.
-
-    Features:
-    - Automatic configuration loading with environment detection
-    - Model warm-up for reduced first-request latency
-    - Concurrent component execution with asyncio.gather
-    - Comprehensive error handling and recovery
-    - Graceful shutdown with resource cleanup
-    - Performance monitoring and health checks
+    Real-Time Audio Pipeline - High-performance audio processing hub.
+    
+    Inherits from BaseAgent to leverage standardized health checking,
+    error handling, metrics, and configuration management.
     """
-
-    def __init__(self,
-                 environment: Optional[str] = None,
-                 config_file: Optional[str] = None,
-                 log_level: str = "INFO"):
+    
+    def __init__(self, **kwargs):
         """
-        Initialize RTAP application.
-
+        Initialize RTAP with BaseAgent foundation.
+        
         Args:
-            environment: Target environment (auto-detected if None)
-            config_file: Specific config file to use
-            log_level: Logging level
+            **kwargs: Arguments passed to BaseAgent
         """
-        self.environment = environment
-        self.config_file = config_file
-        self.log_level = log_level
-
-        # Setup logging first
-        self._setup_logging()
-        self.logger = logging.getLogger(__name__)
-
-        # Application state
-        self.config: Dict[str, Any] = {}
-        self.is_running = False
-        self.start_time = 0.0
-        self.session_id = f"rtap_{int(time.time())}"
-
+        # Initialize BaseAgent with all standard features
+        super().__init__(name='RealTimeAudioPipeline', **kwargs)
+        
+        # Load hub-specific configuration using UnifiedConfigLoader
+        config_loader = UnifiedConfigLoader()
+        self.hub_config = self._load_hub_config(config_loader)
+        
         # Core components
         self.pipeline: Optional[AudioPipeline] = None
-        self.zmq_publisher: Optional[ZmqPublisher] = None
-        self.websocket_server: Optional[WebSocketServer] = None
-
-        # Component tasks
-        self.component_tasks: List[asyncio.Task] = []
-        self.shutdown_event = asyncio.Event()
-
-        # Performance tracking
-        self.metrics = get_global_metrics()
-
-        self.logger.info(f"RTAP Application initialized (session: {self.session_id})")
-
-    def _setup_logging(self) -> None:
-        """Setup comprehensive logging configuration."""
-        # Convert log level
-        numeric_level = getattr(logging, self.log_level.upper(), logging.INFO)
-
-        # Configure root logger
-        logging.basicConfig(
-            level=numeric_level,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.StreamHandler(sys.stdout),
-                logging.FileHandler(f'rtap_{int(time.time())}.log')
-            ]
-        )
-
-        # Set specific logger levels for noisy libraries
-        logging.getLogger('asyncio').setLevel(logging.WARNING)
-        logging.getLogger('websockets').setLevel(logging.WARNING)
-
-    async def initialize_and_run(self) -> None:
+        self.preprocessor: Optional[AudioPreprocessor] = None
+        self.gpu_engine: Optional[GPUInferenceEngine] = None
+        
+        # Transport components
+        self.streaming_server: Optional[StreamingServer] = None
+        self.grpc_service: Optional[RTAPGrpcService] = None
+        
+        # State management
+        self.is_running = False
+        self._shutdown_event = asyncio.Event()
+        self._startup_time = None
+        self._frames_processed = 0
+        
+        # Initialize hub components
+        self._initialize_hub_components()
+        
+        self.logger.info(f"RealTimeAudioPipeline initialized on port {self.port}")
+    
+    def _load_hub_config(self, config_loader: UnifiedConfigLoader) -> RTAPConfig:
         """
-        Main application initialization and execution.
-
-        Performs complete application lifecycle:
-        1. Configuration loading and validation
-        2. Model warm-up for optimal performance
-        3. Component initialization
-        4. Concurrent startup with asyncio.gather
-        5. Runtime monitoring and health checks
-        6. Graceful shutdown handling
+        Load hub-specific configuration using the golden UnifiedConfigLoader.
+        
+        Args:
+            config_loader: The unified config loader instance
+            
+        Returns:
+            RTAPConfig object with merged configuration
         """
         try:
-            self.logger.info("=== Real-Time Audio Pipeline (RTAP) Starting ===")
-            self.start_time = time.perf_counter()
-
-            # Step 1: Load and validate configuration
-            await self._load_configuration()
-
-            # Step 2: Perform system checks
-            await self._perform_system_checks()
-
-            # Step 3: Warm up models and components
-            await self._warmup_models()
-
-            # Step 4: Initialize core components
-            await self._initialize_components()
-
-            # Step 5: Setup signal handlers for graceful shutdown
-            self._setup_signal_handlers()
-
-            # Step 6: Start all components concurrently
-            await self._start_components()
-
-            self.logger.info("RTAP application startup complete")
-
-            # Step 7: Wait for shutdown signal
-            await self._run_until_shutdown()
-
-        except Exception as e:
-            self.logger.error(f"Critical error in RTAP application: {e}")
-            await self._emergency_shutdown()
-            raise
-        finally:
-            await self._cleanup()
-
-    async def _load_configuration(self) -> None:
-        """Load and validate application configuration."""
-        try:
-            self.logger.info("Loading configuration...")
-
-            # Initialize configuration loader
-            config_loader = UnifiedConfigLoader()
-
-            # Load configuration with environment detection
-            self.config = config_loader.load_config(
-                environment=self.environment,
-                config_file=self.config_file,
-                validate=True
-            )
-
-            # Log configuration summary
-            self.logger.info(f"Configuration loaded: {self.config.get('title', 'Unknown')}")
-            self.logger.info(f"Environment: {self.environment or 'auto-detected'}")
-            self.logger.info(f"Audio: {self.config['audio']['sample_rate']}Hz, "
-                           f"{self.config['audio']['frame_ms']}ms frames")
-            self.logger.info(f"Ports: Events={self.config['output']['zmq_pub_port_events']}, "
-                           f"Transcripts={self.config['output']['zmq_pub_port_transcripts']}, "
-                           f"WebSocket={self.config['output']['websocket_port']}")
-
-            # Validate environment variables
-            env_vars = config_loader.validate_environment_variables(self.config)
-            if env_vars:
-                self.logger.debug("Environment variables in use:")
-                for var_name, var_info in env_vars.items():
-                    self.logger.debug(f"  {var_name}: {var_info['value']}")
-
-        except ConfigurationError as e:
-            self.logger.error(f"Configuration error: {e}")
-            raise
+            # Get base configuration
+            base_config = config_loader.get_agent_config('RealTimeAudioPipeline')
+            
+            # Determine environment (PC2 vs MainPC)
+            environment = os.getenv('RTAP_ENVIRONMENT', 'pc2')
+            
+            # Build RTAP-specific configuration
+            config_dict = {
+                'environment': environment,
+                'audio': {
+                    'sample_rate': int(os.getenv('SAMPLE_RATE', base_config.get('sample_rate', 16000))),
+                    'frame_size': int(os.getenv('FRAME_SIZE', base_config.get('frame_size', 512))),
+                    'channels': int(os.getenv('CHANNELS', base_config.get('channels', 1)))
+                },
+                'pipeline': {
+                    'buffer_size': int(os.getenv('BUFFER_SIZE', base_config.get('buffer_size', 100))),
+                    'max_latency_ms': int(os.getenv('MAX_LATENCY_MS', base_config.get('max_latency_ms', 50)))
+                },
+                'transport': {
+                    'zmq_port': int(os.getenv('RTAP_ZMQ_PORT', base_config.get('zmq_port', 5557))),
+                    'grpc_port': int(os.getenv('RTAP_GRPC_PORT', base_config.get('grpc_port', 5558)))
+                },
+                'gpu': {
+                    'enabled': environment == 'main_pc',
+                    'device': os.getenv('CUDA_DEVICE', base_config.get('cuda_device', 'cuda:0'))
+                }
+            }
+            
+            return RTAPConfig(**config_dict)
+            
         except Exception as e:
             self.logger.error(f"Failed to load configuration: {e}")
-            raise
-
-    async def _perform_system_checks(self) -> None:
-        """Perform system compatibility and resource checks."""
-        self.logger.info("Performing system checks...")
-
+            # Return default configuration
+            return RTAPConfig()
+    
+    def _initialize_hub_components(self):
+        """
+        Initialize hub-specific components.
+        
+        Uses inherited features from BaseAgent:
+        - self.health_checker (StandardizedHealthChecker)
+        - self.unified_error_handler (UnifiedErrorHandler)
+        - self.prometheus_exporter (PrometheusExporter)
+        - self.logger (Rotating JSON logger)
+        """
         try:
-            # Check Python version
-            python_version = sys.version_info
-            if python_version < (3, 8):
-                raise RuntimeError(f"Python 3.8+ required, found {python_version}")
-
-            # Check memory availability
-            memory = psutil.virtual_memory()
-            if memory.available < 1024 * 1024 * 1024:  # 1GB
-                self.logger.warning(f"Low memory available: {memory.available / (1024**3):.1f}GB")
-
-            # Check CPU cores
-            cpu_count = psutil.cpu_count()
-            if cpu_count < 2:
-                self.logger.warning(f"Limited CPU cores: {cpu_count}")
-
-            # Check disk space
-            disk = psutil.disk_usage('.')
-            if disk.free < 1024 * 1024 * 100:  # 100MB
-                self.logger.warning(f"Low disk space: {disk.free / (1024**2):.1f}MB")
-
-            # Check component availability
-            self.logger.info(f"Component availability: ZMQ={ZMQ_AVAILABLE}, WebSocket={WEBSOCKET_AVAILABLE}")
-
-            self.logger.info("System checks completed")
-
+            # Register hub capabilities with service discovery
+            if self.hub_config.environment == 'pc2':
+                self.capabilities = [
+                    'audio_preprocessing',
+                    'feature_extraction',
+                    'noise_reduction',
+                    'frame_streaming'
+                ]
+            else:  # main_pc
+                self.capabilities = [
+                    'gpu_inference',
+                    'speech_recognition',
+                    'audio_synthesis',
+                    'real_time_processing'
+                ]
+            
+            # Register with digital twin (inherited from BaseAgent)
+            self._register_with_digital_twin()
+            
+            self.logger.info("Hub components initialized successfully")
+            
         except Exception as e:
-            self.logger.error(f"System check failed: {e}")
-            raise
-
-    async def _warmup_models(self) -> None:
-        """Warm up STT and wake-word models for reduced first-request latency."""
-        self.logger.info("Starting model warm-up...")
-        warmup_start = time.perf_counter()
-
-        try:
-            # Note: In this implementation, individual stages handle their own warmup
-            # This function could be extended to perform global model preloading
-
-            # Warm up STT model (placeholder for future Whisper preloading)
-            stt_start = time.perf_counter()
-            await self._warmup_stt_model()
-            stt_time = time.perf_counter() - stt_start
-            self.logger.info(f"STT model warm-up completed in {stt_time*1000:.1f}ms")
-
-            # Warm up wake-word model (placeholder for future Porcupine preloading)
-            wakeword_start = time.perf_counter()
-            await self._warmup_wakeword_model()
-            wakeword_time = time.perf_counter() - wakeword_start
-            self.logger.info(f"Wake-word model warm-up completed in {wakeword_time*1000:.1f}ms")
-
-            total_warmup_time = time.perf_counter() - warmup_start
-            self.logger.info(f"Model warm-up completed in {total_warmup_time*1000:.1f}ms")
-
-            # Record warmup metrics
-            self.metrics.record_warmup_time('global', total_warmup_time)
-
-        except Exception as e:
-            self.logger.error(f"Model warm-up failed: {e}")
-            # Continue execution - warmup failure shouldn't stop the service
-
-    async def _warmup_stt_model(self) -> None:
-        """Warm up Speech-to-Text model (Whisper)."""
-        # Placeholder for future Whisper model preloading
-        # In production, this would load the Whisper model into memory
-        await asyncio.sleep(0.1)  # Simulate warmup time
-        self.logger.debug("STT model warm-up (placeholder)")
-
-    async def _warmup_wakeword_model(self) -> None:
-        """Warm up wake-word detection model (Porcupine)."""
-        # Placeholder for future Porcupine model preloading
-        # In production, this would load the Porcupine model into memory
-        await asyncio.sleep(0.05)  # Simulate warmup time
-        self.logger.debug("Wake-word model warm-up (placeholder)")
-
-    async def _initialize_components(self) -> None:
-        """Initialize all core components."""
-        self.logger.info("Initializing components...")
-
-        try:
-            # Initialize AudioPipeline
-            self.logger.info("Initializing AudioPipeline...")
-            self.pipeline = AudioPipeline(self.config)
-
-            # Initialize ZMQ Publisher if available
-            if ZMQ_AVAILABLE and ZmqPublisher:
-                self.logger.info("Initializing ZMQ Publisher...")
-                self.zmq_publisher = ZmqPublisher(self.config)
-                self.zmq_publisher.set_session_id(self.session_id)
-            else:
-                self.logger.warning("ZMQ Publisher not available")
-
-            # Initialize WebSocket Server if available
-            if WEBSOCKET_AVAILABLE and WebSocketServer:
-                self.logger.info("Initializing WebSocket Server...")
-                self.websocket_server = WebSocketServer(self.config)
-            else:
-                self.logger.warning("WebSocket Server not available")
-
-            self.logger.info("Component initialization completed")
-
-        except Exception as e:
-            self.logger.error(f"Component initialization failed: {e}")
-            raise
-
-    def _setup_signal_handlers(self) -> None:
-        """Setup signal handlers for graceful shutdown."""
-        def signal_handler(signum, frame):
-            self.logger.info(f"Received signal {signum}, initiating shutdown...")
-            asyncio.create_task(self.shutdown())
-
-        # Register signal handlers
-        signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
-        signal.signal(signal.SIGTERM, signal_handler)  # Termination request
-
-        if hasattr(signal, 'SIGHUP'):
-            signal.signal(signal.SIGHUP, signal_handler)  # Hangup
-
-        self.logger.debug("Signal handlers registered")
-
-    async def _start_components(self) -> None:
-        """Start all components concurrently using asyncio.gather."""
-        self.logger.info("Starting components concurrently...")
-
-        # Prepare component coroutines
-        coroutines = []
-
-        # Add pipeline startup
-        if self.pipeline:
-            coroutines.append(self.pipeline.start())
-
-        # Add ZMQ publisher startup
-        if self.zmq_publisher:
-            coroutines.append(self.zmq_publisher.start())
-
-        # Add WebSocket server startup
-        if self.websocket_server:
-            coroutines.append(self.websocket_server.start())
-
-        if not coroutines:
-            raise RuntimeError("No components available to start")
-
-        # Connect pipeline output to publishers
-        if self.pipeline and (self.zmq_publisher or self.websocket_server):
-            coroutines.append(self._connect_pipeline_outputs())
-
-        # Start all components concurrently
-        self.logger.info(f"Starting {len(coroutines)} components...")
-
-        try:
-            # Create tasks for all components
-            self.component_tasks = [
-                asyncio.create_task(coro, name=f"component_{i}")
-                for i, coro in enumerate(coroutines)
-            ]
-
-            self.is_running = True
-
-            # Publish startup event
-            if self.zmq_publisher:
-                await self.zmq_publisher.publish_system_event(
-                    EventTypes.PIPELINE_STARTED,
-                    metadata={
-                        'session_id': self.session_id,
-                        'components': len(self.component_tasks),
-                        'startup_time_ms': (time.perf_counter() - self.start_time) * 1000
-                    }
+            # Use inherited error handler
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='ERROR',
+                    context={'component': 'RealTimeAudioPipeline', 'phase': 'initialization'}
                 )
-
-            self.logger.info("All components started successfully")
-
-        except Exception as e:
-            self.logger.error(f"Component startup failed: {e}")
-            await self._emergency_shutdown()
-            raise
-
-    async def _connect_pipeline_outputs(self) -> None:
-        """Connect pipeline output stream to transport publishers."""
-        if not self.pipeline:
-            return
-
-        self.logger.info("Connecting pipeline outputs to transport layer...")
-
+            self.logger.error(f"Failed to initialize hub components: {e}")
+    
+    async def initialize_pipeline(self):
+        """Initialize the audio processing pipeline."""
+        self.logger.info("Initializing audio pipeline...")
+        
         try:
-            # Get pipeline output stream
-            output_stream = self.pipeline.output_stream()
-
-            # Fan out to multiple publishers
-            async for output_data in output_stream:
-                try:
-                    # Send to ZMQ publisher
-                    if self.zmq_publisher:
-                        await self.zmq_publisher.consume_pipeline_output([output_data])
-
-                    # Send to WebSocket server
-                    if self.websocket_server:
-                        await self.websocket_server.consume_pipeline_output([output_data])
-
-                except Exception as e:
-                    self.logger.error(f"Error forwarding pipeline output: {e}")
-
-        except asyncio.CancelledError:
-            self.logger.info("Pipeline output connection cancelled")
-        except Exception as e:
-            self.logger.error(f"Pipeline output connection failed: {e}")
-
-    async def _run_until_shutdown(self) -> None:
-        """Run application until shutdown is requested."""
-        self.logger.info("RTAP application running - waiting for shutdown signal")
-
-        try:
-            # Wait for shutdown event or component failure
-            done, pending = await asyncio.wait(
-                [
-                    asyncio.create_task(self.shutdown_event.wait()),
-                    *self.component_tasks
-                ],
-                return_when=asyncio.FIRST_COMPLETED
+            # Initialize preprocessor (PC2 and MainPC)
+            self.preprocessor = AudioPreprocessor(
+                sample_rate=self.hub_config.audio.sample_rate,
+                frame_size=self.hub_config.audio.frame_size,
+                channels=self.hub_config.audio.channels
             )
-
-            # Check if any component failed
-            for task in done:
-                if task.exception() and not self.shutdown_event.is_set():
-                    self.logger.error(f"Component failed: {task.exception()}")
-                    await self.shutdown()
-
-        except Exception as e:
-            self.logger.error(f"Runtime error: {e}")
-            await self.shutdown()
-
-    async def shutdown(self) -> None:
-        """Gracefully shutdown the application."""
-        if self.shutdown_event.is_set():
-            return  # Already shutting down
-
-        self.logger.info("Initiating graceful shutdown...")
-        shutdown_start = time.perf_counter()
-
-        # Set shutdown event
-        self.shutdown_event.set()
-        self.is_running = False
-
-        try:
-            # Publish shutdown event
-            if self.zmq_publisher:
-                await self.zmq_publisher.publish_system_event(
-                    EventTypes.PIPELINE_STOPPED,
-                    metadata={
-                        'session_id': self.session_id,
-                        'uptime_seconds': time.perf_counter() - self.start_time
-                    }
+            await self.preprocessor.initialize()
+            self.logger.info("✅ Preprocessor initialized")
+            
+            # Initialize GPU engine if on MainPC
+            if self.hub_config.gpu.enabled:
+                self.gpu_engine = GPUInferenceEngine(
+                    device=self.hub_config.gpu.device
                 )
-
-            # Shutdown components in reverse order
-            if self.websocket_server:
-                await self.websocket_server.shutdown()
-
-            if self.zmq_publisher:
-                await self.zmq_publisher.shutdown()
-
-            if self.pipeline:
-                await self.pipeline.shutdown()
-
-            # Cancel any remaining tasks
-            for task in self.component_tasks:
-                if not task.done():
-                    task.cancel()
-
-            # Wait for tasks to complete with timeout
-            if self.component_tasks:
-                try:
-                    await asyncio.wait_for(
-                        asyncio.gather(*self.component_tasks, return_exceptions=True),
-                        timeout=5.0
-                    )
-                except asyncio.TimeoutError:
-                    self.logger.warning("Some tasks did not complete within timeout")
-
-            shutdown_time = time.perf_counter() - shutdown_start
-            self.logger.info(f"Graceful shutdown completed in {shutdown_time*1000:.1f}ms")
-
+                await self.gpu_engine.initialize()
+                self.logger.info("✅ GPU inference engine initialized")
+            
+            # Create pipeline
+            self.pipeline = AudioPipeline(
+                preprocessor=self.preprocessor,
+                gpu_engine=self.gpu_engine,
+                buffer_size=self.hub_config.pipeline.buffer_size,
+                max_latency_ms=self.hub_config.pipeline.max_latency_ms
+            )
+            await self.pipeline.initialize()
+            self.logger.info("✅ Audio pipeline created")
+            
+            # Initialize transport servers
+            await self._initialize_transport()
+            
         except Exception as e:
-            self.logger.error(f"Error during shutdown: {e}")
-
-    async def _emergency_shutdown(self) -> None:
-        """Emergency shutdown for critical errors."""
-        self.logger.error("Emergency shutdown initiated")
-
-        self.is_running = False
-        self.shutdown_event.set()
-
-        # Force cancel all tasks
-        for task in self.component_tasks:
-            task.cancel()
-
-    async def _cleanup(self) -> None:
-        """Final cleanup and resource deallocation."""
-        try:
-            # Final statistics
-            uptime = time.perf_counter() - self.start_time
-            final_stats = self.metrics.get_stats()
-
-            self.logger.info("=== RTAP Application Shutdown Complete ===")
-            self.logger.info(f"Session: {self.session_id}")
-            self.logger.info(f"Uptime: {uptime:.1f} seconds")
-            self.logger.info(f"Frames processed: {final_stats.get('frames_processed', 0)}")
-            self.logger.info(f"Transcripts completed: {final_stats.get('transcripts_completed', 0)}")
-            self.logger.info("All resources cleaned up successfully")
-
-        except Exception as e:
-            self.logger.error(f"Error in final cleanup: {e}")
-
-    def get_status(self) -> Dict[str, Any]:
-        """Get comprehensive application status."""
-        uptime = time.perf_counter() - self.start_time if self.start_time > 0 else 0
-
-        return {
-            'session_id': self.session_id,
-            'is_running': self.is_running,
-            'uptime_seconds': uptime,
-            'environment': self.environment,
-            'config_title': self.config.get('title', 'Unknown'),
-            'components': {
-                'pipeline': self.pipeline is not None,
-                'zmq_publisher': self.zmq_publisher is not None,
-                'websocket_server': self.websocket_server is not None,
-            },
-            'component_availability': {
-                'zmq': ZMQ_AVAILABLE,
-                'websocket': WEBSOCKET_AVAILABLE,
-            },
-            'metrics': self.metrics.get_stats() if self.metrics else {},
-        }
-
-
-async def main():
-    """Main entry point for the RTAP application."""
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(
-        description="Real-Time Audio Pipeline (RTAP) - Ultra-low-latency speech processing"
-    )
-    parser.add_argument(
-        '--environment', '-e',
-        choices=['default', 'main_pc', 'pc2'],
-        help='Target environment (auto-detected if not specified)'
-    )
-    parser.add_argument(
-        '--config', '-c',
-        help='Specific configuration file to use'
-    )
-    parser.add_argument(
-        '--log-level', '-l',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
-        default=os.environ.get('RTAP_LOG_LEVEL', 'INFO'),
-        help='Logging level (default: INFO)'
-    )
-    parser.add_argument(
-        '--version', '-v',
-        action='version',
-        version='RTAP 1.0'
-    )
-
-    args = parser.parse_args()
-
-    # Override with environment variables
-    environment = args.environment or os.environ.get('RTAP_ENVIRONMENT')
-
-    try:
-        # Create and run application
-        app = RTAPApplication(
-            environment=environment,
-            config_file=args.config,
-            log_level=args.log_level
+            self.logger.error(f"Failed to initialize pipeline: {e}")
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='CRITICAL',
+                    context={'component': 'RealTimeAudioPipeline', 'phase': 'pipeline_init'}
+                )
+            raise
+    
+    async def _initialize_transport(self):
+        """Initialize transport servers."""
+        # Initialize ZMQ streaming server
+        self.streaming_server = StreamingServer(
+            port=self.hub_config.transport.zmq_port,
+            pipeline=self.pipeline
         )
+        await self.streaming_server.start()
+        self.logger.info(f"✅ ZMQ streaming server on port {self.hub_config.transport.zmq_port}")
+        
+        # Initialize gRPC service
+        self.grpc_service = RTAPGrpcService(
+            port=self.hub_config.transport.grpc_port,
+            pipeline=self.pipeline
+        )
+        await self.grpc_service.start()
+        self.logger.info(f"✅ gRPC service on port {self.hub_config.transport.grpc_port}")
+    
+    async def process_audio_stream(self):
+        """Main audio processing loop."""
+        self.logger.info("Starting audio processing loop...")
+        
+        while self.is_running:
+            try:
+                # Process frames from pipeline
+                frame = await self.pipeline.get_next_frame()
+                if frame:
+                    # Process frame
+                    result = await self.pipeline.process_frame(frame)
+                    
+                    # Update metrics
+                    self._frames_processed += 1
+                    
+                    if self.prometheus_exporter:
+                        self.prometheus_exporter.record_request(
+                            method='process',
+                            endpoint='audio_frame',
+                            status='success',
+                            duration=frame.processing_time_ms / 1000.0
+                        )
+                
+                await asyncio.sleep(0.001)  # Small delay to prevent CPU spinning
+                
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                self.logger.error(f"Error in processing loop: {e}")
+                if self.unified_error_handler:
+                    self.unified_error_handler.report_error(
+                        error=e,
+                        severity='WARNING',
+                        context={'component': 'RealTimeAudioPipeline', 'phase': 'stream_processing'}
+                    )
+    
+    async def start(self):
+        """Start the Real-Time Audio Pipeline service."""
+        try:
+            self.logger.info("🚀 Starting Real-Time Audio Pipeline...")
+            self._startup_time = datetime.utcnow()
+            
+            # Initialize pipeline
+            await self.initialize_pipeline()
+            
+            # Update health status
+            if self.health_checker:
+                self.health_checker.set_healthy()
+            
+            self.is_running = True
+            
+            # Start processing loop
+            asyncio.create_task(self.process_audio_stream())
+            
+            self.logger.info(f"✅ RTAP started successfully ({self.hub_config.environment} mode)")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to start RTAP: {e}")
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='CRITICAL',
+                    context={'component': 'RealTimeAudioPipeline', 'phase': 'startup'}
+                )
+            raise
+    
+    async def stop(self):
+        """Stop the Real-Time Audio Pipeline service gracefully."""
+        self.logger.info("🛑 Stopping Real-Time Audio Pipeline...")
+        self.is_running = False
+        
+        # Stop transport servers
+        if self.streaming_server:
+            await self.streaming_server.stop()
+        
+        if self.grpc_service:
+            await self.grpc_service.stop()
+        
+        # Cleanup pipeline
+        if self.pipeline:
+            await self.pipeline.cleanup()
+        
+        # Cleanup GPU engine
+        if self.gpu_engine:
+            await self.gpu_engine.cleanup()
+        
+        # Update health status
+        if self.health_checker:
+            self.health_checker.set_unhealthy()
+        
+        # Set shutdown event
+        self._shutdown_event.set()
+        
+        # Log statistics
+        if self._startup_time:
+            runtime = datetime.utcnow() - self._startup_time
+            self.logger.info(f"📊 Statistics:")
+            self.logger.info(f"  • Runtime: {runtime}")
+            self.logger.info(f"  • Frames processed: {self._frames_processed}")
+            self.logger.info(f"  • Environment: {self.hub_config.environment}")
+        
+        self.logger.info("✅ Real-Time Audio Pipeline stopped successfully")
+    
+    async def run(self):
+        """Run the Real-Time Audio Pipeline service."""
+        # Start the service
+        await self.start()
+        
+        # Wait for shutdown signal
+        await self._shutdown_event.wait()
+        
+        # Stop the service
+        await self.stop()
 
-        await app.initialize_and_run()
 
+def main():
+    """Main entry point for Real-Time Audio Pipeline."""
+    # Create and run the hub
+    hub = RealTimeAudioPipeline(
+        port=int(os.getenv('RTAP_PORT', 5557)),
+        health_check_port=int(os.getenv('RTAP_HEALTH_PORT', 6557))
+    )
+    
+    # Setup signal handlers
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    def signal_handler(sig, frame):
+        logger.info(f"Received signal {sig}, initiating shutdown...")
+        hub._shutdown_event.set()
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    try:
+        # Run the hub
+        loop.run_until_complete(hub.run())
     except KeyboardInterrupt:
-        print("\nShutdown requested by user")
-        sys.exit(0)
-    except Exception as e:
-        print(f"Critical application error: {e}")
-        sys.exit(1)
+        logger.info("Keyboard interrupt received")
+    finally:
+        # Cleanup
+        loop.close()
+        logger.info("RealTimeAudioPipeline shutdown complete")
 
 
 if __name__ == "__main__":
-    # Run the application
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\nApplication interrupted")
-        sys.exit(0)
-    except Exception as e:
-        print(f"Application failed: {e}")
-        sys.exit(1)
+    main()

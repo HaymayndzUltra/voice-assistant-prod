@@ -1,49 +1,57 @@
-"""Main application entry-point for ModelOps Coordinator."""
+"""
+Main application entry-point for ModelOps Coordinator.
+
+This module provides the ModelOps Coordinator service that inherits from BaseAgent
+and uses the approved golden utilities from the common directory.
+"""
 
 import asyncio
 import signal
 import sys
-import time
+import os
 from typing import Optional, Any
 from datetime import datetime
 from pathlib import Path
 
-# Add project root to path for imports
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
+# Add common to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config.loader import load_config  # noqa: E402
-from core.kernel import Kernel  # noqa: E402
-from core.errors import ConfigurationError, ModelOpsError  # noqa: E402
-from transport.zmq_server import ZMQServer  # noqa: E402
-from transport.grpc_server import GRPCServer  # noqa: E402
-from transport.rest_api import RESTAPIServer  # noqa: E402
+# Import BaseAgent and golden utilities
+from common.core.base_agent import BaseAgent
+from common.utils.unified_config_loader import UnifiedConfigLoader
+from common.utils.path_manager import PathManager
+
+# Import hub-specific modules
+from core.kernel import Kernel
+from core.errors import ConfigurationError, ModelOpsError
+from transport.zmq_server import ZMQServer
+from transport.grpc_server import GRPCServer
+from transport.rest_api import RESTAPIServer
 
 
-class ModelOpsCoordinatorApp:
+class ModelOpsCoordinator(BaseAgent):
     """
-    Main ModelOps Coordinator application.
+    ModelOps Coordinator - Central GPU resource management and model lifecycle hub.
     
-    Manages the complete application lifecycle including:
-    - Configuration loading
-    - Kernel initialization  
-    - Server startup and coordination
-    - Graceful shutdown handling
+    Inherits from BaseAgent to leverage standardized health checking,
+    error handling, metrics, and configuration management.
     """
     
-    def __init__(self, config_file: Optional[str] = None, config_dir: str = "config"):
+    def __init__(self, **kwargs):
         """
-        Initialize ModelOps Coordinator application.
+        Initialize ModelOps Coordinator with BaseAgent foundation.
         
         Args:
-            config_file: Optional specific config file
-            config_dir: Configuration directory
+            **kwargs: Arguments passed to BaseAgent
         """
-        self.config_file = config_file
-        self.config_dir = config_dir
+        # Initialize BaseAgent with all standard features
+        super().__init__(name='ModelOpsCoordinator', **kwargs)
+        
+        # Load hub-specific configuration using UnifiedConfigLoader
+        config_loader = UnifiedConfigLoader()
+        self.hub_config = self._load_hub_config(config_loader)
         
         # Core components
-        self.config: Optional[Any] = None
         self.kernel: Optional[Kernel] = None
         
         # Server instances
@@ -56,407 +64,307 @@ class ModelOpsCoordinatorApp:
         self._shutdown_event = asyncio.Event()
         self._startup_time: Optional[datetime] = None
         
-        # Shutdown handling
-        self._shutdown_handlers = []
-        self._setup_signal_handlers()
+        # Initialize hub components
+        self._initialize_hub_components()
+        
+        self.logger.info(f"ModelOpsCoordinator initialized on port {self.port}")
     
-    def _setup_signal_handlers(self):
-        """Setup signal handlers for graceful shutdown."""
-        def signal_handler(signum, frame):
-            """Handle shutdown signals."""
-            print(f"\n🛑 Received signal {signum}, initiating graceful shutdown...")
+    def _load_hub_config(self, config_loader: UnifiedConfigLoader) -> Any:
+        """
+        Load hub-specific configuration using the golden UnifiedConfigLoader.
+        
+        Args:
+            config_loader: The unified config loader instance
             
-            # Set shutdown event in async context
-            if self._shutdown_event:
-                try:
-                    loop = asyncio.get_running_loop()
-                    loop.call_soon_threadsafe(self._shutdown_event.set)
-                except RuntimeError:
-                    # No running loop, handle synchronously
-                    asyncio.run(self._shutdown_async())
+        Returns:
+            Configuration object
+        """
+        try:
+            # Get base configuration
+            base_config = config_loader.get_agent_config('ModelOpsCoordinator')
+            
+            # Apply environment overrides
+            config = {
+                'server': {
+                    'zmq_port': int(os.getenv('MOC_ZMQ_PORT', base_config.get('zmq_port', 7211))),
+                    'grpc_port': int(os.getenv('MOC_GRPC_PORT', base_config.get('grpc_port', 7212))),
+                    'rest_port': int(os.getenv('MOC_REST_PORT', base_config.get('rest_port', 8008))),
+                    'max_workers': int(os.getenv('MOC_MAX_WORKERS', base_config.get('max_workers', 10)))
+                },
+                'resources': {
+                    'gpu_poll_interval': int(os.getenv('GPU_POLL_INTERVAL', base_config.get('gpu_poll_interval', 5))),
+                    'vram_soft_limit_mb': int(os.getenv('VRAM_SOFT_LIMIT_MB', base_config.get('vram_soft_limit_mb', 24000))),
+                    'eviction_threshold_pct': int(os.getenv('EVICTION_THRESHOLD_PCT', base_config.get('eviction_threshold_pct', 90)))
+                },
+                'models': {
+                    'preload': base_config.get('preload', []),
+                    'default_dtype': os.getenv('DEFAULT_DTYPE', base_config.get('default_dtype', 'float16')),
+                    'quantization': os.getenv('ENABLE_QUANTIZATION', base_config.get('quantization', 'true')).lower() == 'true'
+                },
+                'learning': {
+                    'enable_auto_tune': os.getenv('ENABLE_AUTO_TUNE', base_config.get('enable_auto_tune', 'true')).lower() == 'true',
+                    'max_parallel_jobs': int(os.getenv('MAX_PARALLEL_JOBS', base_config.get('max_parallel_jobs', 2))),
+                    'job_store': os.getenv('JOB_STORE', base_config.get('job_store', 'learning_jobs.db'))
+                },
+                'goals': {
+                    'policy': os.getenv('GOAL_POLICY', base_config.get('policy', 'priority_queue')),
+                    'max_active_goals': int(os.getenv('MAX_ACTIVE_GOALS', base_config.get('max_active_goals', 5)))
+                },
+                'resilience': {
+                    'circuit_breaker': base_config.get('circuit_breaker', {}),
+                    'bulkhead': base_config.get('bulkhead', {})
+                }
+            }
+            
+            return config
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load configuration: {e}")
+            # Return minimal default configuration
+            return {
+                'server': {'zmq_port': 7211, 'grpc_port': 7212, 'rest_port': 8008, 'max_workers': 10},
+                'resources': {'gpu_poll_interval': 5, 'vram_soft_limit_mb': 24000, 'eviction_threshold_pct': 90},
+                'models': {'preload': [], 'default_dtype': 'float16', 'quantization': True},
+                'learning': {'enable_auto_tune': True, 'max_parallel_jobs': 2, 'job_store': 'learning_jobs.db'},
+                'goals': {'policy': 'priority_queue', 'max_active_goals': 5},
+                'resilience': {'circuit_breaker': {}, 'bulkhead': {}}
+            }
+    
+    def _initialize_hub_components(self):
+        """
+        Initialize hub-specific components.
         
-        # Register signal handlers
-        signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
-        signal.signal(signal.SIGTERM, signal_handler)  # Termination request
-        
-        # Windows compatibility
-        if hasattr(signal, 'SIGBREAK'):
-            signal.signal(signal.SIGBREAK, signal_handler)
+        Uses inherited features from BaseAgent:
+        - self.health_checker (StandardizedHealthChecker)
+        - self.unified_error_handler (UnifiedErrorHandler)
+        - self.prometheus_exporter (PrometheusExporter)
+        - self.logger (Rotating JSON logger)
+        """
+        try:
+            # Register hub capabilities with service discovery
+            self.capabilities = [
+                'gpu_management',
+                'model_lifecycle',
+                'inference_routing',
+                'learning_orchestration',
+                'goal_management',
+                'vram_optimization',
+                'gpu_lease_api'
+            ]
+            
+            # Register with digital twin (inherited from BaseAgent)
+            self._register_with_digital_twin()
+            
+            self.logger.info("Hub components initialized successfully")
+            
+        except Exception as e:
+            # Use inherited error handler
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='ERROR',
+                    context={'component': 'ModelOpsCoordinator', 'phase': 'initialization'}
+                )
+            self.logger.error(f"Failed to initialize hub components: {e}")
     
     async def start(self):
-        """Start the ModelOps Coordinator application."""
+        """
+        Start the ModelOps Coordinator service.
+        """
         try:
-            print("🚀 Starting ModelOps Coordinator...")
+            self.logger.info("Starting ModelOpsCoordinator...")
             self._startup_time = datetime.utcnow()
             
-            # Load configuration
-            await self._load_configuration()
-            
-            # Initialize kernel
+            # Initialize kernel with configuration
             await self._initialize_kernel()
             
             # Start servers concurrently
             await self._start_servers()
             
+            # Update health status
+            if self.health_checker:
+                self.health_checker.set_healthy()
+            
             self._running = True
-            print("✅ ModelOps Coordinator started successfully!")
-            
-            # Print startup summary
-            self._print_startup_summary()
-            
-            # Wait for shutdown signal
-            await self._wait_for_shutdown()
+            self.logger.info("✅ ModelOpsCoordinator started successfully")
             
         except Exception as e:
-            print(f"❌ Failed to start ModelOps Coordinator: {e}")
-            await self._cleanup()
+            self.logger.error(f"Failed to start ModelOpsCoordinator: {e}")
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='CRITICAL',
+                    context={'component': 'ModelOpsCoordinator', 'phase': 'startup'}
+                )
             raise
     
-    async def _load_configuration(self):
-        """Load and validate configuration."""
-        print("📋 Loading configuration...")
-        
-        try:
-            # Use UnifiedConfigLoader to load config
-            self.config = load_config(
-                config_file=self.config_file,
-                config_dir=self.config_dir
-            )
-            print(f"✅ Configuration loaded from {self.config_dir}")
-            
-            # Log configuration sources
-            from config.loader import UnifiedConfigLoader
-            loader = UnifiedConfigLoader(self.config_dir)
-            loader.load_config(self.config_file)
-            sources = loader.get_source_info()
-            
-            print("📂 Configuration sources:")
-            for source in sources:
-                if source['loaded']:
-                    print(f"   • {source['path']} ({source['type']}, priority: {source['priority']})")
-            
-        except Exception as e:
-            raise ConfigurationError(f"Configuration loading failed: {e}", "CONFIG_LOAD_FAILED")
-    
     async def _initialize_kernel(self):
-        """Initialize the ModelOps kernel."""
-        print("🔧 Initializing ModelOps kernel...")
-        
+        """Initialize the kernel with all modules."""
         try:
-            # Create kernel with loaded configuration
-            self.kernel = Kernel(self.config)
+            # Convert config dict to the format expected by Kernel
+            from core.schemas import Config
+            kernel_config = Config(
+                server=self.hub_config['server'],
+                resources=self.hub_config['resources'],
+                models=self.hub_config['models'],
+                learning=self.hub_config['learning'],
+                goals=self.hub_config['goals'],
+                resilience=self.hub_config['resilience']
+            )
             
-            # Wait a moment for kernel initialization
-            await asyncio.sleep(0.1)
+            self.kernel = Kernel(kernel_config)
+            await self.kernel.initialize()
+            self.logger.info("✅ Kernel initialized successfully")
             
-            # Verify kernel health
-            if self.kernel.is_healthy():
-                print("✅ Kernel initialized and healthy")
-            else:
-                raise ModelOpsError("Kernel health check failed", "KERNEL_UNHEALTHY")
-                
         except Exception as e:
-            raise ModelOpsError(f"Kernel initialization failed: {e}", "KERNEL_INIT_FAILED")
+            self.logger.error(f"❌ Failed to initialize kernel: {e}")
+            raise ModelOpsError(f"Kernel initialization failed: {e}")
     
     async def _start_servers(self):
         """Start all transport servers concurrently."""
-        print("🌐 Starting transport servers...")
-        
         try:
-            # Create server instances
-            self._create_server_instances()
+            server_tasks = []
             
-            # Start servers concurrently
-            await self._start_servers_concurrent()
+            # Start ZMQ server
+            if self.hub_config['server'].get('zmq_port'):
+                self.zmq_server = ZMQServer(
+                    self.kernel,
+                    port=self.hub_config['server']['zmq_port']
+                )
+                server_tasks.append(asyncio.create_task(
+                    self.zmq_server.start(),
+                    name="zmq-server"
+                ))
+                self.logger.info(f"🚀 Starting ZMQ server on port {self.hub_config['server']['zmq_port']}")
             
-            print("✅ All transport servers started successfully")
+            # Start gRPC server
+            if self.hub_config['server'].get('grpc_port'):
+                self.grpc_server = GRPCServer(
+                    self.kernel,
+                    port=self.hub_config['server']['grpc_port'],
+                    max_workers=self.hub_config['server']['max_workers']
+                )
+                server_tasks.append(asyncio.create_task(
+                    self.grpc_server.start(),
+                    name="grpc-server"
+                ))
+                self.logger.info(f"🚀 Starting gRPC server on port {self.hub_config['server']['grpc_port']}")
+            
+            # Start REST API server
+            if self.hub_config['server'].get('rest_port'):
+                self.rest_server = RESTAPIServer(
+                    self.kernel,
+                    host="0.0.0.0",
+                    port=self.hub_config['server']['rest_port']
+                )
+                server_tasks.append(asyncio.create_task(
+                    self.rest_server.start(),
+                    name="rest-server"
+                ))
+                self.logger.info(f"🚀 Starting REST API server on port {self.hub_config['server']['rest_port']}")
+            
+            # Wait for all servers to start
+            if server_tasks:
+                await asyncio.gather(*server_tasks)
+            
+            self.logger.info("✅ All servers started successfully")
             
         except Exception as e:
-            raise ModelOpsError(f"Server startup failed: {e}", "SERVER_START_FAILED")
+            self.logger.error(f"❌ Failed to start servers: {e}")
+            raise
     
-    def _create_server_instances(self):
-        """Create server instances with kernel."""
-        # ZMQ Server
-        zmq_bind_address = f"tcp://*:{self.config.server.zmq_port}"
-        self.zmq_server = ZMQServer(
-            kernel=self.kernel,
-            bind_address=zmq_bind_address,
-            max_workers=self.config.server.max_workers
-        )
-        
-        # gRPC Server
-        grpc_bind_address = f"[::]:{self.config.server.grpc_port}"
-        self.grpc_server = GRPCServer(
-            kernel=self.kernel,
-            bind_address=grpc_bind_address,
-            max_workers=self.config.server.max_workers
-        )
-        
-        # REST API Server
-        self.rest_server = RESTAPIServer(
-            kernel=self.kernel,
-            host="0.0.0.0",
-            port=self.config.server.rest_port
-        )
-    
-    async def _start_servers_concurrent(self):
-        """Start servers concurrently using asyncio."""
-        async def start_zmq():
-            """Start ZMQ server."""
-            try:
-                self.zmq_server.start()
-                print(f"✅ ZMQ server listening on port {self.config.server.zmq_port}")
-            except Exception as e:
-                print(f"❌ ZMQ server failed: {e}")
-                raise
-        
-        async def start_grpc():
-            """Start gRPC server."""
-            try:
-                self.grpc_server.start()
-                print(f"✅ gRPC server listening on port {self.config.server.grpc_port}")
-            except Exception as e:
-                print(f"❌ gRPC server failed: {e}")
-                raise
-        
-        async def start_rest():
-            """Start REST API server."""
-            try:
-                self.rest_server.start()
-                print(f"✅ REST API server listening on port {self.config.server.rest_port}")
-                await asyncio.sleep(0.5)  # Give REST server time to start
-            except Exception as e:
-                print(f"❌ REST API server failed: {e}")
-                raise
-        
-        # Start all servers concurrently
-        await asyncio.gather(
-            start_zmq(),
-            start_grpc(),
-            start_rest(),
-            return_exceptions=False
-        )
-    
-    def _print_startup_summary(self):
-        """Print startup summary information."""
-        uptime = datetime.utcnow() - self._startup_time
-        
-        print("\n" + "="*60)
-        print("🎉 ModelOps Coordinator - Startup Complete")
-        print("="*60)
-        print("📊 System Status:")
-        print(f"   • Startup Time: {uptime.total_seconds():.2f}s")
-        print(f"   • Kernel Health: {'✅ Healthy' if self.kernel.is_healthy() else '❌ Unhealthy'}")
-        print(f"   • Configuration: {len(self.config.__dict__)} sections loaded")
-        
-        print("\n🌐 Transport Endpoints:")
-        print(f"   • ZMQ Server:  tcp://localhost:{self.config.server.zmq_port}")
-        print(f"   • gRPC Server: localhost:{self.config.server.grpc_port}")
-        print(f"   • REST API:    http://localhost:{self.config.server.rest_port}")
-        print(f"   • Swagger UI:  http://localhost:{self.config.server.rest_port}/docs")
-        
-        # Get system status
-        system_status = self.kernel.get_system_status()
-        print("\n📈 Resource Status:")
-        print(f"   • GPU Available: {'✅' if system_status.get('gpu', {}).get('available', False) else '❌'}")
-        print(f"   • Models Loaded: {system_status.get('models', {}).get('loaded_count', 0)}")
-        print(f"   • Active Jobs: {system_status.get('learning', {}).get('running_jobs', 0)}")
-        print(f"   • Active Goals: {system_status.get('goals', {}).get('active_goals', 0)}")
-        
-        print("\n💡 Ready to accept requests!")
-        print("   Press Ctrl+C to shutdown gracefully")
-        print("="*60)
-    
-    async def _wait_for_shutdown(self):
-        """Wait for shutdown signal."""
-        try:
-            await self._shutdown_event.wait()
-        except KeyboardInterrupt:
-            print("\n🛑 Keyboard interrupt received")
-        
-        print("🔄 Initiating graceful shutdown...")
-        await self._shutdown_async()
-    
-    async def _shutdown_async(self):
-        """Perform graceful shutdown asynchronously."""
+    async def stop(self):
+        """
+        Stop the ModelOps Coordinator service gracefully.
+        """
         if not self._running:
             return
         
+        self.logger.info("🛑 Stopping ModelOpsCoordinator...")
         self._running = False
-        shutdown_start = time.time()
         
-        try:
-            print("📊 Saving system state...")
-            
-            # Stop accepting new requests
-            await self._stop_servers()
-            
-            # Shutdown kernel and save state
-            await self._shutdown_kernel()
-            
-            # Run custom shutdown handlers
-            await self._run_shutdown_handlers()
-            
-            shutdown_duration = time.time() - shutdown_start
-            print(f"✅ Graceful shutdown completed in {shutdown_duration:.2f}s")
-            
-        except Exception as e:
-            print(f"⚠️ Error during shutdown: {e}")
-        finally:
-            await self._cleanup()
-    
-    async def _stop_servers(self):
-        """Stop all transport servers."""
-        print("🌐 Stopping transport servers...")
-        
+        # Stop servers
         stop_tasks = []
         
-        # Stop ZMQ server
         if self.zmq_server:
-            async def stop_zmq():
-                try:
-                    self.zmq_server.stop()
-                    print("✅ ZMQ server stopped")
-                except Exception as e:
-                    print(f"⚠️ Error stopping ZMQ server: {e}")
-            stop_tasks.append(stop_zmq())
+            stop_tasks.append(self.zmq_server.stop())
         
-        # Stop gRPC server
         if self.grpc_server:
-            async def stop_grpc():
-                try:
-                    self.grpc_server.stop()
-                    print("✅ gRPC server stopped")
-                except Exception as e:
-                    print(f"⚠️ Error stopping gRPC server: {e}")
-            stop_tasks.append(stop_grpc())
+            stop_tasks.append(self.grpc_server.stop())
         
-        # Stop REST server
         if self.rest_server:
-            async def stop_rest():
-                try:
-                    self.rest_server.stop()
-                    print("✅ REST API server stopped")
-                except Exception as e:
-                    print(f"⚠️ Error stopping REST server: {e}")
-            stop_tasks.append(stop_rest())
+            stop_tasks.append(self.rest_server.stop())
         
-        # Wait for all servers to stop
         if stop_tasks:
             await asyncio.gather(*stop_tasks, return_exceptions=True)
-    
-    async def _shutdown_kernel(self):
-        """Shutdown kernel and save state."""
+        
+        # Shutdown kernel
         if self.kernel:
-            print("🔧 Shutting down kernel...")
-            try:
-                # Save learning job states
-                if hasattr(self.kernel, 'learning'):
-                    print("💾 Saving learning job states...")
-                    # Learning module handles its own state persistence
-                
-                # Save goal states
-                if hasattr(self.kernel, 'goals'):
-                    print("🎯 Saving goal states...")
-                    # Goal module handles its own state persistence
-                
-                # Shutdown kernel
-                self.kernel.shutdown()
-                print("✅ Kernel shutdown completed")
-                
-            except Exception as e:
-                print(f"⚠️ Error during kernel shutdown: {e}")
-    
-    async def _run_shutdown_handlers(self):
-        """Run custom shutdown handlers."""
-        for handler in self._shutdown_handlers:
-            try:
-                if asyncio.iscoroutinefunction(handler):
-                    await handler()
-                else:
-                    handler()
-            except Exception as e:
-                print(f"⚠️ Error in shutdown handler: {e}")
-    
-    async def _cleanup(self):
-        """Final cleanup operations."""
-        print("🧹 Performing final cleanup...")
+            await self.kernel.shutdown()
         
-        # Clear references
-        self.kernel = None
-        self.zmq_server = None
-        self.grpc_server = None
-        self.rest_server = None
+        # Update health status
+        if self.health_checker:
+            self.health_checker.set_unhealthy()
         
-        print("✅ Cleanup completed")
-    
-    def add_shutdown_handler(self, handler):
-        """Add custom shutdown handler."""
-        self._shutdown_handlers.append(handler)
-    
-    def is_running(self) -> bool:
-        """Check if application is running."""
-        return self._running
-    
-    def get_status(self) -> dict:
-        """Get application status."""
-        status = {
-            'running': self._running,
-            'startup_time': self._startup_time.isoformat() if self._startup_time else None,
-            'kernel_healthy': self.kernel.is_healthy() if self.kernel else False,
-            'servers': {
-                'zmq': self.zmq_server.is_running() if self.zmq_server else False,
-                'grpc': self.grpc_server.is_running() if self.grpc_server else False,
-                'rest': self.rest_server.is_running() if self.rest_server else False
-            }
-        }
+        # Set shutdown event
+        self._shutdown_event.set()
         
+        # Log runtime
         if self._startup_time:
-            uptime = datetime.utcnow() - self._startup_time
-            status['uptime_seconds'] = uptime.total_seconds()
+            runtime = datetime.utcnow() - self._startup_time
+            self.logger.info(f"⏱️ ModelOpsCoordinator ran for {runtime}")
         
-        return status
+        self.logger.info("✅ ModelOpsCoordinator stopped successfully")
+    
+    async def run(self):
+        """
+        Run the ModelOps Coordinator service.
+        """
+        # Start the service
+        await self.start()
+        
+        # Wait for shutdown signal
+        await self._shutdown_event.wait()
+        
+        # Stop the service
+        await self.stop()
 
 
-async def main():
-    """Main application entry point."""
-    import argparse
-    
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description='ModelOps Coordinator')
-    parser.add_argument('--config', type=str, help='Configuration file path')
-    parser.add_argument('--config-dir', type=str, default='config', help='Configuration directory')
-    parser.add_argument('--version', action='version', version='ModelOps Coordinator 1.0.0')
-    
-    args = parser.parse_args()
-    
-    # Create and start application
-    app = ModelOpsCoordinatorApp(
-        config_file=args.config,
-        config_dir=args.config_dir
+def main():
+    """
+    Main entry point for ModelOps Coordinator.
+    """
+    # Create and run the hub
+    hub = ModelOpsCoordinator(
+        port=int(os.getenv('MOC_PORT', 7212)),
+        health_check_port=int(os.getenv('MOC_HEALTH_PORT', 8212))
     )
     
+    # Setup signal handlers
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    def signal_handler(sig, frame):
+        print(f"\n🛑 Received signal {sig}, initiating graceful shutdown...")
+        hub._shutdown_event.set()
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    # Windows compatibility
+    if hasattr(signal, 'SIGBREAK'):
+        signal.signal(signal.SIGBREAK, signal_handler)
+    
     try:
-        await app.start()
+        # Run the hub
+        loop.run_until_complete(hub.run())
     except KeyboardInterrupt:
-        print("\n🛑 Interrupted by user")
-    except Exception as e:
-        print(f"❌ Application failed: {e}")
-        sys.exit(1)
+        print("Keyboard interrupt received")
+    finally:
+        # Cleanup
+        loop.close()
+        print("ModelOpsCoordinator shutdown complete")
 
 
 if __name__ == "__main__":
-    # Ensure we're running in the correct directory
-    if not Path("config/default.yaml").exists():
-        print("❌ Error: Must run from ModelOps Coordinator project root")
-        print("   Expected to find config/default.yaml")
-        sys.exit(1)
-    
-    # Run the application
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\n👋 Goodbye!")
-    except Exception as e:
-        print(f"❌ Fatal error: {e}")
-        sys.exit(1)
+    main()
