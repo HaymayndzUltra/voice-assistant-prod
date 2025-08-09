@@ -34,12 +34,12 @@ pc2_services:
   health_check_port: ${PORT_OFFSET}+6713
   required: true
   dependencies:
-  - ObservabilityHub
+  - UnifiedObservabilityCenter
   config:
     zmq_port: ${PORT_OFFSET}+5713
     grpc_port: ${PORT_OFFSET}+5714
     metrics_port: ${PORT_OFFSET}+8080
-    redis_url: "redis://localhost:6379/0"
+    redis_url: "${REDIS_URL:-redis://localhost:6379/0}"
     sqlite_path: "/workspace/memory.db"
 - name: RealTimeAudioPipelinePC2
   script_path: real_time_audio_pipeline/app.py
@@ -84,8 +84,8 @@ pc2_services:
 - name: VisionProcessingAgent
   script_path: pc2_code/agents/VisionProcessingAgent.py
   host: 0.0.0.0
-  port: ${PORT_OFFSET}+7150
-  health_check_port: ${PORT_OFFSET}+8150
+  port: ${PORT_OFFSET}+7160
+  health_check_port: ${PORT_OFFSET}+8160
   required: true
   dependencies:
   - CacheManager
@@ -129,7 +129,7 @@ pc2_services:
   health_check_port: ${PORT_OFFSET}+8113
   required: true
   dependencies:
-  - ObservabilityHub
+  - UnifiedObservabilityCenter
 - name: TaskScheduler
   script_path: pc2_code/agents/task_scheduler.py
   host: 0.0.0.0
@@ -153,7 +153,7 @@ pc2_services:
   health_check_port: ${PORT_OFFSET}+8118
   required: true
   dependencies:
-  - ObservabilityHub
+  - UnifiedObservabilityCenter
 - name: ProactiveContextMonitor
   script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py
   host: 0.0.0.0
@@ -211,8 +211,8 @@ pc2_services:
   required: true
   dependencies:
   - TaskScheduler
-- name: ObservabilityHub
-  script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+- name: UnifiedObservabilityCenter
+  script_path: unified_observability_center/app.py
   host: 0.0.0.0
   port: ${PORT_OFFSET}+9100
   health_check_port: ${PORT_OFFSET}+9110
@@ -240,7 +240,7 @@ pc2_services:
   health_check_port: ${PORT_OFFSET}+9008
   required: true
   dependencies:
-  - ObservabilityHub
+  - UnifiedObservabilityCenter
   config:
     docker_sock: /var/run/docker.sock
 - name: SpeechRelayService

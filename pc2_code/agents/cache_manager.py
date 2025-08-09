@@ -99,7 +99,7 @@ class CacheManager(BaseAgent):
         try:
             self.redis = redis.Redis(
                 host=os.environ.get('REDIS_HOST', 'localhost'),
-                port=int(os.environ.get('REDIS_PORT', 6379),
+                port=int(os.environ.get('REDIS_PORT', 6379)),
                 password=os.environ.get('REDIS_PASSWORD', None),
                 decode_responses=False  # Keep as bytes for compatibility
             )

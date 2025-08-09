@@ -140,7 +140,8 @@ class RemoteConnectorAgent(BaseAgent):
         self.health_port = self.port + 1
 
         # Initialize ZMQ Context
-        self.context = None  # Using pool
+        import zmq
+        self.context = zmq.Context.instance()
 
         # Socket to receive requests (main REP socket)
         self.receiver = self.context.socket(zmq.REP)

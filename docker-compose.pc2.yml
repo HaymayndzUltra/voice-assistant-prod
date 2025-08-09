@@ -182,7 +182,7 @@ services:
     networks:
       - backplane
     ports:
-      - "7150:7150"   # VisionProcessingAgent
+      - "7160:7160"   # VisionProcessingAgent
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
