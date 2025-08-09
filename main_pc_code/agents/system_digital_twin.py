@@ -920,8 +920,6 @@ class SystemDigitalTwinAgent(BaseAgent):
 # The official health check is handled by _get_health_status(), called via handle_request.
 
 if __name__ == "__main__":
-    import sys
-    
     # Check if async mode is requested
     use_async = "--async" in sys.argv or os.getenv("ASYNC_MODE", "false").lower() == "true"
     
