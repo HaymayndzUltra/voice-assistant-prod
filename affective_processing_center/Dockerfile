@@ -2,7 +2,7 @@
 # Multi-stage build for optimal production deployment
 
 # Build stage
-FROM nvidia/cuda:12.1-devel-ubuntu22.04 AS builder
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS builder
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -41,7 +41,7 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Production stage
-FROM nvidia/cuda:12.1-runtime-ubuntu22.04
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
