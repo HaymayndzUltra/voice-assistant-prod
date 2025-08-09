@@ -21,11 +21,11 @@
       },
       {
         "text": "PHASE 4: POST-REMEDIATION CI/QUALITY GATES\n\n**Task 28: Implement Post-Remediation CI/Quality Gates**\n*   **Context (Rationale):** To prevent regressions of the issues fixed in previous phases, automated checks must be integrated into the CI pipeline.\n*   **Technical Artifacts / Tasks:**\n    *   **Task:** Add the following automated checks to the CI pipeline.\n    *   **Suggested Fixes / Checks to Add:**\n        1.  **Duplicate-YAML-key detection:** A linter that fails the build if duplicate keys are found in YAML configs.\n        2.  **Unique (host,port) linter:** A script that validates port uniqueness across all configuration files to prevent bind conflicts.\n        3.  **Dependency graph validator:** A tool that validates the service dependency graph for each feature-flag permutation to catch invalid dependencies before runtime.\n        4.  **Thread-safety/race-condition static analysis:** A static analysis tool focused on detecting potential race conditions in components like the `ServiceRegistry`.\n        5.  **Unused/Duplicate Import Check:** Run `flake8 --select=F401,F811` to catch issues like the duplicate `get_env` import.\n\n**Concluding Step: Plan Completion Protocol**\nTo formally conclude this plan, update its state by executing the following protocol:\n1.  **Run Command (Review State):** `python3 todo_manager.py show 2024_unified_remediation_plan_v2`\n2.  **Run Command (Mark Complete):** `python3 todo_manager.py done 2024_unified_remediation_plan_v2 4`\n\n──────────────────────────────────\nIMPORTANT NOTE: This final phase is about prevention. Implementing these safeguards will codify the lessons learned from this remediation effort and automatically protect the system from similar issues in the future.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-24T12:00:00Z",
-    "updated": "2025-08-10T01:19:17.950732+08:00"
+    "updated": "2025-08-10T03:33:26.926345+08:00"
   }
 ]
