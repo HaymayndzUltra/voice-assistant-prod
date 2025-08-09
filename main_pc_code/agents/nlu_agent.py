@@ -22,7 +22,7 @@ except ImportError:
     ENHANCED_AVAILABLE = False
     
 import os
-from common.pools.zmq_pool import get_rep_socket
+import zmq
 import time
 import re
 import threading
@@ -144,12 +144,16 @@ class NLUAgent(BaseClass):
     def _perform_initialization(self):
         """Perform ZMQ initialization in background."""
         try:
-            # Create ZMQ context and socket
-            self.context = None  # Using pool
-            self.socket = get_rep_socket(self.endpoint).socket
+            # Use BaseAgent's already-initialized and bound REP socket; only set timeouts
+            if not hasattr(self, 'socket') or self.socket is None:
+                # Defensive: create if missing
+                if not hasattr(self, 'context') or self.context is None:
+                    self.context = zmq.Context()
+                self.socket = self.context.socket(zmq.REP)
+                self.socket.bind(f"tcp://*:{self.port}")
             self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.socket.bind(f"tcp://*:{self.port}")
+            self.socket.setsockopt(zmq.LINGER, 0)
             # Error reporting now handled by BaseAgent's UnifiedErrorHandler
             
             # Mark as initialized

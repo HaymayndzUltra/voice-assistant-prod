@@ -58,11 +58,25 @@ class Alert:
     last_triggered: float = 0.0
     
     def should_trigger(self, value: float) -> bool:
-        """Check if alert should trigger"""
-        # Simple condition evaluation
+        """Check if alert should trigger using safe operator parse (no eval)."""
+        import operator
+        import re
         try:
-            return eval(f"{value} {self.condition}")
-        except:
+            match = re.fullmatch(r"\s*(==|!=|>=|<=|>|<)\s*([-+]?[0-9]*\.?[0-9]+)\s*", self.condition)
+            if not match:
+                return False
+            op_str, rhs_str = match.groups()
+            rhs = float(rhs_str)
+            ops = {
+                '==': operator.eq,
+                '!=': operator.ne,
+                '>=': operator.ge,
+                '<=': operator.le,
+                '>': operator.gt,
+                '<': operator.lt,
+            }
+            return ops[op_str](float(value), rhs)
+        except Exception:
             return False
     
     def can_trigger(self) -> bool:

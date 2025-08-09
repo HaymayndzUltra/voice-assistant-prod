@@ -7,9 +7,8 @@ Manages and processes emotional states and responses
 import sys
 import os
 
-# Removed # Removed 
 import os
-from common.pools.zmq_pool import get_rep_socket
+import zmq
 import json
 import threading
 import time
@@ -53,9 +52,9 @@ class EmotionEngine(BaseAgent):
         self.pub_port = int(config.get("pub_port", agent_port + 2))
         
         # Initialize ZMQ components
-        self.context = None
-        self.socket = None
-        self.health_socket = None
+        # BaseAgent already creates and binds main REP socket (self.socket)
+        # and health REP socket (self.health_socket) with an initialized context.
+        # We only create additional sockets we need (e.g., PUB).
         self.pub_socket = None
         
         # Setup ZMQ
@@ -120,30 +119,29 @@ class EmotionEngine(BaseAgent):
         sys.exit(0)
 
     def setup_zmq(self):
-        """Set up ZMQ sockets with proper error handling"""
+        """Set up additional ZMQ sockets with proper error handling (avoid rebinding main sockets)."""
         try:
-            self.context = None  # Using pool
-            
-            # Main socket
-            self.socket = get_rep_socket(self.endpoint).socket
-            self.socket.setsockopt(zmq.LINGER, 0)
-            self.socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            
-            # Health socket
-            self.health_socket = self.context.socket(zmq.REP)
-            self.health_socket.setsockopt(zmq.LINGER, 0)
-            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            
-            # PUB socket for broadcasting
+            # BaseAgent already initialized self.context, self.socket and self.health_socket
+            # Configure timeouts on existing sockets
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.setsockopt(zmq.LINGER, 0)
+                self.socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+            if hasattr(self, 'health_socket') and self.health_socket:
+                self.health_socket.setsockopt(zmq.LINGER, 0)
+                self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+            # Create PUB socket for broadcasting
+            if not hasattr(self, 'context') or self.context is None:
+                # Defensive: ensure context exists (BaseAgent should set this)
+                import zmq as _zmq
+                self.context = _zmq.Context()
+
             self.pub_socket = self.context.socket(zmq.PUB)
             self.pub_socket.setsockopt(zmq.LINGER, 0)
-            
-            # Bind sockets with retry logic
-            self._bind_socket_with_retry(self.socket, self.port)
-            self._bind_socket_with_retry(self.health_socket, self.health_port)
             self._bind_socket_with_retry(self.pub_socket, self.pub_port)
-            
-            logger.info(f"Successfully set up ZMQ sockets on ports {self.port}, {self.health_port}, and {self.pub_port}")
+
+            logger.info(f"Successfully set up PUB socket on port {self.pub_port}")
             return True
         except Exception as e:
             logger.error(f"Error setting up ZMQ: {e}")

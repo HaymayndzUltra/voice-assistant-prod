@@ -13,6 +13,7 @@ from common.utils.path_manager import PathManager
 # Removed 
 import zmq
 import pickle
+import json as _json_safe
 import numpy as np
 import time
 from common.utils.log_setup import configure_logging
@@ -707,7 +708,12 @@ class FusedAudioPreprocessor(BaseAgent):
                 # Check for new audio data with timeout
                 try:
                     message = self.sub_socket.recv(flags=zmq.NOBLOCK)
-                    data = pickle.loads(message)
+                    # SECURITY: Avoid untrusted pickle.loads; prefer JSON
+                    try:
+                        data = _json_safe.loads(message.decode('utf-8'))
+                    except Exception:
+                        logger.error("Received non-JSON data on audio sub socket; rejecting for safety")
+                        continue
                 except zmq.Again:
                     time.sleep(0.001)  # Short sleep to avoid busy waiting
                     continue
@@ -775,9 +781,8 @@ class FusedAudioPreprocessor(BaseAgent):
                 # Calculate total processing time
                 processing_time = time.time() - start_time
                 
-                # Publish cleaned audio
+                # Publish cleaned audio (JSON-safe metadata; raw audio not serialized here for safety)
                 clean_audio_message = {
-                    'audio': normalized_audio,
                     'sample_rate': sample_rate,
                     'timestamp': timestamp,
                     'processing_time': processing_time,
@@ -786,7 +791,7 @@ class FusedAudioPreprocessor(BaseAgent):
                     'agc_enabled': AGC_ENABLED,
                     'agc_gain': float(self.current_gain) if AGC_ENABLED else 1.0
                 }
-                self.clean_audio_pub_socket.send(pickle.dumps(clean_audio_message))
+                self.clean_audio_pub_socket.send_json(clean_audio_message)
                 
                 # Track speech state changes and publish VAD events
                 if speech_detected and not self.speech_active:

@@ -119,7 +119,8 @@ class ExecutorAgent(BaseAgent):
         self.last_health_check = time.time()
         
         # Initialize ZMQ sockets - adding a socket for receiving commands
-        self.context = None  # Using pool
+        if not hasattr(self, 'context') or self.context is None:
+            self.context = zmq.Context()
         self.command_socket = self.context.socket(zmq.REP)
         bind_address = f"tcp://{self.bind_address}:{self.port}"
         self.command_socket.bind(bind_address)

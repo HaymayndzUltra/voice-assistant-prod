@@ -18,6 +18,7 @@ Monitors partial transcripts for interruption keywords and sends interrupt signa
 import zmq
 import pickle
 import json
+import json as _json_safe
 import time
 import logging
 from common.utils.log_setup import configure_logging
@@ -198,12 +199,16 @@ class StreamingInterruptHandler(BaseAgent):
                 
             self.last_interrupt_time = current_time
             
-            # Send interrupt signal
-            interrupt_msg = pickle.dumps({
+            # Send interrupt signal via JSON (avoid pickle)
+            interrupt_msg = {
                 'type': 'interrupt',
                 'timestamp': current_time
-            })
-            self.pub_socket.send(interrupt_msg)
+            }
+            try:
+                self.pub_socket.send_json(interrupt_msg)
+            except Exception:
+                # Fallback to string
+                self.pub_socket.send_string(json.dumps(interrupt_msg))
             logger.info("Published interrupt signal")
             
             # Also send direct stop command to TTS agent
@@ -224,7 +229,13 @@ class StreamingInterruptHandler(BaseAgent):
                 try:
                     # Check for partial transcripts
                     msg = self.sub_socket.recv(flags=zmq.NOBLOCK)
-                    data = pickle.loads(msg)
+                    # SECURITY: Avoid untrusted pickle.loads; expect JSON payloads only
+                    try:
+                        data = _json_safe.loads(msg.decode('utf-8'))
+                    except Exception:
+                        logger.error("Received non-JSON payload on transcripts topic; ignoring for safety")
+                        time.sleep(0.05)
+                        continue
                     
                     if data.get('type') == 'partial_transcription':
                         text = data.get('text', '')

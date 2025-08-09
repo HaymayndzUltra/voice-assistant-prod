@@ -188,11 +188,19 @@ class RESTAPIServer:
     def _setup_middleware(self):
         """Setup FastAPI middleware."""
         if self.enable_cors:
+            # Fail-closed CORS: restrict to trusted origins via env or default-safe list
+            import os as _os
+            origins_env = _os.environ.get("MODEL_OPS_ALLOWED_ORIGINS")
+            if origins_env:
+                allowed_origins = [o.strip() for o in origins_env.split(",") if o.strip()]
+            else:
+                # Default to localhost-only
+                allowed_origins = ["http://localhost", "http://127.0.0.1"]
             self.app.add_middleware(
                 CORSMiddleware,
-                allow_origins=["*"],
+                allow_origins=allowed_origins,
                 allow_credentials=True,
-                allow_methods=["*"],
+                allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 allow_headers=["*"],
             )
         
@@ -218,8 +226,13 @@ class RESTAPIServer:
             return response
     
     def _setup_authentication(self):
-        """Setup authentication if API key is provided."""
+        """Setup authentication; fail-closed if API key missing in non-dev env."""
+        import os as _os
+        env = _os.environ.get("ENV", "development").lower()
         if not self.api_key:
+            if env in ("prod", "production", "staging"):  # fail-closed
+                raise ModelOpsError("API key is required in production/staging environments", "REST_API_AUTH_CONFIG_ERROR")
+            # In development, allow no auth dependency but log warning
             self._auth_dependency = None
             return
         

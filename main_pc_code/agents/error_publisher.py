@@ -17,7 +17,7 @@ from typing import Any, Optional
 # Import the missing function
 from common.utils.env_standardizer import get_pc2_ip, get_mainpc_ip
 
-from common.pools.zmq_pool import get_pub_socket
+# Do not use pooled PUB sockets for publishers that should only connect
 
 
 class ErrorPublisher:
@@ -45,9 +45,9 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
         self.context = context or zmq.Context.instance()
 
         try:
-            self.socket = get_pub_socket(self.endpoint).socket
-            # PUB sockets must *connect* to the central SUB (collector) or vice-versa.
-            # We assume collector is a SUB‐binding central bus; agents therefore connect.
+            # Create plain PUB socket and connect to central collector endpoint
+            self.socket = self.context.socket(zmq.PUB)
+            self.socket.setsockopt(zmq.LINGER, 0)
             self.socket.connect(self.endpoint)
         except Exception as exc:  # pragma: no cover – initialisation issues
             logging.error("ErrorPublisher: failed to set up PUB socket: %s", exc)

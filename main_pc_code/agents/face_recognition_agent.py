@@ -23,8 +23,9 @@ from common.env_helpers import get_env
 import cv2
 import numpy as np
 import insightface
-from common.pools.zmq_pool import get_rep_socket
+import zmq
 from collections import defaultdict
+from queue import Queue, Empty
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
@@ -179,7 +180,8 @@ class EmotionAnalyzer(BaseAgent):
         self.emotion_model = self._load_emotion_model()
         self.voice_model = self._load_voice_model() if config.get("voice_integration")["enabled"] else None
         self.emotion_history: Dict[int, List[EmotionState]] = {}
-        self.voice_buffer = []
+        self.voice_buffer: Queue = Queue()
+        self._voice_stop = threading.Event()
         self.voice_thread = None
         if self.voice_model:
             self._start_voice_processing()
@@ -198,13 +200,18 @@ class EmotionAnalyzer(BaseAgent):
         return None
 
     def _start_voice_processing(self):
-        """Start voice processing thread"""
+        """Start voice processing thread with safe shutdown and thread-safe buffer."""
         def process_voice():
-            while True:
-                if len(self.voice_buffer) > 0:
-                    self.voice_buffer.pop(0)
-                    # TODO: Process audio and update emotion state
-                time.sleep(0.1)
+            while not self._voice_stop.is_set():
+                try:
+                    _ = self.voice_buffer.get(timeout=0.1)
+                    # TODO: Process audio and update emotion state using the dequeued item
+                except Empty:
+                    continue
+                except Exception as e:
+                    logging.error(f"Voice processing error: {e}")
+            logging.info("Voice processing thread exiting")
+
         self.voice_thread = threading.Thread(target=process_voice, daemon=True)
         self.voice_thread.start()
 
@@ -482,14 +489,19 @@ class FaceRecognitionAgent(BaseAgent):
     def _init_zmq(self):
         """Initialize ZMQ context and sockets."""
         try:
-            self.context = None  # Using pool
-            self.socket = get_rep_socket(self.endpoint).socket
+            # Ensure context exists
+            if not hasattr(self, 'context') or self.context is None:
+                self.context = zmq.Context()
+            # Create REP socket directly and bind once
+            self.socket = self.context.socket(zmq.REP)
             self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
             self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
+            self.socket.setsockopt(zmq.LINGER, 0)
             self.socket.bind(f"tcp://*:{self.port}")
             
             # Initialize publisher socket for events
             self.pub_socket = self.context.socket(zmq.PUB)
+            self.pub_socket.setsockopt(zmq.LINGER, 0)
             self.pub_socket.bind(f"tcp://*:{self.port + 1}")
             
             logging.info("ZMQ initialization complete")
@@ -679,6 +691,14 @@ class FaceRecognitionAgent(BaseAgent):
         """Stop the agent."""
         logging.info("Stopping FaceRecognitionAgent")
         self.running = False
+        # Stop voice processing thread
+        try:
+            if hasattr(self, '_voice_stop'):
+                self._voice_stop.set()
+            if hasattr(self, 'voice_thread') and self.voice_thread:
+                self.voice_thread.join(timeout=1.0)
+        except Exception as e:
+            logging.warning(f"Error stopping voice thread: {e}")
         if hasattr(self, 'socket'):
             self.socket.close()
         if hasattr(self, 'pub_socket'):

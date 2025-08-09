@@ -20,7 +20,7 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import os
-from common.pools.zmq_pool import get_rep_socket
+import zmq
 import json
 import logging
 import threading
@@ -69,9 +69,7 @@ class EmotionEngine(BaseAgent):
         self.pub_port = int(config.get("pub_port", agent_port + 2))
         
         # Initialize ZMQ components
-        self.context = None
-        self.socket = None
-        self.health_socket = None
+        # BaseAgent already creates and binds main REP and health REP sockets
         self.pub_socket = None
         
         # Setup ZMQ
@@ -136,30 +134,27 @@ class EmotionEngine(BaseAgent):
         sys.exit(0)
 
     def setup_zmq(self):
-        """Set up ZMQ sockets with proper error handling"""
+        """Set up additional ZMQ sockets with proper error handling (avoid rebinding base sockets)."""
         try:
-            self.context = None  # Using pool
-            
-            # Main socket
-            self.socket = get_rep_socket(self.endpoint).socket
-            self.socket.setsockopt(zmq.LINGER, 0)
-            self.socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            
-            # Health socket
-            self.health_socket = self.context.socket(zmq.REP)
-            self.health_socket.setsockopt(zmq.LINGER, 0)
-            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            
-            # PUB socket for broadcasting
+            # Configure timeouts on existing sockets
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.setsockopt(zmq.LINGER, 0)
+                self.socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+            if hasattr(self, 'health_socket') and self.health_socket:
+                self.health_socket.setsockopt(zmq.LINGER, 0)
+                self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+            # Ensure context exists and create PUB socket
+            if not hasattr(self, 'context') or self.context is None:
+                import zmq as _zmq
+                self.context = _zmq.Context()
+
             self.pub_socket = self.context.socket(zmq.PUB)
             self.pub_socket.setsockopt(zmq.LINGER, 0)
-            
-            # Bind sockets with retry logic
-            self._bind_socket_with_retry(self.socket, self.port)
-            self._bind_socket_with_retry(self.health_socket, self.health_port)
             self._bind_socket_with_retry(self.pub_socket, self.pub_port)
-            
-            logger.info(f"Successfully set up ZMQ sockets on ports {self.port}, {self.health_port}, and {self.pub_port}")
+
+            logger.info(f"Successfully set up PUB socket on port {self.pub_port}")
             return True
         except Exception as e:
             logger.error(f"Error setting up ZMQ: {e}")

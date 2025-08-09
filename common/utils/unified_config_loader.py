@@ -101,8 +101,8 @@ class UnifiedConfigLoader:
                 return "mainpc"
             elif "RTX 3060" in gpu_info:
                 return "pc2"
-        except:
-            pass
+        except (subprocess.CalledProcessError, FileNotFoundError, Exception) as e:
+            logger.debug(f"GPU detection unavailable or failed: {e}")
         
         # Fallback detection based on hostname or other indicators
         hostname = os.environ.get("HOSTNAME", "").lower()

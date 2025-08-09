@@ -22,7 +22,7 @@ from typing import Dict, Any
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
-from common.pools.zmq_pool import get_rep_socket
+from common.pools.zmq_pool import get_req_socket  # keep for client sockets only
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -76,9 +76,10 @@ class ChitchatAgent(BaseAgent):
     def _init_sockets(self):
         """Set up ZMQ sockets."""
         try:
-            # Main REP socket for chitchat requests with fallback if port in use
-            self.socket = get_rep_socket(self.endpoint).socket
+            # Main REP socket for chitchat requests (create directly and bind once)
+            self.socket = self.context.socket(zmq.REP)
             self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.LINGER, 0)
             rep_port = self.chitchat_port
             while True:
                 try:

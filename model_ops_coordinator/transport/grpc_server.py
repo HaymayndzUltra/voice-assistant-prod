@@ -268,7 +268,8 @@ class ModelOpsGRPCServicer(ModelOpsServicer):
     # ------------------------------
     def _sweep_expired_leases(self):
         import time as _time
-        while not self._lease_sweeper_stop.wait(1.0):
+        # Reduce cadence to 0.1s to minimize transient VRAM over-allocation windows
+        while not self._lease_sweeper_stop.wait(0.1):
             try:
                 now_ms = int(datetime.utcnow().timestamp() * 1000)
                 with self._lease_lock:
@@ -334,7 +335,7 @@ class GRPCServer:
         self._start_time: Optional[datetime] = None
     
     def start(self):
-        """Start the gRPC server."""
+        """Start the gRPC server. Synchronous; wrap in executor when called from async code."""
         if self._running:
             return
         
@@ -399,9 +400,12 @@ class GRPCServer:
         if self.servicer:
             # stop lease sweeper
             try:
+                # Signal sweeper to stop and join thread for clean shutdown
                 self.servicer._lease_sweeper_stop.set()
-            except Exception:
-                pass
+                try:
+                    self.servicer._lease_sweeper.join(timeout=5)
+                except Exception:
+                    pass
             self.servicer.worker_adapter.shutdown()
             self.servicer = None
     

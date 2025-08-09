@@ -231,10 +231,15 @@ class ModelOpsCoordinator(BaseAgent):
                     self.kernel,
                     port=self.hub_config['server']['zmq_port']
                 )
-                server_tasks.append(asyncio.create_task(
-                    self.zmq_server.start(),
-                    name="zmq-server"
-                ))
+                # Ensure start() is awaited as coroutine if it is async; otherwise run in executor
+                if asyncio.iscoroutinefunction(self.zmq_server.start):
+                    server_tasks.append(asyncio.create_task(
+                        self.zmq_server.start(),
+                        name="zmq-server"
+                    ))
+                else:
+                    loop = asyncio.get_running_loop()
+                    server_tasks.append(loop.run_in_executor(None, self.zmq_server.start))
                 self.logger.info(f"🚀 Starting ZMQ server on port {self.hub_config['server']['zmq_port']}")
             
             # Start gRPC server
@@ -244,10 +249,14 @@ class ModelOpsCoordinator(BaseAgent):
                     port=self.hub_config['server']['grpc_port'],
                     max_workers=self.hub_config['server']['max_workers']
                 )
-                server_tasks.append(asyncio.create_task(
-                    self.grpc_server.start(),
-                    name="grpc-server"
-                ))
+                if asyncio.iscoroutinefunction(self.grpc_server.start):
+                    server_tasks.append(asyncio.create_task(
+                        self.grpc_server.start(),
+                        name="grpc-server"
+                    ))
+                else:
+                    loop = asyncio.get_running_loop()
+                    server_tasks.append(loop.run_in_executor(None, self.grpc_server.start))
                 self.logger.info(f"🚀 Starting gRPC server on port {self.hub_config['server']['grpc_port']}")
             
             # Start REST API server
@@ -257,10 +266,14 @@ class ModelOpsCoordinator(BaseAgent):
                     host="0.0.0.0",
                     port=self.hub_config['server']['rest_port']
                 )
-                server_tasks.append(asyncio.create_task(
-                    self.rest_server.start(),
-                    name="rest-server"
-                ))
+                if asyncio.iscoroutinefunction(self.rest_server.start):
+                    server_tasks.append(asyncio.create_task(
+                        self.rest_server.start(),
+                        name="rest-server"
+                    ))
+                else:
+                    loop = asyncio.get_running_loop()
+                    server_tasks.append(loop.run_in_executor(None, self.rest_server.start))
                 self.logger.info(f"🚀 Starting REST API server on port {self.hub_config['server']['rest_port']}")
             
             # Wait for all servers to start
@@ -285,15 +298,17 @@ class ModelOpsCoordinator(BaseAgent):
         
         # Stop servers
         stop_tasks = []
+        loop = asyncio.get_running_loop()
         
         if self.zmq_server:
-            stop_tasks.append(self.zmq_server.stop())
+            # Wrap sync stop in executor
+            stop_tasks.append(loop.run_in_executor(None, self.zmq_server.stop))
         
         if self.grpc_server:
-            stop_tasks.append(self.grpc_server.stop())
+            stop_tasks.append(loop.run_in_executor(None, self.grpc_server.stop))
         
         if self.rest_server:
-            stop_tasks.append(self.rest_server.stop())
+            stop_tasks.append(loop.run_in_executor(None, self.rest_server.stop))
         
         if stop_tasks:
             await asyncio.gather(*stop_tasks, return_exceptions=True)
