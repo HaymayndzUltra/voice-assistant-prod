@@ -462,79 +462,8 @@ class SystemDigitalTwinAgent(BaseAgent):
     #         NEW AGENT REGISTRATION AND DISCOVERY METHODS
     # ===================================================================
     
-    def register_agent(self, registration_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Register an agent with the system.
-        
-        Args:
-            registration_data: Agent registration information
-            
-        Returns:
-            Response indicating success or failure
-        """
-        if registration_data is None:
-            return {"status": "error", "error": "Missing registration data"}
-            
-        try:
-            # Convert to AgentRegistration model if plain dict
-            if not isinstance(registration_data, AgentRegistration):
-                try:
-                    registration = AgentRegistration(**registration_data)
-                except Exception as e:
-                    logger.error(f"Invalid registration data: {e}")
-                    return {"status": "error", "error": f"Invalid registration data: {str(e)}"}
-            else:
-                registration = registration_data
-                
-            agent_id = registration.agent_id
-            
-            # Store the endpoint information
-            self.agent_endpoints[agent_id] = {
-                "host": registration.host,
-                "port": registration.port,
-                "health_check_port": registration.health_check_port,
-                "last_registered": datetime.now().isoformat(),
-                "agent_type": registration.agent_type,
-                "capabilities": registration.capabilities,
-                "metadata": registration.metadata
-            }
-            
-            # Also update the agent status
-            location = registration.metadata.get("location", "MainPC")
-            self.update_agent_status(agent_id, "HEALTHY", location)
-            
-            logger.info(f"Registered agent {agent_id} at {registration.host}:{registration.port}")
-            return {
-                "status": "success", 
-                "message": f"Successfully registered {agent_id}",
-                "agent_id": agent_id
-            }
-            
-        except Exception as e:
-            logger.error(f"Error registering agent: {e}", exc_info=True)
-            return {"status": "error", "error": str(e)}
-    
-    def get_agent_endpoint(self, agent_name: str) -> Dict[str, Any]:
-        """Get the endpoint information for a specific agent.
-        
-        Args:
-            agent_name: Name of the agent to locate
-            
-        Returns:
-            Dictionary with host and port information
-        """
-        if agent_name in self.agent_endpoints:
-            endpoint = self.agent_endpoints[agent_name]
-            return {
-                "status": "success",
-                "agent_name": agent_name,
-                "host": endpoint["host"],
-                "port": endpoint["port"],
-                "health_check_port": endpoint["health_check_port"]
-            }
-        else:
-            logger.warning(f"No endpoint found for agent {agent_name}")
-            return {"status": "error", "error": f"Agent {agent_name} not found in registry"}
-    
+    # legacy local registration and endpoint lookup removed; delegated to ServiceRegistry
+
     # ===================================================================
     #         PHASE 2: DISCOVERY DELEGATION TO SERVICEREGISTRYAGENT
     # ===================================================================
