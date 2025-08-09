@@ -36,7 +36,6 @@ from collections import deque
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.service_discovery_client import get_service_discovery_client
 from main_pc_code.utils.metrics_client import get_metrics_client
-from main_pc_code.utils.env_loader import get_env
 try:
     from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_server, start_auth  # type: ignore
 except Exception:
