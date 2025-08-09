@@ -12,35 +12,63 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from typing import Optional, Any, List, Awaitable, Callable, TypeVar, Tuple
+from typing import ParamSpec
 
 import aiosqlite
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy import text, MetaData, Table, Column, String, Text, DateTime, JSON
-from pydantic import BaseModel
-from tenacity import retry, stop_after_attempt, wait_exponential
+# Optional SQLAlchemy imports (not required for SQLite path or unit tests)
+try:  # pragma: no cover - optional import for Postgres path
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession  # type: ignore
+    from sqlalchemy.ext.asyncio import async_sessionmaker  # type: ignore
+    from sqlalchemy import text, MetaData, Table, Column, String, Text, DateTime, JSON  # type: ignore
+except Exception:  # pragma: no cover - allow environments without SQLAlchemy
+    create_async_engine = None  # type: ignore
+    AsyncSession = None  # type: ignore
+    async_sessionmaker = None  # type: ignore
+    text = None  # type: ignore
+    MetaData = Table = Column = String = Text = DateTime = JSON = None  # type: ignore
 
-from .models import MemoryItem, SessionData, KnowledgeRecord, MemoryEvent, FusionConfig
-from ..resiliency.circuit_breaker import CircuitBreakerException
+from pydantic import BaseModel
+
+from .models import MemoryItem, SessionData, KnowledgeRecord, MemoryEvent
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T")
+P = ParamSpec("P")
 
-def retry_with_backoff(max_attempts: int = 3, base_delay: float = 1.0):
+
+def async_retry_with_backoff(
+    *,
+    max_retries: int = 3,
+    base_delay: float = 0.5,
+    max_delay: float = 10.0,
+    jitter: float = 0.3,
+    exceptions: Tuple[type[BaseException], ...] = (Exception,),
+) -> Callable[[Callable[P, Awaitable[T]]], Callable[P, Awaitable[T]]]:
     """
-    Decorator for retrying operations with exponential backoff.
-    
-    Args:
-        max_attempts: Maximum number of retry attempts
-        base_delay: Base delay in seconds for exponential backoff
+    Async decorator for retrying a coroutine with exponential backoff and jitter.
     """
-    return retry(
-        stop=stop_after_attempt(max_attempts),
-        wait=wait_exponential(multiplier=base_delay, min=1, max=10),
-        reraise=True
-    )
+
+    def decorator(fn: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            attempt = 0
+            while True:
+                try:
+                    return await fn(*args, **kwargs)
+                except exceptions:
+                    if attempt >= max_retries:
+                        raise
+                    delay = min(base_delay * (2 ** attempt), max_delay)
+                    # Apply jitter ±jitter
+                    from random import uniform
+
+                    delay *= uniform(1 - jitter, 1 + jitter)
+                    await asyncio.sleep(delay)
+                    attempt += 1
+        return wrapper
+
+    return decorator
 
 
 class RepositoryException(Exception):
@@ -216,17 +244,16 @@ class SQLiteRepository(AbstractRepository):
         else:
             raise RepositoryException(f"Unsupported model type: {type(value)}")
     
-    def _get_model_class(self, table_name: str) -> type:
+    def _get_model_class(self, table_name: str) -> Optional[type[BaseModel]]:
         """Get the Pydantic model class for a table."""
-        table_to_model = {
+        table_to_model: dict[str, type[BaseModel]] = {
             "memory_items": MemoryItem,
             "session_data": SessionData,
             "knowledge_records": KnowledgeRecord,
-            "memory_events": MemoryEvent
+            "memory_events": MemoryEvent,
         }
         return table_to_model.get(table_name)
     
-    @retry_with_backoff(max_attempts=3)
     async def get(self, key: str) -> Optional[BaseModel]:
         """Retrieve a data object by its key from any table."""
         if not self.connection:
@@ -253,7 +280,6 @@ class SQLiteRepository(AbstractRepository):
         
         return None
     
-    @retry_with_backoff(max_attempts=3)
     async def put(self, key: str, value: BaseModel) -> None:
         """Store a data object with the given key."""
         if not self.connection:
@@ -275,7 +301,6 @@ class SQLiteRepository(AbstractRepository):
             logger.error(f"Failed to store object {key}: {e}")
             raise RepositoryException(f"Put operation failed: {e}")
     
-    @retry_with_backoff(max_attempts=3)
     async def delete(self, key: str) -> None:
         """Delete a data object by its key from all tables."""
         if not self.connection:
@@ -287,7 +312,7 @@ class SQLiteRepository(AbstractRepository):
                 cursor = await self.connection.execute(
                     f"DELETE FROM {table_name} WHERE key = ?", (key,)
                 )
-                if cursor.rowcount > 0:
+                if cursor.rowcount and cursor.rowcount > 0:
                     deleted = True
                 await cursor.close()
             
@@ -330,7 +355,7 @@ class SQLiteRepository(AbstractRepository):
         if not self.connection:
             raise RepositoryException("Repository not initialized")
         
-        keys = []
+        keys: List[str] = []
         for table_name in ["memory_items", "session_data", "knowledge_records", "memory_events"]:
             try:
                 if prefix:
@@ -373,18 +398,15 @@ class PostgresRepository(AbstractRepository):
     """
     
     def __init__(self, connection_url: str):
-        """
-        Initialize PostgreSQL repository.
-        
-        Args:
-            connection_url: PostgreSQL connection URL
-        """
+        if create_async_engine is None:
+            raise RepositoryException("SQLAlchemy is not available in this environment")
         self.connection_url = connection_url
         self.engine = None
         self.session_factory = None
         
     async def initialize(self) -> None:
-        """Initialize PostgreSQL database and create tables."""
+        if create_async_engine is None or async_sessionmaker is None or text is None:
+            raise RepositoryException("SQLAlchemy is not available in this environment")
         try:
             self.engine = create_async_engine(
                 self.connection_url,
@@ -397,12 +419,14 @@ class PostgresRepository(AbstractRepository):
             
             self.session_factory = async_sessionmaker(
                 bind=self.engine,
-                class_=AsyncSession,
+                class_=AsyncSession,  # type: ignore[arg-type]
                 expire_on_commit=False
             )
             
             # Create tables using raw SQL for simplicity
-            async with self.engine.begin() as conn:
+            engine = self.engine
+            assert engine is not None
+            async with engine.begin() as conn:
                 await conn.execute(text("""
                     CREATE TABLE IF NOT EXISTS memory_items (
                         key VARCHAR(255) PRIMARY KEY,
@@ -451,7 +475,6 @@ class PostgresRepository(AbstractRepository):
             raise RepositoryException(f"PostgreSQL initialization failed: {e}")
     
     def _get_table_name(self, value: BaseModel) -> str:
-        """Determine the appropriate table name based on model type."""
         if isinstance(value, MemoryItem):
             return "memory_items"
         elif isinstance(value, SessionData):
@@ -463,28 +486,24 @@ class PostgresRepository(AbstractRepository):
         else:
             raise RepositoryException(f"Unsupported model type: {type(value)}")
     
-    def _get_model_class(self, table_name: str) -> type:
-        """Get the Pydantic model class for a table."""
-        table_to_model = {
+    def _get_model_class(self, table_name: str) -> Optional[type[BaseModel]]:
+        table_to_model: dict[str, type[BaseModel]] = {
             "memory_items": MemoryItem,
             "session_data": SessionData,
             "knowledge_records": KnowledgeRecord,
-            "memory_events": MemoryEvent
+            "memory_events": MemoryEvent,
         }
         return table_to_model.get(table_name)
     
-    @retry_with_backoff(max_attempts=3)
     async def get(self, key: str) -> Optional[BaseModel]:
-        """Retrieve a data object by its key from any table."""
         if not self.session_factory:
             raise RepositoryException("Repository not initialized")
         
-        async with self.session_factory() as session:
-            # Search across all tables
+        async with self.session_factory() as session:  # type: ignore[operator]
             for table_name in ["memory_items", "session_data", "knowledge_records", "memory_events"]:
                 try:
                     result = await session.execute(
-                        text(f"SELECT data FROM {table_name} WHERE key = :key"),
+                        text(f"SELECT data FROM {table_name} WHERE key = :key"),  # type: ignore[arg-type]
                         {"key": key}
                     )
                     row = result.fetchone()
@@ -500,9 +519,7 @@ class PostgresRepository(AbstractRepository):
         
         return None
     
-    @retry_with_backoff(max_attempts=3)
     async def put(self, key: str, value: BaseModel) -> None:
-        """Store a data object with the given key."""
         if not self.session_factory:
             raise RepositoryException("Repository not initialized")
         
@@ -510,7 +527,7 @@ class PostgresRepository(AbstractRepository):
             table_name = self._get_table_name(value)
             data_dict = value.dict()
             
-            async with self.session_factory() as session:
+            async with self.session_factory() as session:  # type: ignore[operator]
                 await session.execute(
                     text(f"""
                         INSERT INTO {table_name} (key, data, updated_at)
@@ -518,7 +535,7 @@ class PostgresRepository(AbstractRepository):
                         ON CONFLICT (key) DO UPDATE SET
                             data = EXCLUDED.data,
                             updated_at = EXCLUDED.updated_at
-                    """),
+                    """),  # type: ignore[arg-type]
                     {"key": key, "data": data_dict}
                 )
                 await session.commit()
@@ -529,21 +546,19 @@ class PostgresRepository(AbstractRepository):
             logger.error(f"Failed to store object {key}: {e}")
             raise RepositoryException(f"Put operation failed: {e}")
     
-    @retry_with_backoff(max_attempts=3)
     async def delete(self, key: str) -> None:
-        """Delete a data object by its key from all tables."""
         if not self.session_factory:
             raise RepositoryException("Repository not initialized")
         
         try:
             deleted = False
-            async with self.session_factory() as session:
+            async with self.session_factory() as session:  # type: ignore[operator]
                 for table_name in ["memory_items", "session_data", "knowledge_records", "memory_events"]:
                     result = await session.execute(
-                        text(f"DELETE FROM {table_name} WHERE key = :key"),
+                        text(f"DELETE FROM {table_name} WHERE key = :key"),  # type: ignore[arg-type]
                         {"key": key}
                     )
-                    if result.rowcount > 0:
+                    if result.rowcount and result.rowcount > 0:
                         deleted = True
                 
                 await session.commit()
@@ -558,16 +573,14 @@ class PostgresRepository(AbstractRepository):
             raise RepositoryException(f"Delete operation failed: {e}")
     
     async def exists(self, key: str) -> bool:
-        """Check if a data object exists for the given key."""
         if not self.session_factory:
             raise RepositoryException("Repository not initialized")
         
-        async with self.session_factory() as session:
-            # Check across all tables
+        async with self.session_factory() as session:  # type: ignore[operator]
             for table_name in ["memory_items", "session_data", "knowledge_records", "memory_events"]:
                 try:
                     result = await session.execute(
-                        text(f"SELECT 1 FROM {table_name} WHERE key = :key LIMIT 1"),
+                        text(f"SELECT 1 FROM {table_name} WHERE key = :key LIMIT 1"),  # type: ignore[arg-type]
                         {"key": key}
                     )
                     row = result.fetchone()
@@ -582,22 +595,21 @@ class PostgresRepository(AbstractRepository):
         return False
     
     async def list_keys(self, prefix: str = "", limit: int = 100) -> List[str]:
-        """List keys matching the given prefix."""
         if not self.session_factory:
             raise RepositoryException("Repository not initialized")
         
-        keys = []
-        async with self.session_factory() as session:
+        keys: List[str] = []
+        async with self.session_factory() as session:  # type: ignore[operator]
             for table_name in ["memory_items", "session_data", "knowledge_records", "memory_events"]:
                 try:
                     if prefix:
                         result = await session.execute(
-                            text(f"SELECT key FROM {table_name} WHERE key LIKE :prefix ORDER BY key LIMIT :limit"),
+                            text(f"SELECT key FROM {table_name} WHERE key LIKE :prefix ORDER BY key LIMIT :limit"),  # type: ignore[arg-type]
                             {"prefix": f"{prefix}%", "limit": limit - len(keys)}
                         )
                     else:
                         result = await session.execute(
-                            text(f"SELECT key FROM {table_name} ORDER BY key LIMIT :limit"),
+                            text(f"SELECT key FROM {table_name} ORDER BY key LIMIT :limit"),  # type: ignore[arg-type]
                             {"limit": limit - len(keys)}
                         )
                     
@@ -614,15 +626,14 @@ class PostgresRepository(AbstractRepository):
         return keys[:limit]
     
     async def close(self) -> None:
-        """Close the PostgreSQL engine."""
         if self.engine:
-            await self.engine.dispose()
+            await self.engine.dispose()  # type: ignore[union-attr]
             self.engine = None
             self.session_factory = None
             logger.info("PostgreSQL repository connection closed")
 
 
-def build_repo(storage_config) -> AbstractRepository:
+def build_repo(storage_config: Any) -> AbstractRepository:
     """
     Factory function to build the appropriate repository based on configuration.
     
@@ -632,9 +643,9 @@ def build_repo(storage_config) -> AbstractRepository:
     Returns:
         Configured repository instance
     """
-    if storage_config.postgres_url:
+    if getattr(storage_config, 'postgres_url', None):
         logger.info("Building PostgreSQL repository")
-        return PostgresRepository(storage_config.postgres_url)
+        return PostgresRepository(storage_config.postgres_url)  # type: ignore[arg-type]
     else:
         logger.info(f"Building SQLite repository: {storage_config.sqlite_path}")
         return SQLiteRepository(storage_config.sqlite_path)
