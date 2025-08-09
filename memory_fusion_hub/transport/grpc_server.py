@@ -11,12 +11,12 @@ This module provides:
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional, List, BaseModel
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 
 import grpc
 from grpc import aio
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel
 
 from ..core.fusion_service import FusionService
 from ..core.models import MemoryItem, SessionData, KnowledgeRecord, MemoryEvent
