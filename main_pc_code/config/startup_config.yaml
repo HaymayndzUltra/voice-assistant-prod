@@ -9,6 +9,8 @@ global_settings:
     DATA_OPTIMIZER_METHOD: compressed_msgpack
     ENABLE_HYBRID_INFERENCE: 'true'
     HYBRID_QUALITY_THRESHOLD: '0.85'
+  features:
+    RTAP_ENABLED: ${RTAP_ENABLED:-false}
   resource_limits:
     cpu_percent: 80
     memory_mb: 2048
@@ -111,18 +113,26 @@ agent_groups:
     #   - ModelManagerSuite
     #   - RequestCoordinator
     #   - SystemDigitalTwin
-    ObservabilityHub:
-      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
-      port: ${PORT_OFFSET}+9000
-      health_check_port: ${PORT_OFFSET}+9001
+    # ObservabilityHub retired; use UnifiedObservabilityCenter instead
+    # ObservabilityHub:
+    #   script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+    #   port: ${PORT_OFFSET}+9000
+    #   health_check_port: ${PORT_OFFSET}+9001
+    #   required: false
+    #   dependencies:
+    #   - SystemDigitalTwin
+    #   config:
+    #     prometheus_enabled: true
+    #     parallel_health_checks: true
+    #     prediction_enabled: true
+    #     dynamic_batch_tuning: true
+    UnifiedObservabilityCenter:
+      script_path: unified_observability_center/app.py
+      port: ${PORT_OFFSET}+9100
+      health_check_port: ${PORT_OFFSET}+10100
       required: true
       dependencies:
       - SystemDigitalTwin
-      config:
-        prometheus_enabled: true
-        parallel_health_checks: true
-        prediction_enabled: true
-        dynamic_batch_tuning: true
     UnifiedSystemAgent:
       script_path: main_pc_code/agents/unified_system_agent.py
       port: ${PORT_OFFSET}+7201
@@ -210,87 +220,79 @@ agent_groups:
     UnifiedObservabilityCenter:
       script_path: unified_observability_center/app.py
       port: ${PORT_OFFSET}+9100
-      health_check_port: ${PORT_OFFSET}+9101
+      health_check_port: ${PORT_OFFSET}+10100
       required: true
       dependencies:
       - SystemDigitalTwin
-      config:
-        nats_url: "nats://localhost:4222"
-        cluster_name: "uoc-cluster"
-        election_ttl: 10
-        rest_port: ${PORT_OFFSET}+9100
-        prometheus_enabled: true
-        jaeger_enabled: true
-        log_collection_enabled: true
-  # DECOMMISSIONED: Legacy memory agents replaced by MemoryFusionHub
-  # memory_system:
-  #   MemoryClient:
-  #     script_path: main_pc_code/agents/memory_client.py
-  #     port: ${PORT_OFFSET}+5713
-  #     health_check_port: ${PORT_OFFSET}+6713
-  #     required: true
-  #     dependencies:
-  #     - SystemDigitalTwin
-  #   SessionMemoryAgent:
-  #     script_path: main_pc_code/agents/session_memory_agent.py
-  #     port: ${PORT_OFFSET}+5574
-  #     health_check_port: ${PORT_OFFSET}+6574
-  #     required: true
-  #     dependencies:
-  #     - RequestCoordinator
-  #     - SystemDigitalTwin
-  #     - MemoryClient
-  #   KnowledgeBase:
-  #     script_path: main_pc_code/agents/knowledge_base.py
-  #     port: ${PORT_OFFSET}+5715
-  #     health_check_port: ${PORT_OFFSET}+6715
-  #     required: true
-  #     dependencies:
-  #     - MemoryClient
-  #     - SystemDigitalTwin
-  utility_services:
-    CodeGenerator:
-      script_path: main_pc_code/agents/code_generator_agent.py
-      port: ${PORT_OFFSET}+5650
-      health_check_port: ${PORT_OFFSET}+6650
-      required: true
-      dependencies:
-      - SystemDigitalTwin
-      - ModelOpsCoordinator
-    PredictiveHealthMonitor:
-      script_path: main_pc_code/agents/predictive_health_monitor.py
-      port: ${PORT_OFFSET}+5613
-      health_check_port: ${PORT_OFFSET}+6613
-      required: true
-      dependencies:
-      - SystemDigitalTwin
-    Executor:
-      script_path: main_pc_code/agents/executor.py
-      port: ${PORT_OFFSET}+5606
-      health_check_port: ${PORT_OFFSET}+6606
-      required: true
-      dependencies:
-      - CodeGenerator
-      - SystemDigitalTwin
-    TinyLlamaServiceEnhanced:
-      script_path: main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py
-      port: ${PORT_OFFSET}+5615
-      health_check_port: ${PORT_OFFSET}+6615
-      required: false
-      dependencies:
-      - ModelOpsCoordinator
-      - SystemDigitalTwin
-    SmartHomeAgent:
-      script_path: main_pc_code/agents/smart_home_agent.py
-      port: ${PORT_OFFSET}+7125
-      health_check_port: ${PORT_OFFSET}+8125
-      required: false
-      dependencies:
-      - SystemDigitalTwin
-      config:
-        voice_control: enabled
-        intelligent_control: enabled
-        device_scan_interval: 60
+    # DECOMMISSIONED: Legacy memory agents replaced by MemoryFusionHub
+    # memory_system:
+    #   MemoryClient:
+    #     script_path: main_pc_code/agents/memory_client.py
+    #     port: ${PORT_OFFSET}+5713
+    #     health_check_port: ${PORT_OFFSET}+6713
+    #     required: true
+    #     dependencies:
+    #     - SystemDigitalTwin
+    #   SessionMemoryAgent:
+    #     script_path: main_pc_code/agents/session_memory_agent.py
+    #     port: ${PORT_OFFSET}+5574
+    #     health_check_port: ${PORT_OFFSET}+6574
+    #     required: true
+    #     dependencies:
+    #     - RequestCoordinator
+    #     - SystemDigitalTwin
+    #     - MemoryClient
+    #   KnowledgeBase:
+    #     script_path: main_pc_code/agents/knowledge_base.py
+    #     port: ${PORT_OFFSET}+5715
+    #     health_check_port: ${PORT_OFFSET}+6715
+    #     required: true
+    #     dependencies:
+    #     - MemoryClient
+    #     - SystemDigitalTwin
+    utility_services:
+      CodeGenerator:
+        script_path: main_pc_code/agents/code_generator_agent.py
+        port: ${PORT_OFFSET}+5650
+        health_check_port: ${PORT_OFFSET}+6650
+        required: true
+        dependencies:
+        - SystemDigitalTwin
+        - ModelOpsCoordinator
+      PredictiveHealthMonitor:
+        script_path: main_pc_code/agents/predictive_health_monitor.py
+        port: ${PORT_OFFSET}+5613
+        health_check_port: ${PORT_OFFSET}+6613
+        required: true
+        dependencies:
+        - SystemDigitalTwin
+      Executor:
+        script_path: main_pc_code/agents/executor.py
+        port: ${PORT_OFFSET}+5606
+        health_check_port: ${PORT_OFFSET}+6606
+        required: true
+        dependencies:
+        - CodeGenerator
+        - SystemDigitalTwin
+      TinyLlamaServiceEnhanced:
+        script_path: main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py
+        port: ${PORT_OFFSET}+5615
+        health_check_port: ${PORT_OFFSET}+6615
+        required: false
+        dependencies:
+        - ModelOpsCoordinator
+        - SystemDigitalTwin
+      SmartHomeAgent:
+        script_path: main_pc_code/agents/smart_home_agent.py
+        port: ${PORT_OFFSET}+7125
+        health_check_port: ${PORT_OFFSET}+8125
+        required: false
+        dependencies:
+        - SystemDigitalTwin
+        config:
+          voice_control: enabled
+          intelligent_control: enabled
+          device_scan_interval: 60
   gpu_infrastructure:
     CrossMachineGPUScheduler:
       script_path: services/cross_gpu_scheduler/app.py
@@ -481,16 +483,16 @@ agent_groups:
   audio_interface:
     AudioCapture:
       script_path: main_pc_code/agents/streaming_audio_capture.py
-      port: ${PORT_OFFSET}+6550
-      health_check_port: ${PORT_OFFSET}+7550
-      required: true
+      port: "${PORT_OFFSET}+6550"
+      health_check_port: "${PORT_OFFSET}+7550"
+      required: ${RTAP_ENABLED:-false} == 'false'
       dependencies:
       - SystemDigitalTwin
     FusedAudioPreprocessor:
       script_path: main_pc_code/agents/fused_audio_preprocessor.py
-      port: ${PORT_OFFSET}+6551
-      health_check_port: ${PORT_OFFSET}+7551
-      required: true
+      port: "${PORT_OFFSET}+6551"
+      health_check_port: "${PORT_OFFSET}+7551"
+      required: ${RTAP_ENABLED:-false} == 'false'
       dependencies:
       - AudioCapture
       - SystemDigitalTwin
@@ -505,12 +507,11 @@ agent_groups:
       - SystemDigitalTwin
     StreamingSpeechRecognition:
       script_path: main_pc_code/agents/streaming_speech_recognition.py
-      port: ${PORT_OFFSET}+6553
-      health_check_port: ${PORT_OFFSET}+7553
-      required: true
+      port: "${PORT_OFFSET}+6553"
+      health_check_port: "${PORT_OFFSET}+7553"
+      required: ${RTAP_ENABLED:-false} == 'false'
       dependencies:
       - FusedAudioPreprocessor
-      - ModelOpsCoordinator
       - STTService
       - SystemDigitalTwin
     StreamingTTSAgent:
@@ -525,9 +526,9 @@ agent_groups:
       - UnifiedSystemAgent
     WakeWordDetector:
       script_path: main_pc_code/agents/wake_word_detector.py
-      port: ${PORT_OFFSET}+6552
-      health_check_port: ${PORT_OFFSET}+7552
-      required: true
+      port: "${PORT_OFFSET}+6552"
+      health_check_port: "${PORT_OFFSET}+7552"
+      required: ${RTAP_ENABLED:-false} == 'false'
       dependencies:
       - AudioCapture
       - FusedAudioPreprocessor

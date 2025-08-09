@@ -124,7 +124,7 @@ def check_streaming_tts(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: in
     Returns:
         bool: True if service is healthy, False otherwise
     """
-    return check_zmq_service(host, port, "StreamingTtsAgent")
+    return check_zmq_service(host, port, "StreamingTTSAgent")
 
 def check_tts(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 5563) -> bool:
     """
