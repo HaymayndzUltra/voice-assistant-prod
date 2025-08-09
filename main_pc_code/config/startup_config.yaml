@@ -173,6 +173,55 @@ agent_groups:
         models_dir: models
         enable_auto_tune: true
         max_parallel_jobs: 2
+    AffectiveProcessingCenter:
+      script_path: affective_processing_center/app.py
+      port: ${PORT_OFFSET}+5560
+      health_check_port: ${PORT_OFFSET}+6560
+      required: true
+      dependencies:
+      - ModelOpsCoordinator
+      - MemoryFusionHub
+      config:
+        pub_address: "tcp://*:5560"
+        synth_address: "tcp://*:5561"
+        zmq_endpoints:
+        - "tcp://localhost:5555"
+        - "tcp://localhost:5556"
+        redis_url: "redis://localhost:6379/0"
+        cache_ttl: 3600
+        batch_size: 10
+    RealTimeAudioPipeline:
+      script_path: real_time_audio_pipeline/app.py
+      port: ${PORT_OFFSET}+5557
+      health_check_port: ${PORT_OFFSET}+6557
+      required: true
+      dependencies:
+      - ModelOpsCoordinator
+      config:
+        environment: "main_pc"
+        sample_rate: 16000
+        frame_size: 512
+        channels: 1
+        buffer_size: 100
+        max_latency_ms: 50
+        zmq_port: ${PORT_OFFSET}+5557
+        grpc_port: ${PORT_OFFSET}+5558
+        cuda_device: "cuda:0"
+    UnifiedObservabilityCenter:
+      script_path: unified_observability_center/app.py
+      port: ${PORT_OFFSET}+9100
+      health_check_port: ${PORT_OFFSET}+9101
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      config:
+        nats_url: "nats://localhost:4222"
+        cluster_name: "uoc-cluster"
+        election_ttl: 10
+        rest_port: ${PORT_OFFSET}+9100
+        prometheus_enabled: true
+        jaeger_enabled: true
+        log_collection_enabled: true
   # DECOMMISSIONED: Legacy memory agents replaced by MemoryFusionHub
   # memory_system:
   #   MemoryClient:
@@ -591,10 +640,13 @@ docker_groups:
     agents:
     - ObservabilityHub
   core_hubs:
-    description: Unified core service hubs (Memory & ModelOps)
+    description: Unified core service hubs (All 5 consolidated hubs)
     agents:
     - MemoryFusionHub
     - ModelOpsCoordinator
+    - AffectiveProcessingCenter
+    - RealTimeAudioPipeline
+    - UnifiedObservabilityCenter
   # DECOMMISSIONED: Legacy memory stack replaced by MemoryFusionHub
   # memory_stack:
   #   description: Short/long-term memory services

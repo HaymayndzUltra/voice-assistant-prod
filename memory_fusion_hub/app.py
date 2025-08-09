@@ -1,12 +1,8 @@
 """
 Main application entry point for Memory Fusion Hub.
 
-This module provides:
-- Configuration loading with YAML merging and environment variables
-- Service initialization and lifecycle management
-- Prometheus metrics HTTP endpoint
-- Async ZMQ and gRPC server startup
-- Graceful shutdown handling for SIGTERM/SIGINT
+This module provides the Memory Fusion Hub service that inherits from BaseAgent
+and uses the approved golden utilities from the common directory.
 """
 
 import asyncio
@@ -16,11 +12,21 @@ import signal
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
+from pathlib import Path
+
+# Add common to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import BaseAgent and golden utilities
+from common.core.base_agent import BaseAgent
+from common.utils.unified_config_loader import UnifiedConfigLoader
+from common.utils.path_manager import PathManager
 
 try:
     import uvloop  # High-performance event loop
 except ImportError:
     uvloop = None
+
 import yaml
 from prometheus_client import start_http_server
 
@@ -42,371 +48,252 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class UnifiedConfigLoader:
+class MemoryFusionHub(BaseAgent):
     """
-    Configuration loader that merges default.yaml, host-specific overrides,
-    and environment variables into a unified configuration.
+    Memory Fusion Hub - A consolidated memory management service.
+    
+    Inherits from BaseAgent to leverage standardized health checking,
+    error handling, metrics, and configuration management.
     """
     
-    def __init__(self, config_dir: str = "config"):
+    def __init__(self, **kwargs):
         """
-        Initialize config loader.
+        Initialize Memory Fusion Hub with BaseAgent foundation.
         
         Args:
-            config_dir: Directory containing configuration files
+            **kwargs: Arguments passed to BaseAgent
         """
-        self.config_dir = config_dir
-        self.hostname = os.uname().nodename
+        # Initialize BaseAgent with all standard features
+        super().__init__(name='MemoryFusionHub', **kwargs)
         
-    def load_config(self) -> FusionConfig:
-        """
-        Load and merge configuration from multiple sources.
+        # Load hub-specific configuration using UnifiedConfigLoader
+        config_loader = UnifiedConfigLoader()
+        self.hub_config = self._load_hub_config(config_loader)
         
-        Returns:
-            Unified FusionConfig instance
-        """
-        try:
-            # Load default configuration
-            default_config = self._load_yaml_file("default.yaml")
-            logger.info("Loaded default configuration")
-            
-            # Try to load host-specific configuration
-            host_config = {}
-            host_files = [
-                f"{self.hostname}.yaml",
-                "main_pc.yaml" if "main" in self.hostname.lower() else None,
-                "pc2.yaml" if "pc2" in self.hostname.lower() else None
-            ]
-            
-            for host_file in host_files:
-                if host_file:
-                    try:
-                        host_config.update(self._load_yaml_file(host_file))
-                        logger.info(f"Loaded host-specific config: {host_file}")
-                        break
-                    except FileNotFoundError:
-                        logger.debug(f"Host config not found: {host_file}")
-                        continue
-            
-            # Merge configurations
-            merged_config = self._deep_merge(default_config, host_config)
-            
-            # Apply environment variable overrides
-            final_config = self._apply_env_overrides(merged_config)
-            
-            # Create and validate FusionConfig
-            config = FusionConfig(**final_config)
-            logger.info("Configuration loaded and validated successfully")
-            
-            return config
-            
-        except Exception as e:
-            logger.error(f"Failed to load configuration: {e}")
-            raise
-    
-    def _load_yaml_file(self, filename: str) -> dict:
-        """Load YAML file with environment variable substitution."""
-        filepath = os.path.join(self.config_dir, filename)
-        
-        with open(filepath, 'r') as f:
-            content = f.read()
-        
-        # Simple environment variable substitution
-        content = self._substitute_env_vars(content)
-        
-        return yaml.safe_load(content)
-    
-    def _substitute_env_vars(self, content: str) -> str:
-        """
-        Substitute environment variables in YAML content.
-        
-        Supports format: ${VAR_NAME:default_value}
-        """
-        import re
-        
-        def replace_env_var(match):
-            var_expr = match.group(1)
-            if ':' in var_expr:
-                var_name, default_value = var_expr.split(':', 1)
-            else:
-                var_name, default_value = var_expr, ''
-            
-            return os.environ.get(var_name, default_value)
-        
-        return re.sub(r'\$\{([^}]+)\}', replace_env_var, content)
-    
-    def _deep_merge(self, base: dict, override: dict) -> dict:
-        """Deep merge two dictionaries."""
-        result = base.copy()
-        
-        for key, value in override.items():
-            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-                result[key] = self._deep_merge(result[key], value)
-            else:
-                result[key] = value
-        
-        return result
-    
-    def _apply_env_overrides(self, config: dict) -> dict:
-        """Apply environment variable overrides to config."""
-        env_mappings = {
-            'MFH_ZMQ_PORT': ['server', 'zmq_port'],
-            'MFH_GRPC_PORT': ['server', 'grpc_port'],
-            'MFH_MAX_WORKERS': ['server', 'max_workers'],
-            'MFH_SQLITE': ['storage', 'sqlite_path'],
-            'POSTGRES_URL': ['storage', 'postgres_url'],
-            'REDIS_URL': ['storage', 'redis_url'],
-            'NATS_URL': ['replication', 'nats_url'],
-            'MFH_LOG_LEVEL': None  # Special case
-        }
-        
-        result = config.copy()
-        
-        for env_var, config_path in env_mappings.items():
-            if env_var in os.environ:
-                value = os.environ[env_var]
-                
-                if env_var == 'MFH_LOG_LEVEL':
-                    # Set logging level
-                    logging.getLogger().setLevel(getattr(logging, value.upper(), logging.INFO))
-                    continue
-                
-                if config_path:
-                    # Set nested config value
-                    current = result
-                    for key in config_path[:-1]:
-                        if key not in current:
-                            current[key] = {}
-                        current = current[key]
-                    
-                    # Type conversion
-                    if 'port' in config_path[-1] or 'workers' in config_path[-1]:
-                        value = int(value)
-                    
-                    current[config_path[-1]] = value
-                    logger.info(f"Applied env override: {env_var} = {value}")
-        
-        return result
-
-
-class MemoryFusionHubApp:
-    """
-    Main application class for Memory Fusion Hub.
-    
-    Handles service lifecycle, server management, and graceful shutdown.
-    """
-    
-    def __init__(self):
-        """Initialize the application."""
-        self.config: Optional[FusionConfig] = None
+        # Initialize fusion service
         self.fusion_service: Optional[FusionService] = None
         self.zmq_task: Optional[asyncio.Task] = None
         self.grpc_task: Optional[asyncio.Task] = None
-        self.prometheus_server = None
-        self.executor: Optional[ThreadPoolExecutor] = None
-        self.shutdown_event = asyncio.Event()
+        self._shutdown_event = asyncio.Event()
         
-        # Setup signal handlers
-        self._setup_signal_handlers()
+        # Initialize hub components
+        self._initialize_hub_components()
         
-        logger.info("Memory Fusion Hub application initialized")
+        logger.info(f"MemoryFusionHub initialized on port {self.port}")
     
-    def _setup_signal_handlers(self):
-        """Setup signal handlers for graceful shutdown."""
-        def signal_handler(sig, frame):
-            logger.info(f"Received signal {sig}, initiating graceful shutdown...")
-            self.shutdown_event.set()
-        
-        signal.signal(signal.SIGTERM, signal_handler)
-        signal.signal(signal.SIGINT, signal_handler)
-    
-    async def startup(self):
+    def _load_hub_config(self, config_loader: UnifiedConfigLoader) -> FusionConfig:
         """
-        Application startup sequence.
+        Load hub-specific configuration using the golden UnifiedConfigLoader.
         
-        1. Load configuration
-        2. Initialize FusionService
-        3. Start Prometheus metrics server
-        4. Launch transport servers
+        Args:
+            config_loader: The unified config loader instance
+            
+        Returns:
+            FusionConfig object with merged configuration
         """
         try:
-            logger.info("Starting Memory Fusion Hub...")
+            # Get base configuration
+            base_config = config_loader.get_agent_config('MemoryFusionHub')
             
-            # Step 1: Load configuration
-            config_loader = UnifiedConfigLoader()
-            self.config = config_loader.load_config()
-            logger.info(f"Configuration loaded for {self.config.title} v{self.config.version}")
+            # Load additional config from environment
+            config_dict = {
+                'server': {
+                    'zmq_port': int(os.getenv('MFH_ZMQ_PORT', base_config.get('zmq_port', 5713))),
+                    'grpc_port': int(os.getenv('MFH_GRPC_PORT', base_config.get('grpc_port', 5714))),
+                    'metrics_port': int(os.getenv('MFH_METRICS_PORT', base_config.get('metrics_port', 8080)))
+                },
+                'storage': {
+                    'redis_url': os.getenv('REDIS_URL', base_config.get('redis_url', 'redis://localhost:6379/0')),
+                    'postgres_url': os.getenv('POSTGRES_URL', base_config.get('postgres_url', '')),
+                    'sqlite_path': os.getenv('SQLITE_PATH', base_config.get('sqlite_path', '/workspace/memory.db'))
+                },
+                'replication': {
+                    'enabled': os.getenv('REPLICATION_ENABLED', 'false').lower() == 'true',
+                    'role': os.getenv('REPLICATION_ROLE', 'primary'),
+                    'sync_interval': int(os.getenv('REPLICATION_SYNC_INTERVAL', '60'))
+                },
+                'resilience': {
+                    'circuit_breaker': {
+                        'failure_threshold': int(os.getenv('CB_FAILURE_THRESHOLD', '5')),
+                        'timeout': int(os.getenv('CB_TIMEOUT', '60'))
+                    },
+                    'bulkhead': {
+                        'max_concurrent': int(os.getenv('BH_MAX_CONCURRENT', '10')),
+                        'queue_size': int(os.getenv('BH_QUEUE_SIZE', '100'))
+                    }
+                }
+            }
             
-            # Step 2: Initialize FusionService
-            self.fusion_service = create_fusion_service(self.config)
-            await self.fusion_service.initialize()
-            logger.info("FusionService initialized successfully")
-            
-            # Step 3: Start Prometheus metrics server
-            prometheus_port = int(os.environ.get('MFH_METRICS_PORT', '8080'))
-            self.prometheus_server = start_http_server(prometheus_port)
-            logger.info(f"Prometheus metrics server started on port {prometheus_port}")
-            
-            # Step 4: Create thread pool executor
-            self.executor = ThreadPoolExecutor(
-                max_workers=self.config.server.max_workers,
-                thread_name_prefix="mfh-worker"
-            )
-            logger.info(f"Thread pool executor created with {self.config.server.max_workers} workers")
-            
-            # Step 5: Launch transport servers asynchronously
-            await self._start_transport_servers()
-            
-            logger.info("Memory Fusion Hub startup complete")
+            return FusionConfig(**config_dict)
             
         except Exception as e:
-            logger.error(f"Failed to start application: {e}")
-            await self.shutdown()
-            raise
+            logger.error(f"Failed to load configuration: {e}")
+            # Use default configuration as fallback
+            return FusionConfig()
     
-    async def _start_transport_servers(self):
-        """Start ZMQ and gRPC transport servers."""
+    def _initialize_hub_components(self):
+        """
+        Initialize hub-specific components.
+        
+        Uses inherited features from BaseAgent:
+        - self.health_checker (StandardizedHealthChecker)
+        - self.unified_error_handler (UnifiedErrorHandler)
+        - self.prometheus_exporter (PrometheusExporter)
+        - self.logger (Rotating JSON logger)
+        """
         try:
+            # Register hub capabilities with service discovery
+            self.capabilities = [
+                'memory_management',
+                'key_value_storage',
+                'session_management',
+                'knowledge_storage',
+                'event_sourcing',
+                'caching'
+            ]
+            
+            # Register with digital twin (inherited from BaseAgent)
+            self._register_with_digital_twin()
+            
+            logger.info("Hub components initialized successfully")
+            
+        except Exception as e:
+            # Use inherited error handler
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='ERROR',
+                    context={'component': 'MemoryFusionHub', 'phase': 'initialization'}
+                )
+            logger.error(f"Failed to initialize hub components: {e}")
+    
+    async def start(self):
+        """
+        Start the Memory Fusion Hub service.
+        """
+        try:
+            logger.info("Starting MemoryFusionHub service...")
+            
+            # Create fusion service
+            self.fusion_service = await create_fusion_service(self.hub_config)
+            
+            # Start Prometheus metrics server (using inherited exporter)
+            if self.prometheus_exporter:
+                start_http_server(self.hub_config.server.metrics_port)
+                logger.info(f"Prometheus metrics available at :{self.hub_config.server.metrics_port}/metrics")
+            
             # Start ZMQ server
             self.zmq_task = asyncio.create_task(
-                run_zmq_server(self.fusion_service, self.config.server.zmq_port),
-                name="zmq-server"
+                run_zmq_server(self.fusion_service, self.hub_config.server.zmq_port)
             )
-            logger.info(f"ZMQ server task created for port {self.config.server.zmq_port}")
+            logger.info(f"ZMQ server started on port {self.hub_config.server.zmq_port}")
             
             # Start gRPC server
             self.grpc_task = asyncio.create_task(
-                run_grpc_server(
-                    self.fusion_service, 
-                    self.config.server.grpc_port,
-                    self.config.server.max_workers
-                ),
-                name="grpc-server"
+                run_grpc_server(self.fusion_service, self.hub_config.server.grpc_port)
             )
-            logger.info(f"gRPC server task created for port {self.config.server.grpc_port}")
+            logger.info(f"gRPC server started on port {self.hub_config.server.grpc_port}")
             
-            # Give servers a moment to start
-            await asyncio.sleep(0.5)
+            # Update health status
+            if self.health_checker:
+                self.health_checker.set_healthy()
             
-            # Check if servers started successfully
-            if self.zmq_task.done():
-                exception = self.zmq_task.exception()
-                if exception:
-                    logger.error(f"ZMQ server failed to start: {exception}")
-                    raise exception
-            
-            if self.grpc_task.done():
-                exception = self.grpc_task.exception()
-                if exception:
-                    logger.error(f"gRPC server failed to start: {exception}")
-                    raise exception
-            
-            logger.info("Transport servers started successfully")
+            logger.info("MemoryFusionHub service started successfully")
             
         except Exception as e:
-            logger.error(f"Failed to start transport servers: {e}")
+            logger.error(f"Failed to start service: {e}")
+            if self.unified_error_handler:
+                self.unified_error_handler.report_error(
+                    error=e,
+                    severity='CRITICAL',
+                    context={'component': 'MemoryFusionHub', 'phase': 'startup'}
+                )
             raise
+    
+    async def stop(self):
+        """
+        Stop the Memory Fusion Hub service gracefully.
+        """
+        logger.info("Stopping MemoryFusionHub service...")
+        
+        # Set shutdown event
+        self._shutdown_event.set()
+        
+        # Cancel server tasks
+        if self.zmq_task:
+            self.zmq_task.cancel()
+            try:
+                await self.zmq_task
+            except asyncio.CancelledError:
+                pass
+        
+        if self.grpc_task:
+            self.grpc_task.cancel()
+            try:
+                await self.grpc_task
+            except asyncio.CancelledError:
+                pass
+        
+        # Stop fusion service
+        if self.fusion_service:
+            await self.fusion_service.stop()
+        
+        # Update health status
+        if self.health_checker:
+            self.health_checker.set_unhealthy()
+        
+        logger.info("MemoryFusionHub service stopped")
     
     async def run(self):
         """
-        Main application run loop.
+        Run the Memory Fusion Hub service.
+        """
+        # Start the service
+        await self.start()
         
-        Starts the application and waits for shutdown signal.
-        """
-        try:
-            await self.startup()
-            
-            # Wait for shutdown signal
-            logger.info("Memory Fusion Hub is running. Press Ctrl+C to stop.")
-            await self.shutdown_event.wait()
-            
-        except KeyboardInterrupt:
-            logger.info("Received keyboard interrupt")
-        except Exception as e:
-            logger.error(f"Application error: {e}")
-        finally:
-            await self.shutdown()
-    
-    async def shutdown(self):
-        """
-        Graceful shutdown sequence.
+        # Wait for shutdown signal
+        await self._shutdown_event.wait()
         
-        1. Stop accepting new requests
-        2. Finish processing current requests
-        3. Close service components
-        4. Clean up resources
-        """
-        try:
-            logger.info("Initiating graceful shutdown...")
-            
-            # Stop transport servers
-            if self.zmq_task and not self.zmq_task.done():
-                logger.info("Stopping ZMQ server...")
-                self.zmq_task.cancel()
-                try:
-                    await asyncio.wait_for(self.zmq_task, timeout=5.0)
-                except (asyncio.CancelledError, asyncio.TimeoutError):
-                    logger.warning("ZMQ server shutdown timeout")
-            
-            if self.grpc_task and not self.grpc_task.done():
-                logger.info("Stopping gRPC server...")
-                self.grpc_task.cancel()
-                try:
-                    await asyncio.wait_for(self.grpc_task, timeout=5.0)
-                except (asyncio.CancelledError, asyncio.TimeoutError):
-                    logger.warning("gRPC server shutdown timeout")
-            
-            # Close FusionService
-            if self.fusion_service:
-                logger.info("Closing FusionService...")
-                await self.fusion_service.close()
-                logger.info("FusionService closed")
-            
-            # Shutdown thread pool executor
-            if self.executor:
-                logger.info("Shutting down thread pool executor...")
-                self.executor.shutdown(wait=True)
-                logger.info("Thread pool executor shutdown complete")
-            
-            # Stop Prometheus server (this is synchronous)
-            if self.prometheus_server:
-                logger.info("Stopping Prometheus metrics server...")
-                # Note: prometheus_client doesn't have a clean shutdown method
-                # The server will stop when the process exits
-            
-            logger.info("Graceful shutdown complete")
-            
-        except Exception as e:
-            logger.error(f"Error during shutdown: {e}")
+        # Stop the service
+        await self.stop()
 
 
-async def main():
-    """Main entry point."""
-    # Use uvloop for better performance (Unix only)
-    if uvloop is not None and hasattr(uvloop, 'install'):
-        try:
-            uvloop.install()
-            logger.info("Using uvloop for enhanced performance")
-        except Exception as e:
-            logger.warning(f"Failed to install uvloop: {e}")
-            logger.info("Using default event loop")
-    else:
-        logger.info("uvloop not available, using default event loop")
+def main():
+    """
+    Main entry point for Memory Fusion Hub.
+    """
+    # Configure uvloop if available for better performance
+    if uvloop:
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        logger.info("Using uvloop for enhanced async performance")
     
-    # Create and run application
-    app = MemoryFusionHubApp()
-    await app.run()
+    # Create and run the hub
+    hub = MemoryFusionHub(
+        port=int(os.getenv('MFH_PORT', 5713)),
+        health_check_port=int(os.getenv('MFH_HEALTH_PORT', 6713))
+    )
+    
+    # Setup signal handlers
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    def signal_handler(sig, frame):
+        logger.info(f"Received signal {sig}, initiating shutdown...")
+        hub._shutdown_event.set()
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    try:
+        # Run the hub
+        loop.run_until_complete(hub.run())
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received")
+    finally:
+        # Cleanup
+        loop.close()
+        logger.info("MemoryFusionHub shutdown complete")
 
 
 if __name__ == "__main__":
-    # Change to the directory containing the config files
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    
-    # Run the application
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Application terminated by user")
-    except Exception as e:
-        logger.error(f"Application failed: {e}")
-        sys.exit(1)
+    main()

@@ -41,6 +41,22 @@ pc2_services:
     metrics_port: ${PORT_OFFSET}+8080
     redis_url: "redis://localhost:6379/0"
     sqlite_path: "/workspace/memory.db"
+- name: RealTimeAudioPipelinePC2
+  script_path: real_time_audio_pipeline/app.py
+  host: 0.0.0.0
+  port: ${PORT_OFFSET}+5557
+  health_check_port: ${PORT_OFFSET}+6557
+  required: true
+  dependencies: []
+  config:
+    environment: "pc2"
+    sample_rate: 16000
+    frame_size: 512
+    channels: 1
+    buffer_size: 100
+    max_latency_ms: 50
+    zmq_port: ${PORT_OFFSET}+5557
+    grpc_port: ${PORT_OFFSET}+5558
 - name: TieredResponder
   script_path: pc2_code/agents/tiered_responder.py
   host: 0.0.0.0
