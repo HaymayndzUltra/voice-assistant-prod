@@ -237,40 +237,40 @@ agent_groups:
     #     dependencies:
     #     - MemoryClient
     #     - SystemDigitalTwin
-    utility_services:
-      CodeGenerator:
-        script_path: main_pc_code/agents/code_generator_agent.py
+  utility_services:
+    CodeGenerator:
+      script_path: main_pc_code/agents/code_generator_agent.py
         port: ${PORT_OFFSET}+5650
         health_check_port: ${PORT_OFFSET}+6650
         required: true
         dependencies:
         - SystemDigitalTwin
         - ModelOpsCoordinator
-      PredictiveHealthMonitor:
-        script_path: main_pc_code/agents/predictive_health_monitor.py
+    PredictiveHealthMonitor:
+      script_path: main_pc_code/agents/predictive_health_monitor.py
         port: ${PORT_OFFSET}+5613
         health_check_port: ${PORT_OFFSET}+6613
         required: true
         dependencies:
         - SystemDigitalTwin
-      Executor:
-        script_path: main_pc_code/agents/executor.py
+    Executor:
+      script_path: main_pc_code/agents/executor.py
         port: ${PORT_OFFSET}+5606
         health_check_port: ${PORT_OFFSET}+6606
         required: true
         dependencies:
         - CodeGenerator
         - SystemDigitalTwin
-      TinyLlamaServiceEnhanced:
-        script_path: main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py
+    TinyLlamaServiceEnhanced:
+      script_path: main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py
         port: ${PORT_OFFSET}+5615
         health_check_port: ${PORT_OFFSET}+6615
         required: false
         dependencies:
         - ModelOpsCoordinator
         - SystemDigitalTwin
-      SmartHomeAgent:
-        script_path: main_pc_code/agents/smart_home_agent.py
+    SmartHomeAgent:
+      script_path: main_pc_code/agents/smart_home_agent.py
         port: ${PORT_OFFSET}+7125
         health_check_port: ${PORT_OFFSET}+8125
         required: false
