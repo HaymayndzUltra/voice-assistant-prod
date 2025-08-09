@@ -1,0 +1,22 @@
+name: Quality Gates
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruamel.yaml PyYAML flake8
+      - name: Run YAML duplicate key validator
+        run: python tools/validate_yaml_no_dupes.py
+      - name: Run port uniqueness validator
+        run: python tools/validate_ports_unique.py
+      - name: Run dependency graph validator
+        run: python tools/validate_dependencies.py
+      - name: Lint for unused/duplicate imports
+        run: flake8 --select=F401,F811
