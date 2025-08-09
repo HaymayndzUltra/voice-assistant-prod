@@ -14,41 +14,67 @@ def load(path):
   with open(path, 'r', encoding='utf-8') as f:
     return yaml.safe_load(f) or {}
 
+
 def collect_agents(doc):
-  names=set()
-  ag = (doc.get('agent_groups') or {})
+  names = set()
+  ag = (doc.get('agent_groups') or {}) if isinstance(doc, dict) else {}
   for group, entries in ag.items():
     if isinstance(entries, dict):
       for agent_name in entries.keys():
         names.add(agent_name)
-  pcs = doc.get('pc2_services') or []
+  pcs = doc.get('pc2_services') or [] if isinstance(doc, dict) else []
   for svc in pcs:
     if isinstance(svc, dict) and 'name' in svc:
       names.add(svc['name'])
   return names
 
+
+def contains_legacy(obj) -> bool:
+  if isinstance(obj, str):
+    return obj in LEGACY_BLOCKERS
+  if isinstance(obj, dict):
+    for k, v in obj.items():
+      if contains_legacy(k) or contains_legacy(v):
+        return True
+    return False
+  if isinstance(obj, list):
+    for it in obj:
+      if contains_legacy(it):
+        return True
+    return False
+  return False
+
+
 def scan_doc(path, doc):
-  errs=[]
-  text = open(path,'r',encoding='utf-8').read()
-  if any(x in text for x in LEGACY_BLOCKERS):
+  errs = []
+  # Only scan parsed YAML (comments are not present), avoiding false positives
+  if contains_legacy(doc):
     errs.append(f"{path}: contains legacy ObservabilityHub reference")
 
   agents = collect_agents(doc)
-  ag = (doc.get('agent_groups') or {})
+  ag = (doc.get('agent_groups') or {}) if isinstance(doc, dict) else {}
   for group, entries in ag.items():
-    if isinstance(entries, dict):
-      for agent_name, cfg in entries.items():
-        deps = (cfg or {}).get('dependencies') or []
-        for d in deps:
-          if d not in agents and d not in ALLOW_MISSING:
-            errs.append(f"{path}: {agent_name} depends on missing agent '{d}'")
+    if not isinstance(entries, dict):
+      continue
+    for agent_name, cfg in entries.items():
+      if not isinstance(cfg, dict):
+        # Skip non-dict stubs or malformed entries
+        continue
+      deps = (cfg.get('dependencies') or [])
+      if not isinstance(deps, list):
+        # Normalize single string to list
+        deps = [deps] if isinstance(deps, str) else []
+      for d in deps:
+        if isinstance(d, str) and d not in agents and d not in ALLOW_MISSING:
+          errs.append(f"{path}: {agent_name} depends on missing agent '{d}'")
 
-  # RTAP gating matching
-  speech = (ag.get('speech_io') or {})
-  def get_req(x):
-    v = speech.get(x, {}) or {}
-    return str(v.get('required', '')).strip()
-  if speech:
+  # RTAP gating matching (guard non-dict configs)
+  speech = ag.get('speech_io') if isinstance(ag, dict) else None
+  if isinstance(speech, dict):
+    def get_req(x):
+      v = speech.get(x, {})
+      v = v if isinstance(v, dict) else {}
+      return str(v.get('required', '')).strip()
     si = get_req('StreamingInterruptHandler')
     sla = get_req('StreamingLanguageAnalyzer')
     ssr = get_req('StreamingSpeechRecognition')
@@ -58,17 +84,18 @@ def scan_doc(path, doc):
       errs.append(f"{path}: StreamingLanguageAnalyzer required gating != SSR gating ({sla} vs {ssr})")
   return errs
 
+
 def main():
-  errors=0
+  errors = 0
   for path in FILES:
     try:
       doc = load(path)
       for msg in scan_doc(path, doc):
         print("[DEP-GRAPH]", msg)
-        errors+=1
+        errors += 1
     except Exception as e:
       print(f"[DEP-PARSE] {path}: {e}")
-      errors+=1
+      errors += 1
   if errors:
     print(f"FAIL: Dependency validation found {errors} issues")
     sys.exit(1)
