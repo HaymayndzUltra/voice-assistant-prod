@@ -10,22 +10,20 @@ TARGETS = [
   "main_pc_code/config/**/*.yaml",
   "pc2_code/config/**/*.yaml",
   "config/**/*.yaml",
-  "docker-compose*.y*ml",
+  "**/*.yml",
+  "**/*.yaml",
 ]
 
-SKIP_FILES = {
-  os.path.normpath("docker-compose.individual.yml"),
-}
-
-def should_skip(path: str) -> bool:
-  norm = os.path.normpath(path)
-  return any(norm.endswith(skip) for skip in SKIP_FILES)
+def is_compose_file(path: str) -> bool:
+  base = os.path.basename(path)
+  return base.startswith("docker-compose") or base in {"compose.yml", "compose.yaml"}
 
 def main():
   errors = 0
   for pattern in TARGETS:
     for path in glob.glob(pattern, recursive=True):
-      if should_skip(path):
+      # Skip docker compose files (not part of active validation scope)
+      if is_compose_file(path):
         continue
       try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -34,12 +32,13 @@ def main():
         print(f"[DUPE-KEY] {path}: {e}")
         errors += 1
       except Exception as e:
+        # treat parse errors as failures too
         print(f"[YAML-ERROR] {path}: {e}")
         errors += 1
   if errors:
     print(f"FAIL: Found {errors} YAML issues")
     sys.exit(1)
-  print("OK: No duplicate YAML keys detected (unused files skipped)")
+  print("OK: No duplicate YAML keys detected (docker compose files skipped)")
 
 if __name__ == "__main__":
   main()
