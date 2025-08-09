@@ -414,7 +414,6 @@ agent_groups:
       health_check_port: "${PORT_OFFSET}+6576"
       required: true
       dependencies:
-      - StreamingSpeechRecognition
       - StreamingTTSAgent
       - SystemDigitalTwin
     StreamingSpeechRecognition:

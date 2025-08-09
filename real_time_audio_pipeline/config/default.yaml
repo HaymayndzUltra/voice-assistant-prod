@@ -1,12 +1,18 @@
-title: RealTimeAudioPipelineConfig
-version: 1.0
+# RTAP Default Configuration
+pipeline:
+  buffer_size: 2048
+  max_latency_ms: 50
 
 audio:
-  sample_rate: 16000
-  frame_ms: 20
+  sample_rate: 48000
+  frame_size: 960
   channels: 1
-  device: "${AUDIO_DEVICE:default}"
-  ring_buffer_size_ms: 4000
+
+outputs:
+  zmq_transcripts_port: 6553
+  zmq_events_port: 6552
+  # When RTAP is enabled, legacy streaming_* agents must be disabled to avoid duplication
+  authoritative: true
 
 wakeword:
   model_path: "/models/porcupine/wake.ppn"
@@ -25,11 +31,6 @@ stt:
 language:
   sentiment: true
   fasttext_model: "/models/lid.176.bin"
-
-output:
-  zmq_pub_port_events: 6552
-  zmq_pub_port_transcripts: 6553
-  websocket_port: 5802
 
 resilience:
   circuit_breaker:
