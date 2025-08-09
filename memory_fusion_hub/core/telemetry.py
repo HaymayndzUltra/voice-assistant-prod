@@ -11,6 +11,7 @@ This module provides:
 import time
 import logging
 from typing import Dict, Any, Optional
+import asyncio
 from contextlib import asynccontextmanager
 from functools import wraps
 
@@ -197,13 +198,12 @@ class Telemetry:
         try:
             yield
             self.record_request(operation, 'success')
-        except Exception as e:
+        except Exception as _e:
             self.record_request(operation, 'error')
-            self.record_error(str(type(e).__name__), 'operation')
+            self.record_error(str(type(_e).__name__), 'operation')
             raise
         finally:
-            duration = time.time() - start_time
-            self.request_duration.labels(operation=operation).observe(duration)
+            self.request_duration.labels(operation=operation).observe(time.time() - start_time)
             self.concurrent_requests.dec()
     
     def record_cache_hit(self) -> None:
@@ -418,11 +418,11 @@ def timed_operation(operation_name: str):
                 result = func(*args, **kwargs)
                 # Record success if telemetry available
                 return result
-            except Exception as e:
+            except Exception:
                 # Record error if telemetry available
                 raise
             finally:
-                duration = time.time() - start_time
+                _ = time.time() - start_time
                 # Record duration if telemetry available
         
         return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper

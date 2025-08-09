@@ -12,8 +12,8 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from typing import Optional, Any, List, Awaitable, Callable, TypeVar, Tuple
+from typing import ParamSpec
 
 import aiosqlite
 # Optional SQLAlchemy imports (not required for SQLite path or unit tests)
@@ -30,11 +30,45 @@ except Exception:  # pragma: no cover - allow environments without SQLAlchemy
 
 from pydantic import BaseModel
 
-from .models import MemoryItem, SessionData, KnowledgeRecord, MemoryEvent, FusionConfig
-# Use golden utility for retry with backoff
-from common.utils.network_util import retry_with_backoff
+from .models import MemoryItem, SessionData, KnowledgeRecord, MemoryEvent
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+def async_retry_with_backoff(
+    *,
+    max_retries: int = 3,
+    base_delay: float = 0.5,
+    max_delay: float = 10.0,
+    jitter: float = 0.3,
+    exceptions: Tuple[type[BaseException], ...] = (Exception,),
+) -> Callable[[Callable[P, Awaitable[T]]], Callable[P, Awaitable[T]]]:
+    """
+    Async decorator for retrying a coroutine with exponential backoff and jitter.
+    """
+
+    def decorator(fn: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            attempt = 0
+            while True:
+                try:
+                    return await fn(*args, **kwargs)
+                except exceptions:
+                    if attempt >= max_retries:
+                        raise
+                    delay = min(base_delay * (2 ** attempt), max_delay)
+                    # Apply jitter ±jitter
+                    from random import uniform
+
+                    delay *= uniform(1 - jitter, 1 + jitter)
+                    await asyncio.sleep(delay)
+                    attempt += 1
+        return wrapper
+
+    return decorator
 
 
 class RepositoryException(Exception):
@@ -210,17 +244,16 @@ class SQLiteRepository(AbstractRepository):
         else:
             raise RepositoryException(f"Unsupported model type: {type(value)}")
     
-    def _get_model_class(self, table_name: str):  # type: ignore[override]
+    def _get_model_class(self, table_name: str) -> Optional[type[BaseModel]]:
         """Get the Pydantic model class for a table."""
-        table_to_model = {
+        table_to_model: dict[str, type[BaseModel]] = {
             "memory_items": MemoryItem,
             "session_data": SessionData,
             "knowledge_records": KnowledgeRecord,
-            "memory_events": MemoryEvent
+            "memory_events": MemoryEvent,
         }
         return table_to_model.get(table_name)
     
-    @retry_with_backoff(max_retries=3, base_delay=1.0)
     async def get(self, key: str) -> Optional[BaseModel]:
         """Retrieve a data object by its key from any table."""
         if not self.connection:
@@ -247,7 +280,6 @@ class SQLiteRepository(AbstractRepository):
         
         return None
     
-    @retry_with_backoff(max_retries=3, base_delay=1.0)
     async def put(self, key: str, value: BaseModel) -> None:
         """Store a data object with the given key."""
         if not self.connection:
@@ -269,7 +301,6 @@ class SQLiteRepository(AbstractRepository):
             logger.error(f"Failed to store object {key}: {e}")
             raise RepositoryException(f"Put operation failed: {e}")
     
-    @retry_with_backoff(max_retries=3, base_delay=1.0)
     async def delete(self, key: str) -> None:
         """Delete a data object by its key from all tables."""
         if not self.connection:
@@ -281,7 +312,7 @@ class SQLiteRepository(AbstractRepository):
                 cursor = await self.connection.execute(
                     f"DELETE FROM {table_name} WHERE key = ?", (key,)
                 )
-                if cursor.rowcount > 0:
+                if cursor.rowcount and cursor.rowcount > 0:
                     deleted = True
                 await cursor.close()
             
@@ -393,7 +424,9 @@ class PostgresRepository(AbstractRepository):
             )
             
             # Create tables using raw SQL for simplicity
-            async with self.engine.begin() as conn:  # type: ignore[union-attr]
+            engine = self.engine
+            assert engine is not None
+            async with engine.begin() as conn:
                 await conn.execute(text("""
                     CREATE TABLE IF NOT EXISTS memory_items (
                         key VARCHAR(255) PRIMARY KEY,
@@ -453,16 +486,15 @@ class PostgresRepository(AbstractRepository):
         else:
             raise RepositoryException(f"Unsupported model type: {type(value)}")
     
-    def _get_model_class(self, table_name: str):  # type: ignore[override]
-        table_to_model = {
+    def _get_model_class(self, table_name: str) -> Optional[type[BaseModel]]:
+        table_to_model: dict[str, type[BaseModel]] = {
             "memory_items": MemoryItem,
             "session_data": SessionData,
             "knowledge_records": KnowledgeRecord,
-            "memory_events": MemoryEvent
+            "memory_events": MemoryEvent,
         }
         return table_to_model.get(table_name)
     
-    @retry_with_backoff(max_retries=3, base_delay=1.0)
     async def get(self, key: str) -> Optional[BaseModel]:
         if not self.session_factory:
             raise RepositoryException("Repository not initialized")
@@ -487,7 +519,6 @@ class PostgresRepository(AbstractRepository):
         
         return None
     
-    @retry_with_backoff(max_retries=3, base_delay=1.0)
     async def put(self, key: str, value: BaseModel) -> None:
         if not self.session_factory:
             raise RepositoryException("Repository not initialized")
@@ -515,7 +546,6 @@ class PostgresRepository(AbstractRepository):
             logger.error(f"Failed to store object {key}: {e}")
             raise RepositoryException(f"Put operation failed: {e}")
     
-    @retry_with_backoff(max_retries=3, base_delay=1.0)
     async def delete(self, key: str) -> None:
         if not self.session_factory:
             raise RepositoryException("Repository not initialized")
@@ -603,7 +633,7 @@ class PostgresRepository(AbstractRepository):
             logger.info("PostgreSQL repository connection closed")
 
 
-def build_repo(storage_config) -> AbstractRepository:
+def build_repo(storage_config: Any) -> AbstractRepository:
     """
     Factory function to build the appropriate repository based on configuration.
     

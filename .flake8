@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 160
+extend-ignore = W293,W291,W292
+exclude = .venv,build,dist,**/*_pb2.py,**/*_pb2_grpc.py
+per-file-ignores =
+    memory_fusion_hub/transport/zmq_server.py:F401

@@ -14,11 +14,11 @@ Environment variables:
 from __future__ import annotations
 
 import asyncio
-import json
+# import json
 import os
 import time
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, Optional, List, Any
 
 import grpc
 from grpc import aio
@@ -27,25 +27,26 @@ from grpc_reflection.v1alpha import reflection
 
 try:
     # When executed within the memory_fusion_hub package
-    from ..memory_fusion_pb2 import (
+    from ..memory_fusion_pb2 import (  # type: ignore
         GetRequest, GetResponse, PutRequest, PutResponse, DeleteRequest, DeleteResponse,
         BatchGetRequest, BatchGetResponse, ExistsRequest, ExistsResponse,
         ListKeysRequest, ListKeysResponse, HealthRequest, HealthResponse,
         MemoryItem as ProtoMemoryItem, ComponentHealth,
     )
-    from ..memory_fusion_pb2_grpc import MemoryFusionServiceServicer, add_MemoryFusionServiceServicer_to_server, MemoryFusionServiceStub
+    from ..memory_fusion_pb2_grpc import MemoryFusionServiceServicer, add_MemoryFusionServiceServicer_to_server, MemoryFusionServiceStub  # type: ignore
 except Exception:  # pragma: no cover - fallback
     # Fallback if running standalone: add package dir to sys.path so generated modules
     # can be imported as top-level (they use absolute imports)
-    import sys, os as _os
+    import sys
+    import os as _os
     sys.path.append(_os.path.dirname(_os.path.dirname(__file__)))
-    from memory_fusion_pb2 import (
+    from memory_fusion_pb2 import (  # type: ignore
         GetRequest, GetResponse, PutRequest, PutResponse, DeleteRequest, DeleteResponse,
         BatchGetRequest, BatchGetResponse, ExistsRequest, ExistsResponse,
         ListKeysRequest, ListKeysResponse, HealthRequest, HealthResponse,
         MemoryItem as ProtoMemoryItem, ComponentHealth,
     )
-    from memory_fusion_pb2_grpc import MemoryFusionServiceServicer, add_MemoryFusionServiceServicer_to_server, MemoryFusionServiceStub
+    from memory_fusion_pb2_grpc import MemoryFusionServiceServicer, add_MemoryFusionServiceServicer_to_server, MemoryFusionServiceStub  # type: ignore
 
 
 # ------------------------------
@@ -93,7 +94,7 @@ class ReadThroughCache:
             CACHE_SIZE.set(len(self._store))
 
 
-class MFHProxyServicer(MemoryFusionServiceServicer):
+class MFHProxyServicer(MemoryFusionServiceServicer):  # type: ignore[misc]
     def __init__(self, upstream_addr: str, cache_ttl_sec: int = 60):
         self._upstream_addr = upstream_addr
         self._channel = grpc.insecure_channel(upstream_addr)
@@ -101,7 +102,7 @@ class MFHProxyServicer(MemoryFusionServiceServicer):
         self._cache = ReadThroughCache(cache_ttl_sec)
 
     # --------------- RPCs ---------------
-    async def Get(self, request: GetRequest, context) -> GetResponse:
+    async def Get(self, request: Any, context: aio.ServicerContext) -> GetResponse:  # type: ignore[override]
         key = request.key
         cached = await self._cache.get(key)
         if cached is not None:
@@ -120,7 +121,7 @@ class MFHProxyServicer(MemoryFusionServiceServicer):
             await self._cache.put(upstream_resp.item.key, upstream_resp.item)
         return upstream_resp
 
-    async def Put(self, request: PutRequest, context) -> PutResponse:
+    async def Put(self, request: Any, context: aio.ServicerContext) -> PutResponse:  # type: ignore[override]
         # Forward write
         loop = asyncio.get_running_loop()
         upstream = self._stub.Put(request)
@@ -130,14 +131,14 @@ class MFHProxyServicer(MemoryFusionServiceServicer):
             await self._cache.put(request.key, request.item)
         return upstream_resp
 
-    async def Delete(self, request: DeleteRequest, context) -> DeleteResponse:
+    async def Delete(self, request: Any, context: aio.ServicerContext) -> DeleteResponse:  # type: ignore[override]
         loop = asyncio.get_running_loop()
         upstream = self._stub.Delete(request)
         upstream_resp: DeleteResponse = await loop.run_in_executor(None, upstream)
         await self._cache.delete(request.key)
         return upstream_resp
 
-    async def BatchGet(self, request: BatchGetRequest, context) -> BatchGetResponse:
+    async def BatchGet(self, request: Any, context: aio.ServicerContext) -> BatchGetResponse:  # type: ignore[override]
         loop = asyncio.get_running_loop()
         response = BatchGetResponse()
         missing: List[str] = []
@@ -166,7 +167,7 @@ class MFHProxyServicer(MemoryFusionServiceServicer):
 
         return response
 
-    async def Exists(self, request: ExistsRequest, context) -> ExistsResponse:
+    async def Exists(self, request: Any, context: aio.ServicerContext) -> ExistsResponse:  # type: ignore[override]
         cached = await self._cache.get(request.key)
         if cached is not None:
             HITS.labels(method="Exists").inc()
@@ -176,13 +177,13 @@ class MFHProxyServicer(MemoryFusionServiceServicer):
         upstream = self._stub.Exists(request)
         return await loop.run_in_executor(None, upstream)
 
-    async def ListKeys(self, request: ListKeysRequest, context) -> ListKeysResponse:
+    async def ListKeys(self, request: Any, context: aio.ServicerContext) -> ListKeysResponse:  # type: ignore[override]
         # Always forward for authoritative listing
         loop = asyncio.get_running_loop()
         upstream = self._stub.ListKeys(request)
         return await loop.run_in_executor(None, upstream)
 
-    async def GetHealth(self, request: HealthRequest, context) -> HealthResponse:
+    async def GetHealth(self, request: Any, context: aio.ServicerContext) -> HealthResponse:  # type: ignore[override]
         loop = asyncio.get_running_loop()
         upstream = self._stub.GetHealth(request)
         resp: HealthResponse = await loop.run_in_executor(None, upstream)
@@ -208,7 +209,7 @@ class MFHProxyServer:
         start_http_server(self._metrics_port)
         self._server = aio.server()
         servicer = MFHProxyServicer(self._upstream_addr, self._cache_ttl_sec)
-        add_MemoryFusionServiceServicer_to_server(servicer, self._server)
+        add_MemoryFusionServiceServicer_to_server(servicer, self._server)  # type: ignore[no-untyped-call]
 
         # Enable reflection for grpcurl/introspection
         service_names = (
@@ -221,6 +222,7 @@ class MFHProxyServer:
 
     async def serve(self) -> None:
         await self.start()
+        assert self._server is not None
         await self._server.wait_for_termination()
 
     async def stop(self, grace: int = 3) -> None:
@@ -245,4 +247,3 @@ async def run_proxy_from_env() -> None:
 
 if __name__ == "__main__":
     asyncio.run(run_proxy_from_env())
-
