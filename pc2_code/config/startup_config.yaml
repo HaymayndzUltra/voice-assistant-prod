@@ -169,7 +169,7 @@ pc2_services:
   health_check_port: ${PORT_OFFSET}+8122
   required: true
   dependencies:
-  - ObservabilityHub
+  - UnifiedObservabilityCenter
 - name: FileSystemAssistantAgent
   script_path: pc2_code/agents/filesystem_assistant_agent.py
   host: 0.0.0.0
@@ -266,9 +266,9 @@ error_bus_port: ${PORT_OFFSET}+7150
 docker_groups:
   infra_core:
     description: Core observability & resource management infrastructure
-    agents:
-    - ObservabilityHub
-    - ResourceManager
+      agents:
+  - UnifiedObservabilityCenter
+  - ResourceManager
   core_hubs:
     description: Memory Fusion Hub for unified memory management
     agents:
