@@ -1,1050 +1,595 @@
-workspace $ python3 tpython3 tools/validate_dependencies.py
-[DEP-PARSE] main_pc_code/config/startup_config.yaml: 'str' object has no attribute 'get'
-[DEP-GRAPH] pc2_code/config/startup_config.yaml: contains legacy ObservabilityHub reference
-FAIL: Dependency validation found 2 issues
+./scripts/enhanced_system_audit.py:11:1: F401 'sys' imported but unused
+./scripts/execute_batch4_specialized_services_migration.py:17:1: F401 'time' imported but unused
+./scripts/execute_batch4_specialized_services_migration.py:21:1: F401 'threading' imported but unused
+./scripts/execute_batch4_specialized_services_migration.py:23:1: F401 'datetime.timedelta' imported but unused
+./scripts/execute_batch4_specialized_services_migration.py:24:1: F401 'typing.Optional' imported but unused
+./scripts/execute_batch4_specialized_services_migration.py:24:1: F401 'typing.Tuple' imported but unused
+./scripts/execute_batch4_specialized_services_migration.py:33:5: F401 'common.observability.migration_metrics.MigrationPhase' imported but unused
+./scripts/execute_mma_migration.py:16:1: F401 'typing.Dict' imported but unused
+./scripts/execute_mma_migration.py:16:1: F401 'typing.List' imported but unused
+./scripts/execute_mma_migration.py:16:1: F401 'typing.Any' imported but unused
+./scripts/execute_mma_migration.py:16:1: F401 'typing.Optional' imported but unused
+./scripts/execute_mma_migration_v2.py:14:1: F401 'requests' imported but unused
+./scripts/execute_mma_migration_v2.py:16:1: F401 'typing.Dict' imported but unused
+./scripts/execute_mma_migration_v2.py:16:1: F401 'typing.List' imported but unused
+./scripts/execute_mma_migration_v2.py:16:1: F401 'typing.Any' imported but unused
+./scripts/execute_second_high_risk_migration.py:9:1: F401 'os' imported but unused
+./scripts/execute_second_high_risk_migration.py:14:1: F401 'requests' imported but unused
+./scripts/execute_second_high_risk_migration.py:16:1: F401 'typing.Dict' imported but unused
+./scripts/execute_second_high_risk_migration.py:16:1: F401 'typing.List' imported but unused
+./scripts/execute_second_high_risk_migration.py:16:1: F401 'typing.Any' imported but unused
+./scripts/execute_second_high_risk_migration.py:18:1: F401 'threading' imported but unused
+./scripts/expand_agent_table.py:7:1: F401 're' imported but unused
+./scripts/extract_individual_requirements.py:16:1: F401 'os' imported but unused
+./scripts/extract_individual_requirements.py:18:1: F401 'sys' imported but unused
+./scripts/extract_individual_requirements.py:21:1: F401 'typing.Optional' imported but unused
+./scripts/extract_todos_to_issues.py:11:1: F401 'json' imported but unused
+./scripts/fix_all_logging_basicconfig.py:8:1: F401 'ast' imported but unused
+./scripts/fix_compliance_issues.py:8:1: F401 'json' imported but unused
+./scripts/fix_compliance_issues.py:9:1: F401 'subprocess' imported but unused
+./scripts/fix_compliance_issues.py:10:1: F401 'sys' imported but unused
+./scripts/fix_critical_issues.py:11:1: F401 'os' imported but unused
+./scripts/fix_formainpc_and_observability.py:9:1: F401 'typing.Set' imported but unused
+./scripts/fix_indentation.py:10:1: F401 'sys' imported but unused
+./scripts/fix_indentation.py:14:1: F401 'typing.Optional' imported but unused
+./scripts/fix_indentation.py:14:1: F401 'typing.Dict' imported but unused
+./scripts/fix_indentation.py:14:1: F401 'typing.Any' imported but unused
+./scripts/fix_missing_error_publishers.py:6:1: F401 're' imported but unused
+./scripts/fix_missing_error_publishers.py:7:1: F401 'ast' imported but unused
+./scripts/fix_pc2_dockerignores.py:15:1: F401 'os' imported but unused
+./scripts/fix_pc2_syntax_errors.py:5:1: F401 'os' imported but unused
+./scripts/fix_specific_agents.py:10:1: F401 'typing.Set' imported but unused
+./scripts/fix_specific_agents_v2.py:9:1: F401 'typing.Set' imported but unused
+./scripts/fix_test_errors.py:13:1: F401 'pathlib.Path' imported but unused
+./scripts/flatten_config.py:2:1: F401 'sys' imported but unused
+./scripts/generate_agent_inventory.py:2:1: F401 'os' imported but unused
+./scripts/generate_agents_report.py:16:1: F401 'pathlib.Path' imported but unused
+./scripts/generate_agents_report.py:18:1: F401 'typing.List' imported but unused
+./scripts/generate_requirements_pc2_infra_core.py:14:1: F401 'sys' imported but unused
+./scripts/generate_week3_performance_report.py:8:1: F401 'os' imported but unused
+./scripts/generate_week3_performance_report.py:11:1: F401 'typing.Dict' imported but unused
+./scripts/generate_week3_performance_report.py:11:1: F401 'typing.Any' imported but unused
+./scripts/gpu_usage_reporter.py:6:1: F401 'os' imported but unused
+./scripts/harden_audit.py:18:1: F401 'subprocess' imported but unused
+./scripts/harden_audit.py:18:1: F401 'hashlib' imported but unused
+./scripts/health_check.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/health_check.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/health_check.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/health_check.py:13:1: F401 'typing.List' imported but unused
+./scripts/health_check.py:13:1: F401 'typing.Optional' imported but unused
+./scripts/identify_high_risk_legacy_agents.py:9:1: F401 'os' imported but unused
+./scripts/identify_high_risk_legacy_agents.py:11:1: F401 'ast' imported but unused
+./scripts/identify_high_risk_legacy_agents.py:14:1: F401 'typing.Dict' imported but unused
+./scripts/identify_high_risk_legacy_agents.py:14:1: F401 'typing.Any' imported but unused
+./scripts/identify_high_risk_legacy_agents.py:14:1: F401 'typing.Tuple' imported but unused
+./scripts/integrate_pc2_error_bus.py:16:1: F401 'os' imported but unused
+./scripts/integrate_pc2_error_bus.py:20:1: F401 'typing.List' imported but unused
+./scripts/launch_unified.py:15:1: F401 'typing.Set' imported but unused
+./scripts/launch_unified.py:15:1: F401 'typing.Tuple' imported but unused
+./scripts/launch_unified.py:15:1: F401 'typing.Optional' imported but unused
+./scripts/launch_unified.py:17:1: F401 'pathlib.Path' imported but unused
+./scripts/launch_unified_phase2.py:15:1: F401 'typing.Set' imported but unused
+./scripts/launch_unified_phase2.py:15:1: F401 'typing.Tuple' imported but unused
+./scripts/launch_unified_phase2.py:15:1: F401 'typing.Optional' imported but unused
+./scripts/launch_unified_phase2.py:17:1: F401 'pathlib.Path' imported but unused
+./scripts/launch_unified_profile.py:11:1: F401 'time' imported but unused
+./scripts/launch_unified_profile.py:14:1: F401 'signal' imported but unused
+./scripts/launch_unified_profile.py:15:1: F401 'typing.Dict' imported but unused
+./scripts/launch_unified_profile.py:15:1: F401 'typing.List' imported but unused
+./scripts/launch_unified_profile.py:15:1: F401 'typing.Set' imported but unused
+./scripts/launch_unified_profile.py:15:1: F401 'typing.Optional' imported but unused
+./scripts/launch_unified_profile.py:16:1: F401 'pathlib.Path' imported but unused
+./scripts/lazy_loader_service.py:17:1: F401 'typing.Optional' imported but unused
+./scripts/lazy_loader_service.py:19:1: F401 'pathlib.Path' imported but unused
+./scripts/lazy_loader_service.py:20:1: F401 'collections.defaultdict' imported but unused
+./scripts/lazy_loader_service.py:21:1: F401 'datetime.timedelta' imported but unused
+./scripts/load-testing.py:15:1: F401 'os' imported but unused
+./scripts/load-testing.py:16:1: F401 'sys' imported but unused
+./scripts/load-testing.py:18:1: F401 'json' imported but unused
+./scripts/load-testing.py:24:1: F401 'subprocess' imported but unused
+./scripts/load-testing.py:25:1: F401 'datetime.timedelta' imported but unused
+./scripts/load-testing.py:26:1: F401 'typing.Optional' imported but unused
+./scripts/load-testing.py:31:1: F401 'matplotlib.pyplot as plt' imported but unused
+./scripts/load-testing.py:32:1: F401 'concurrent.futures.ThreadPoolExecutor' imported but unused
+./scripts/load-testing.py:32:1: F401 'concurrent.futures.as_completed' imported but unused
+./scripts/logging_migration_test.py:11:1: F401 'os' imported but unused
+./scripts/logging_migration_test.py:15:1: F401 'subprocess' imported but unused
+./scripts/logging_migration_test.py:17:1: F401 'typing.Tuple' imported but unused
+./scripts/logging_migration_test.py:17:1: F401 'typing.Optional' imported but unused
+./scripts/migrate_pc2_agents.py:19:1: F401 'shutil' imported but unused
+./scripts/migrate_pc2_agents.py:23:1: F401 'typing.Dict' imported but unused
+./scripts/migrate_pc2_agents.py:23:1: F401 'typing.Any' imported but unused
+./scripts/migration/search_replace_hosts.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/migration/search_replace_hosts.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/migration/search_replace_hosts.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/migration/search_replace_hosts.py:10:1: F401 'os' imported but unused
+./scripts/migration/search_replace_hosts.py:13:1: F401 'typing.Dict' imported but unused
+./scripts/migration/search_replace_hosts.py:13:1: F401 'typing.Set' imported but unused
+./scripts/migration/wp02_dockerfile_hardening.py:11:1: F401 'typing.Dict' imported but unused
+./scripts/migration/wp03_graceful_shutdown_migration.py:12:1: F401 'typing.Tuple' imported but unused
+./scripts/migration/wp03_graceful_shutdown_migration.py:12:1: F401 'typing.Set' imported but unused
+./scripts/migration/wp03_graceful_shutdown_migration.py:13:1: F401 'subprocess' imported but unused
+./scripts/migration/wp04_async_performance_migration.py:12:1: F401 'typing.Tuple' imported but unused
+./scripts/migration/wp04_async_performance_migration.py:12:1: F401 'typing.Set' imported but unused
+./scripts/migration/wp04_async_performance_migration.py:13:1: F401 'subprocess' imported but unused
+./scripts/migration/wp05_connection_pools_migration.py:8:1: F401 'os' imported but unused
+./scripts/migration/wp06_api_standardization_migration.py:8:1: F401 'os' imported but unused
+./scripts/migration/wp07_health_unification.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/migration/wp07_health_unification.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/migration/wp07_health_unification.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/migration/wp07_health_unification.py:9:1: F401 'os' imported but unused
+./scripts/migration/wp07_health_unification.py:13:1: F401 'typing.Tuple' imported but unused
+./scripts/migration/wp07_health_unification.py:13:1: F401 'typing.Set' imported but unused
+./scripts/migration/wp07_resiliency_migration.py:8:1: F401 'os' imported but unused
+./scripts/migration/wp08_performance_migration.py:8:1: F401 'os' imported but unused
+./scripts/migration/wp09_observability_migration.py:8:1: F401 'os' imported but unused
+./scripts/migration/wp09_service_mesh.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/migration/wp09_service_mesh.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/migration/wp09_service_mesh.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/migration/wp09_service_mesh.py:9:1: F401 'os' imported but unused
+./scripts/migration/wp09_service_mesh.py:11:1: F401 'yaml' imported but unused
+./scripts/migration/wp09_service_mesh.py:14:1: F401 'typing.Set' imported but unused
+./scripts/migration/wp09_service_mesh.py:14:1: F401 'typing.Tuple' imported but unused
+./scripts/migration/wp09_service_mesh.py:17:1: F401 'subprocess' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:3:1: F401 'common.utils.log_setup.configure_logging' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:10:1: F401 'os' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:13:1: F401 'asyncio' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:15:1: F401 'typing.Set' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:15:1: F401 'typing.Tuple' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:16:1: F401 'datetime.timedelta' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:17:1: F401 'dataclasses.asdict' imported but unused
+./scripts/migration/wp10_nats_error_bus.py:18:1: F401 'subprocess' imported but unused
+./scripts/migration/wp10_security_migration.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/migration/wp10_security_migration.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/migration/wp10_security_migration.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/migration/wp10_security_migration.py:9:1: F401 'os' imported but unused
+./scripts/migration/wp12_automated_reports.py:8:1: F401 'os' imported but unused
+./scripts/migration/wp12_automated_reports.py:14:1: F401 'typing.Set' imported but unused
+./scripts/migration/wp12_automated_reports.py:14:1: F401 'typing.Tuple' imported but unused
+./scripts/migration/wp12_automated_reports.py:17:1: F401 'yaml' imported but unused
+./scripts/migration_validation_framework.py:10:1: F401 'os' imported but unused
+./scripts/migration_validation_framework.py:16:1: F401 'subprocess' imported but unused
+./scripts/migration_validation_framework.py:19:1: F401 'datetime.timedelta' imported but unused
+./scripts/migration_validation_framework.py:21:1: F401 'concurrent.futures.ThreadPoolExecutor' imported but unused
+./scripts/migration_validation_framework.py:21:1: F401 'concurrent.futures.as_completed' imported but unused
+./scripts/migration_validation_framework.py:22:1: F401 'yaml' imported but unused
+./scripts/migration_validation_framework.py:27:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/migration_validation_framework.py:27:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/migration_validation_framework.py:28:1: F401 'common.utils.path_manager.PathManager' imported but unused
+./scripts/monitor_optimization_performance.py:8:1: F401 'os' imported but unused
+./scripts/optimize_requirements.py:10:1: F401 'collections.defaultdict' imported but unused
+./scripts/optimize_requirements.py:10:1: F401 'collections.Counter' imported but unused
+./scripts/optimize_requirements_aggressive.py:10:1: F401 'collections.defaultdict' imported but unused
+./scripts/optimize_requirements_aggressive.py:10:1: F401 'collections.Counter' imported but unused
+./scripts/parallel_deploy_system.py:14:1: F401 'subprocess' imported but unused
+./scripts/parallel_deploy_system.py:18:1: F401 'concurrent.futures' imported but unused
+./scripts/parallel_deploy_system.py:20:1: F401 'typing.Optional' imported but unused
+./scripts/parallel_deploy_system.py:22:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/patch_dockerfiles.py:33:1: F401 'hashlib' imported but unused
+./scripts/patch_dockerfiles.py:33:1: F401 're' imported but unused
+./scripts/pc2_agents_compliance_fixer.py:22:1: F401 'ast' imported but unused
+./scripts/pc2_agents_compliance_fixer.py:25:1: F401 'typing.Dict' imported but unused
+./scripts/pc2_agents_compliance_fixer.py:25:1: F401 'typing.List' imported but unused
+./scripts/pc2_agents_compliance_fixer.py:25:1: F401 'typing.Set' imported but unused
+./scripts/pc2_agents_compliance_fixer.py:25:1: F401 'typing.Tuple' imported but unused
+./scripts/pc2_agents_compliance_fixer.py:25:1: F401 'typing.Optional' imported but unused
+./scripts/pc2_compliance_automation.py:14:1: F401 'os' imported but unused
+./scripts/pc2_cross_machine_automation.py:14:1: F401 'os' imported but unused
+./scripts/pc2_cross_machine_fixer.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/pc2_cross_machine_fixer.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/pc2_cross_machine_fixer.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/pc2_cross_machine_fixer.py:22:1: F401 'sys' imported but unused
+./scripts/pc2_cross_machine_fixer.py:28:1: F401 'typing.List' imported but unused
+./scripts/pc2_cross_machine_fixer.py:28:1: F401 'typing.Set' imported but unused
+./scripts/pc2_cross_machine_fixer.py:28:1: F401 'typing.Tuple' imported but unused
+./scripts/pc2_restore_functionality.py:18:1: F401 'difflib' imported but unused
+./scripts/pc2_restore_functionality.py:23:1: F401 'typing.List' imported but unused
+./scripts/pc2_restore_functionality.py:23:1: F401 'typing.Set' imported but unused
+./scripts/pc2_restore_functionality.py:23:1: F401 'typing.Tuple' imported but unused
+./scripts/port_linter.py:14:1: F401 'typing.Set' imported but unused
+./scripts/rebuild_source_of_truth.py:17:1: F401 'pathlib.Path' imported but unused
+./scripts/rebuild_source_of_truth.py:19:1: F401 'typing.List' imported but unused
+./scripts/refactor_paths.py:12:1: F401 'pathlib.Path' imported but unused
+./scripts/refactor_paths.py:15:1: F401 'typing.Optional' imported but unused
+./scripts/refactor_paths.py:27:1: F401 'common.utils.path_env.get_path' imported but unused
+./scripts/refactor_paths.py:27:1: F401 'common.utils.path_env.join_path' imported but unused
+./scripts/refactor_paths.py:27:1: F401 'common.utils.path_env.get_file_path' imported but unused
+./scripts/remove_sys_path_example.py:7:1: F401 'os' imported but unused
+./scripts/remove_sys_path_example.py:9:1: F401 'pathlib.Path' imported but unused
+./scripts/remove_sys_path_example.py:10:1: F401 'typing.List' imported but unused
+./scripts/remove_sys_path_example.py:10:1: F401 'typing.Dict' imported but unused
+./scripts/remove_sys_path_example.py:10:1: F401 'typing.Optional' imported but unused
+./scripts/remove_sys_path_inserts.py:10:1: F401 'pathlib.Path' imported but unused
+./scripts/remove_sys_path_inserts.py:12:1: F401 'sys' imported but unused
+./scripts/remove_sys_path_inserts.py:13:1: F401 'typing.Optional' imported but unused
+./scripts/resilience_enhancements.py:9:1: F401 'typing.Optional' imported but unused
+./scripts/resilience_enhancements.py:11:1: F401 'datetime.timedelta' imported but unused
+./scripts/restore_functionality.py:14:1: F401 'os' imported but unused
+./scripts/restore_functionality.py:18:1: F401 'difflib' imported but unused
+./scripts/restore_functionality.py:22:1: F401 'typing.List' imported but unused
+./scripts/restore_functionality.py:22:1: F401 'typing.Set' imported but unused
+./scripts/restore_functionality.py:22:1: F401 'typing.Tuple' imported but unused
+./scripts/routing_benchmark.py:11:1: F401 'typing.Tuple' imported but unused
+./scripts/routing_benchmark_simple.py:8:1: F401 'json' imported but unused
+./scripts/secure_sdt_client.py:11:1: F401 'json' imported but unused
+./scripts/secure_sdt_client.py:13:1: F401 'time' imported but unused
+./scripts/setup_api_cloud.py:7:1: F401 'os' imported but unused
+./scripts/setup_api_cloud.py:8:1: F401 'json' imported but unused
+./scripts/setup_local_models.py:7:1: F401 'os' imported but unused
+./scripts/setup_mma_enhanced_monitoring.py:9:1: F401 'os' imported but unused
+./scripts/setup_mma_enhanced_monitoring.py:13:1: F401 'typing.Dict' imported but unused
+./scripts/setup_mma_enhanced_monitoring.py:13:1: F401 'typing.List' imported but unused
+./scripts/setup_mma_enhanced_monitoring.py:13:1: F401 'typing.Any' imported but unused
+./scripts/slo_calculator.py:8:1: F401 'time' imported but unused
+./scripts/slo_calculator.py:13:1: F401 'typing.List' imported but unused
+./scripts/slo_calculator.py:15:1: F401 'prometheus_client' imported but unused
+./scripts/slo_calculator.py:16:1: F401 'prometheus_client.Histogram' imported but unused
+./scripts/standardize_imports.py:11:1: F401 'os' imported but unused
+./scripts/standardize_imports.py:13:1: F401 'sys' imported but unused
+./scripts/start_24h_observation_monitoring.py:13:1: F401 'requests' imported but unused
+./scripts/start_24h_observation_monitoring.py:15:1: F401 'typing.List' imported but unused
+./scripts/start_24h_observation_monitoring.py:15:1: F401 'typing.Any' imported but unused
+./scripts/start_24h_observation_monitoring.py:17:1: F401 'threading' imported but unused
+./scripts/start_system.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/start_system.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/start_system.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/start_system.py:32:1: F811 redefinition of unused 'defaultdict' from line 16
+./scripts/start_system.py:32:1: F811 redefinition of unused 'deque' from line 16
+./scripts/start_system.py:103:1: F401 'json' imported but unused
+./scripts/system_wide_optimization_deployment.py:10:1: F401 'time' imported but unused
+./scripts/system_wide_optimization_deployment.py:13:1: F401 'subprocess' imported but unused
+./scripts/system_wide_optimization_deployment.py:15:1: F401 'typing.Optional' imported but unused
+./scripts/template_compliant_agent.py:15:1: F401 'threading' imported but unused
+./scripts/template_compliant_agent.py:18:1: F401 'typing.Union' imported but unused
+./scripts/test_api_priorities.py:9:1: F401 'json' imported but unused
+./scripts/test_batch_processing.py:8:1: F401 'os' imported but unused
+./scripts/test_batch_processing.py:12:1: F401 'random' imported but unused
+./scripts/test_connection_pools.py:12:1: F401 'os' imported but unused
+./scripts/test_cross_machine_coordination.py:7:1: F401 'sys' imported but unused
+./scripts/test_cross_machine_coordination.py:10:1: F401 'typing.Dict' imported but unused
+./scripts/test_cross_machine_coordination.py:10:1: F401 'typing.Any' imported but unused
+./scripts/test_distributed_observability.py:8:1: F401 'os' imported but unused
+./scripts/test_distributed_observability.py:11:1: F401 'json' imported but unused
+./scripts/test_distributed_observability.py:12:1: F401 'threading' imported but unused
+./scripts/test_distributed_observability.py:14:1: F401 'typing.Dict' imported but unused
+./scripts/test_distributed_observability.py:14:1: F401 'typing.List' imported but unused
+./scripts/test_distributed_observability.py:14:1: F401 'typing.Any' imported but unused
+./scripts/test_distributed_observability.py:19:1: F401 'common.utils.path_manager.PathManager' imported but unused
+./scripts/test_fixed_service_discovery.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/test_fixed_service_discovery.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/test_fixed_service_discovery.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/test_fixed_service_discovery.py:18:1: F401 'signal' imported but unused
+./scripts/test_fixed_service_discovery.py:21:1: F401 'common.env_helpers.get_env' imported but unused
+./scripts/test_observability.py:9:1: F401 'json' imported but unused
+./scripts/test_performance.py:12:1: F401 'typing.Dict' imported but unused
+./scripts/test_performance.py:12:1: F401 'typing.Any' imported but unused
+./scripts/test_resiliency.py:10:1: F401 'threading' imported but unused
+./scripts/test_resiliency.py:22:9: F401 'common.resiliency.circuit_breaker.CircuitState' imported but unused
+./scripts/test_resiliency.py:159:9: F401 'common.resiliency.bulkhead.BulkheadFullException' imported but unused
+./scripts/test_resiliency.py:227:9: F401 'common.resiliency.health_monitor.HealthStatus' imported but unused
+./scripts/test_resiliency.py:379:9: F401 'common.resiliency.bulkhead.IsolationStrategy' imported but unused
+./scripts/test_script_resolution.py:12:1: F401 'typing.Dict' imported but unused
+./scripts/test_secure_twin_connection.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/test_secure_twin_connection.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/test_secure_twin_connection.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/test_secure_twin_connection.py:19:1: F401 'typing.Dict' imported but unused
+./scripts/test_secure_twin_connection.py:19:1: F401 'typing.Any' imported but unused
+./scripts/test_secure_twin_connection.py:19:1: F401 'typing.Optional' imported but unused
+./scripts/test_security.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/test_security.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/test_security.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/test_security.py:10:1: F401 'json' imported but unused
+./scripts/test_security.py:13:1: F401 'common.env_helpers.get_env' imported but unused
+./scripts/test_security.py:23:9: F401 'common.security.authentication.SecurityContext' imported but unused
+./scripts/test_security.py:170:9: F401 'common.security.access_control.ThreatLevel' imported but unused
+./scripts/test_security.py:170:9: F401 'common.security.access_control.RateLimitRule' imported but unused
+./scripts/test_security.py:170:9: F401 'common.security.access_control.RateLimitType' imported but unused
+./scripts/test_security.py:170:9: F401 'common.security.access_control.AccessRule' imported but unused
+./scripts/test_security.py:365:9: F401 'common.security.access_control.protect_endpoint' imported but unused
+./scripts/test_service_discovery_system.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/test_service_discovery_system.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/test_service_discovery_system.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/test_service_discovery_system.py:23:1: F401 'zmq' imported but unused
+./scripts/test_service_discovery_system.py:24:1: F401 'typing.Dict' imported but unused
+./scripts/test_service_discovery_system.py:24:1: F401 'typing.Any' imported but unused
+./scripts/test_service_discovery_system.py:24:1: F401 'typing.List' imported but unused
+./scripts/test_service_discovery_system.py:24:1: F401 'typing.Optional' imported but unused
+./scripts/test_service_discovery_system.py:24:1: F401 'typing.Tuple' imported but unused
+./scripts/test_simple_service_discovery.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/test_simple_service_discovery.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/test_simple_service_discovery.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/test_simple_service_discovery.py:11:1: F401 'os' imported but unused
+./scripts/test_unified_memory_agent.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/test_unified_memory_agent.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/test_unified_memory_agent.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/test_unified_memory_agent.py:20:1: F401 'typing.Optional' imported but unused
+./scripts/test_unified_memory_agent.py:21:1: F401 'json' imported but unused
+./scripts/test_unified_tiered_responder.py:8:1: F401 'json' imported but unused
+./scripts/test_unified_tiered_responder.py:9:1: F401 'zmq' imported but unused
+./scripts/test_unified_tiered_responder.py:10:1: F401 'threading' imported but unused
+./scripts/update_zmq_hardcoded_ips.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/update_zmq_hardcoded_ips.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/update_zmq_hardcoded_ips.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/update_zmq_hardcoded_ips.py:17:1: F401 'os' imported but unused
+./scripts/update_zmq_hardcoded_ips.py:23:1: F401 'typing.List' imported but unused
+./scripts/update_zmq_hardcoded_ips.py:24:1: F401 'common.env_helpers.get_env' imported but unused
+./scripts/validate_config.py:11:1: F401 'pathlib.Path' imported but unused
+./scripts/validate_deployment.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/validate_deployment.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/validate_deployment.py:10:1: F401 'json' imported but unused
+./scripts/validate_deployment.py:15:1: F401 'typing.List' imported but unused
+./scripts/validate_deployment.py:15:1: F401 'typing.Optional' imported but unused
+./scripts/validate_deployment.py:16:1: F401 'pathlib.Path' imported but unused
+./scripts/validate_done_definition.py:15:1: F401 'subprocess' imported but unused
+./scripts/validate_done_definition.py:19:1: F401 'typing.Tuple' imported but unused
+./scripts/validate_done_definition.py:19:1: F401 'typing.Dict' imported but unused
+./scripts/validate_mainpc_imports.py:14:1: F401 'pathlib.Path' imported but unused
+./scripts/validate_optimization_health.py:8:1: F401 'os' imported but unused
+./scripts/validate_optimization_health.py:13:1: F401 'typing.Tuple' imported but unused
+./scripts/validate_optimization_health.py:14:1: F401 'datetime.datetime' imported but unused
+./scripts/validate_optimization_health.py:15:1: F401 'concurrent.futures' imported but unused
+./scripts/validate_phase1_completion.py:9:1: F401 'os' imported but unused
+./scripts/validate_phase1_completion.py:12:1: F401 'time' imported but unused
+./scripts/validate_phase1_completion.py:15:1: F401 'typing.Dict' imported but unused
+./scripts/validate_phase1_completion.py:15:1: F401 'typing.List' imported but unused
+./scripts/validate_phase1_completion.py:15:1: F401 'typing.Any' imported but unused
+./scripts/validate_phase1_completion.py:16:1: F401 'datetime.timedelta' imported but unused
+./scripts/validate_production_ready.py:10:1: F401 'os' imported but unused
+./scripts/validate_production_ready.py:15:1: F401 'typing.Tuple' imported but unused
+./scripts/validate_production_ready.py:15:1: F401 'typing.Dict' imported but unused
+./scripts/validate_production_ready.py:293:13: F401 'common.config_manager.load_unified_config' imported but unused
+./scripts/validate_production_ready.py:300:13: F401 'main_pc_code.agents.error_publisher.create_mainpc_error_publisher' imported but unused
+./scripts/validate_prometheus_metrics.py:13:1: F401 'json' imported but unused
+./scripts/validate_prometheus_metrics.py:15:1: F401 'threading' imported but unused
+./scripts/validate_prometheus_metrics.py:18:1: F401 'typing.List' imported but unused
+./scripts/validate_prometheus_metrics.py:25:1: F401 'common.utils.path_manager.PathManager' imported but unused
+./scripts/validate_secrets_remediation.py:14:1: F401 'os' imported but unused
+./scripts/validate_secrets_remediation.py:16:1: F401 'tempfile' imported but unused
+./scripts/validate_secrets_remediation.py:20:1: F401 'typing.Tuple' imported but unused
+./scripts/validate_secrets_remediation.py:20:1: F401 'typing.Optional' imported but unused
+./scripts/validate_secrets_remediation.py:48:13: F401 'common.utils.secret_manager.SecretNotFoundError' imported but unused
+./scripts/validate_system_wide_performance.py:9:1: F401 'os' imported but unused
+./scripts/validate_system_wide_performance.py:10:1: F401 'time' imported but unused
+./scripts/validate_system_wide_performance.py:14:1: F401 'typing.List' imported but unused
+./scripts/validate_system_wide_performance.py:15:1: F401 'datetime.datetime' imported but unused
+./scripts/verify_agent_health_checks.py:18:1: F401 'typing.Set' imported but unused
+./scripts/verify_agent_health_checks.py:18:1: F401 'typing.Optional' imported but unused
+./scripts/verify_all_health_checks.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./scripts/verify_all_health_checks.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./scripts/verify_all_health_checks.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./scripts/verify_all_health_checks.py:20:1: F401 'time' imported but unused
+./scripts/verify_logging_upgrade.py:11:1: F401 'os' imported but unused
+./scripts/verify_logging_upgrade.py:12:1: F401 'time' imported but unused
+./scripts/verify_logging_upgrade.py:104:9: F401 'common.utils.logger_util.upgrade_logger_to_rotating' imported but unused
+./services/cross_gpu_scheduler/scheduler_pb2_grpc.py:4:1: F401 'warnings' imported but unused
+./services/self_healing_supervisor/supervisor.py:8:1: F401 'json' imported but unused
+./services/self_healing_supervisor/supervisor.py:8:1: F401 'time' imported but unused
+./services/speech_relay/relay_pb2_grpc.py:4:1: F401 'warnings' imported but unused
+./services/streaming_translation_proxy/proxy.py:9:1: F401 'asyncio' imported but unused
+./services/streaming_translation_proxy/proxy.py:10:1: F401 'fastapi.Depends' imported but unused
+./session_consistency_validator.py:12:1: F401 'pathlib.Path' imported but unused
+./session_consistency_validator.py:13:1: F401 'typing.Tuple' imported but unused
+./session_consistency_validator.py:13:1: F401 'typing.Optional' imported but unused
+./session_continuity_manager.py:12:1: F401 'dataclasses.asdict' imported but unused
+./setup_phi3_instruct.py:9:1: F401 'time' imported but unused
+./setup_phi3_instruct.py:11:1: F401 'json' imported but unused
+./start_pc2_agents.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
+./start_pc2_agents.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
+./start_pc2_agents.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
+./start_pc2_agents.py:13:1: F401 'os' imported but unused
+./structural_integrity_scan.py:7:1: F401 'os' imported but unused
+./structural_integrity_scan.py:11:1: F401 'typing.List' imported but unused
+./system_discovery_script.py:7:1: F401 'os' imported but unused
+./system_discovery_script.py:9:1: F401 'typing.Set' imported but unused
+./task_automation_hub.py:13:1: F401 'json' imported but unused
+./task_automation_hub.py:15:1: F401 'sys' imported but unused
+./task_automation_hub.py:18:1: F401 'datetime.datetime' imported but unused
+./task_automation_hub.py:20:1: F401 'pathlib.Path' imported but unused
+./task_command_center.py:9:1: F401 'typing.List' imported but unused
+./task_command_center.py:9:1: F401 'typing.Dict' imported but unused
+./task_command_center.py:9:1: F401 'typing.Any' imported but unused
+./task_command_center.py:11:1: F401 'todo_manager.new_task' imported but unused
+./task_interruption_manager.py:7:1: F401 'os' imported but unused
+./task_interruption_manager.py:8:1: F401 'time' imported but unused
+./task_interruption_manager.py:10:1: F401 'typing.List' imported but unused
+./task_interruption_manager.py:10:1: F401 'typing.Optional' imported but unused
+./task_interruption_manager.py:14:1: F401 'todo_manager.add_todo' imported but unused
+./task_interruption_manager.py:14:1: F401 'todo_manager.list_open_tasks' imported but unused
+./task_interruption_manager.py:15:1: F401 'task_state_manager.save_task_state' imported but unused
+./task_interruption_manager.py:15:1: F401 'task_state_manager.load_task_state' imported but unused
+./task_interruption_manager.py:158:17: F811 redefinition of unused 'list_open_tasks' from line 14
+./task_queue_engine.py:18:1: F401 'os' imported but unused
+./task_queue_engine.py:23:1: F401 'typing.Optional' imported but unused
+./task_queue_engine.py:24:1: F401 'watchdog.observers.Observer' imported but unused
+./task_queue_engine.py:359:9: F811 redefinition of unused 'Observer' from line 24
+./test/agent_discovery_tests.py:8:1: F401 'asyncio' imported but unused
+./test/agent_discovery_tests.py:13:1: F401 'subprocess' imported but unused
+./test/agent_discovery_tests.py:14:1: F401 'typing.Tuple' imported but unused
+./test/agent_discovery_tests.py:16:1: F401 'pathlib.Path' imported but unused
+./test/comprehensive_agent_tests.py:9:1: F401 'asyncio' imported but unused
+./test/comprehensive_agent_tests.py:13:1: F401 'time' imported but unused
+./test/comprehensive_agent_tests.py:16:1: F401 'typing.Tuple' imported but unused
+./test/comprehensive_agent_tests.py:17:1: F401 'subprocess' imported but unused
+./test/comprehensive_agent_tests.py:18:1: F401 'pytest' imported but unused
+./test/cross_machine_tests.py:9:1: F401 'asyncio' imported but unused
+./test/cross_machine_tests.py:15:1: F401 'threading' imported but unused
+./test/cross_machine_tests.py:16:1: F401 'typing.Any' imported but unused
+./test/cross_machine_tests.py:18:1: F401 'subprocess' imported but unused
+./test/cross_machine_tests.py:19:1: F401 'pathlib.Path' imported but unused
+./test/health_check_foundation.py:10:1: F401 'time' imported but unused
+./test/health_check_foundation.py:12:1: F401 'typing.List' imported but unused
+./test/start_foundation_services.py:17:1: F401 'typing.List' imported but unused
+./test/start_foundation_services.py:17:1: F401 'typing.Optional' imported but unused
+./test/verify_mainpc_services.py:11:1: F401 'time' imported but unused
+./test_complete_setup.py:9:1: F401 'pathlib.Path' imported but unused
+./test_google_translate_api.py:10:1: F401 'json' imported but unused
+./test_google_translate_api.py:80:9: F401 'common.hybrid_api_manager.api_manager' imported but unused
+./test_local_stt.py:8:1: F401 'pathlib.Path' imported but unused
+./test_periodic_sync.py:7:1: F401 'auto_sync_manager.stop_periodic_sync' imported but unused
+./test_translation_service.py:10:1: F401 'time' imported but unused
+./test_translation_service.py:65:9: F401 'common.hybrid_api_manager.api_manager' imported but unused
+./tests/conftest.py:8:1: F401 'pathlib.Path' imported but unused
+./tests/conftest.py:84:1: F401 'requests' imported but unused
+./tests/conftest.py:96:5: F401 'signal' imported but unused
+./tests/e2e/test_dialogue_flow.py:9:1: F401 'json' imported but unused
+./tests/e2e/test_dialogue_flow.py:10:1: F401 'typing.Any' imported but unused
+./tests/e2e_full/test_lazy_loading.py:10:1: F401 'json' imported but unused
+./tests/e2e_full/test_lazy_loading.py:11:1: F401 'subprocess' imported but unused
+./tests/e2e_full/test_lazy_loading.py:13:1: F401 'os' imported but unused
+./tests/e2e_full/test_lazy_loading.py:14:1: F401 'pathlib.Path' imported but unused
+./tests/e2e_full/test_lazy_loading.py:15:1: F401 'typing.Dict' imported but unused
+./tests/e2e_full/test_lazy_loading.py:15:1: F401 'typing.Optional' imported but unused
+./tests/test_active_agents_import.py:2:1: F401 'os' imported but unused
+./tests/test_api_health.py:1:1: F401 'asyncio' imported but unused
+./tests/test_api_health.py:2:1: F401 'os' imported but unused
+./tests/test_common_api_contract.py:1:1: F401 'time' imported but unused
+./tests/test_common_api_contract.py:3:1: F401 'pytest' imported but unused
+./tests/test_contracts_apc_multipart.py:5:1: F401 'pathlib.Path' imported but unused
+./tests/test_docker_validation.py:8:1: F401 'pytest' imported but unused
+./tests/test_docker_validation.py:19:5: F401 'numpy' imported but unused
+./tests/test_docker_validation.py:20:5: F401 'yaml' imported but unused
+./tests/test_docker_validation.py:21:5: F401 'requests' imported but unused
+./tests/test_docker_validation.py:22:5: F401 'psutil' imported but unused
+./tests/test_docker_validation.py:23:5: F401 'zmq' imported but unused
+./tests/test_inter_service.py:4:1: F401 'json' imported but unused
+./tests/test_inter_service.py:4:1: F401 'os' imported but unused
+./tests/test_mainpc_core_health.py:2:1: F401 'os' imported but unused
+./tests/test_pc2_stage1.py:11:1: F401 'typing.Dict' imported but unused
+./tests/test_pc2_stage1.py:11:1: F401 'typing.List' imported but unused
+./tests/test_phase1_foundation.py:9:1: F401 'os' imported but unused
+./tests/test_phase_4_1_logging.py:16:1: F401 'json' imported but unused
+./tests/test_phase_4_1_logging.py:17:1: F401 'os' imported but unused
+./tests/test_phase_4_1_logging.py:24:1: F401 'unittest.mock.patch' imported but unused
+./tests/test_phase_4_1_logging.py:24:1: F401 'unittest.mock.MagicMock' imported but unused
+./tests/test_phase_4_1_logging.py:31:1: F401 'common.logging.setup_logging' imported but unused
+./tests/test_phase_4_1_logging.py:31:1: F401 'common.logging.LogLevel' imported but unused
+./tests/test_phase_4_1_logging.py:31:1: F401 'common.logging.SearchResult' imported but unused
+./tests/test_phase_4_1_logging.py:41:1: F401 'common.audit.setup_audit' imported but unused
+./tests/test_phase_4_1_logging.py:41:1: F401 'common.audit.AuditEventType' imported but unused
+./tests/test_phase_4_1_logging.py:41:1: F401 'common.audit.AuditEvent' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:16:1: F401 'threading' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:19:1: F401 'typing.Optional' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:20:1: F401 'unittest.mock.MagicMock' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:25:5: F401 'common.factories.enhanced_agent_factory.AgentTemplate' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:25:5: F401 'common.factories.enhanced_agent_factory.DependencyContainer' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:29:5: F401 'common.lifecycle.agent_lifecycle.StateTransitionValidator' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:33:5: F401 'common.monitoring.health_monitor.BasicHealthChecker' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:33:5: F401 'common.monitoring.health_monitor.ResourceHealthChecker' imported but unused
+./tests/test_phase_4_2_enhanced_lifecycle.py:37:5: F401 'common.resources.resource_manager.AllocationStrategy' imported but unused
+./tests/test_placeholder.py:1:1: F401 'pytest' imported but unused
+./tests/test_resource_allocation.py:4:1: F401 'json' imported but unused
+./tests/test_service_registry.py:4:1: F401 'unittest.mock.patch' imported but unused
+./tests/test_service_registry.py:4:1: F401 'unittest.mock.MagicMock' imported but unused
+./tests/test_service_registry_redis.py:9:1: F401 'unittest.mock.patch' imported but unused
+./tests/test_service_registry_redis.py:9:1: F401 'unittest.mock.MagicMock' imported but unused
+./tests/test_system_digital_twin.py:4:1: F401 'unittest.mock.patch' imported but unused
+./tests/test_system_digital_twin.py:4:1: F401 'unittest.mock.MagicMock' imported but unused
+./todo_manager.py:306:13: F401 'os' imported but unused
+./tools/add_healthchecks.py:4:1: F401 're' imported but unused
+./tools/dead_code_cleaner.py:22:1: F401 're' imported but unused
+./tools/dead_code_cleaner.py:26:1: F401 'typing.Tuple' imported but unused
+./tools/dead_code_cleaner.py:26:1: F401 'typing.Optional' imported but unused
+./tools/dead_code_cleaner.py:28:1: F401 'importlib.util' imported but unused
+./tools/legacy_port_sweep.py:3:1: F401 're' imported but unused
+./tools/network_config_upgrader.py:19:1: F401 'os' imported but unused
+./tools/safe_terminal_ops.py:7:1: F401 'os' imported but unused
+./tools/safe_terminal_ops.py:13:1: F401 'typing.Tuple' imported but unused
+./tools/safe_terminal_ops.py:14:1: F401 'pathlib.Path' imported but unused
+./tools/terminal_health_monitor.py:8:1: F401 'sys' imported but unused
+./tools/terminal_health_monitor.py:14:1: F401 'typing.Optional' imported but unused
+./tools/validate_ports_unique.py:2:1: F401 'os' imported but unused
+./unified_observability_center/api/rest.py:5:1: F401 'typing.Optional' imported but unused
+./unified_observability_center/app.py:24:1: F401 'common.utils.path_manager.PathManager' imported but unused
+./unified_observability_center/core/collector_manager.py:3:1: F401 'typing.Any' imported but unused
+./unified_observability_center/core/ha.py:2:1: F401 'logging' imported but unused
+./unified_observability_center/core/healing_engine.py:1:1: F401 'asyncio' imported but unused
+./unified_observability_center/core/kernel.py:1:1: F401 'asyncio' imported but unused
+./unified_observability_center/core/kernel.py:2:1: F401 'typing.Optional' imported but unused
+./unified_observability_center/core/kernel.py:6:1: F401 'unified_observability_center.bus.nats_client.NatsClient' imported but unused
+./unified_observability_center/core/storage.py:1:1: F401 'asyncio' imported but unused
+./unified_observability_center/core/storage.py:2:1: F401 'json' imported but unused
+./unified_observability_center/resiliency/circuit_breaker.py:3:1: F401 'typing.Coroutine' imported but unused
+./validate_all_agents.py:8:1: F401 'os' imported but unused
+./validate_all_agents.py:11:1: F401 'traceback' imported but unused
+./validate_cloud_translation.py:9:1: F401 'time' imported but unused
+./validate_cloud_translation.py:10:1: F401 'json' imported but unused
+./validate_cloud_translation.py:47:9: F401 'common.hybrid_api_manager.api_manager' imported but unused
+./validate_cross_machine_integration.py:10:1: F401 'time' imported but unused
+./validate_cross_machine_integration.py:11:1: F401 'json' imported but unused
+./validate_mainpc_individual_groups.py:21:1: F401 'time' imported but unused
+./validate_mainpc_individual_groups.py:23:1: F401 'requests' imported but unused
+./validate_mainpc_individual_groups.py:27:1: F401 'concurrent.futures.ThreadPoolExecutor' imported but unused
+./validate_mainpc_phase1.py:22:1: F401 'json' imported but unused
+./validate_mainpc_phase1.py:24:1: F401 'datetime.datetime' imported but unused
+./validate_mainpc_phase1.py:25:1: F401 'concurrent.futures.ThreadPoolExecutor' imported but unused
+./validate_mainpc_phase2_integration.py:11:1: F401 'time' imported but unused
+./validate_mainpc_phase2_integration.py:15:1: F401 'typing.Dict' imported but unused
+./validate_mainpc_phase2_integration.py:15:1: F401 'typing.List' imported but unused
+./validate_mainpc_phase2_integration.py:15:1: F401 'typing.Tuple' imported but unused
+./validate_mainpc_phase2_integration.py:15:1: F401 'typing.Optional' imported but unused
+./validate_mainpc_running_services.py:9:1: F401 'json' imported but unused
+./validate_mainpc_running_services.py:11:1: F401 'datetime.datetime' imported but unused
+./validate_pc2_stage1.py:12:1: F401 'typing.Dict' imported but unused
+./validate_pc2_stage1.py:12:1: F401 'typing.List' imported but unused
+./validate_pc2_stage2.py:8:1: F401 'requests' imported but unused
+./validate_pc2_stage2.py:13:1: F401 'typing.Dict' imported but unused
+./validate_pc2_stage2.py:13:1: F401 'typing.List' imported but unused
+./validate_pc2_stage2.py:13:1: F401 'typing.Optional' imported but unused
+./validate_pc2_stage3.py:8:1: F401 'requests' imported but unused
+./validate_pc2_stage3.py:15:1: F401 'typing.Dict' imported but unused
+./validate_pc2_stage3.py:15:1: F401 'typing.List' imported but unused
+./validate_pc2_stage3.py:15:1: F401 'typing.Optional' imported but unused
+./validate_pc2_stage3.py:15:1: F401 'typing.Tuple' imported but unused
+./validate_pc2_stage4.py:10:1: F401 'threading' imported but unused
+./validate_pc2_stage4.py:12:1: F401 'json' imported but unused
+./validate_pc2_stage4.py:13:1: F401 'typing.Dict' imported but unused
+./validate_pc2_stage4.py:13:1: F401 'typing.List' imported but unused
+./validate_pc2_stage4.py:14:1: F401 'concurrent.futures.ThreadPoolExecutor' imported but unused
+./validate_pc2_stage4.py:14:1: F401 'concurrent.futures.as_completed' imported but unused
+./validate_pc2_stage5.py:20:1: F401 'random' imported but unused
+./validate_pc2_stage5.py:22:1: F401 'json' imported but unused
+./validate_pc2_stage5.py:24:1: F401 'socket' imported but unused
+./validate_pc2_stage5.py:25:1: F401 'concurrent.futures.ThreadPoolExecutor' imported but unused
+./validate_pc2_stage5.py:25:1: F401 'concurrent.futures.as_completed' imported but unused
+./validate_pc2_stage5.py:27:1: F401 'requests' imported but unused
+./validate_pc2_stage5.py:28:1: F401 'asyncio' imported but unused
+./validate_pc2_stage5.py:29:1: F401 'threading' imported but unused
+./validation_checklists/check_performance_patterns.py:6:1: F401 'typing.Any' imported but unused
+./validation_checklists/check_security_patterns.py:6:1: F401 'typing.Any' imported but unused
+./verify_baseagent_compliance.py:11:1: F401 'pathlib.Path' imported but unused
+./voice_pipeline_recommendation.py:15:1: F401 'requests' imported but unused
+./voice_pipeline_recommendation.py:17:1: F401 'pathlib.Path' imported but unused
+./whisper_cpp_tagalog_integration.py:18:1: F401 'tempfile' imported but unused
+./whisper_cpp_tagalog_integration.py:19:1: F401 'wave' imported but unused
+./whisper_cpp_tagalog_integration.py:22:1: F401 'typing.Optional' imported but unused
+./workflow_memory_intelligence.py:9:1: F401 'time' imported but unused
+./workflow_memory_intelligence.py:10:1: F401 'datetime.datetime' imported but unused
+./workflow_memory_intelligence.py:11:1: F401 'typing.Optional' imported but unused
+./workflow_memory_intelligence.py:11:1: F401 'typing.Tuple' imported but unused
+./workflow_memory_intelligence.py:23:1: F401 'todo_manager.list_open_tasks' imported but unused
+./workflow_memory_intelligence.py:23:1: F401 'todo_manager.hard_delete_task' imported but unused
+./workflow_memory_intelligence.py:31:1: F401 'task_interruption_manager.auto_task_handler' imported but unused
+./workflow_memory_intelligence.py:31:1: F401 'task_interruption_manager.get_interruption_status' imported but unused
+./workflow_memory_intelligence.py:32:1: F401 'task_state_manager.save_task_state' imported but unused
+./workflow_memory_intelligence.py:32:1: F401 'task_state_manager.load_task_state' imported but unused
+./workflow_memory_intelligence_fixed.py:8:1: F401 'os' imported but unused
+./workflow_memory_intelligence_fixed.py:10:1: F401 'time' imported but unused
+./workflow_memory_intelligence_fixed.py:12:1: F401 'datetime.datetime' imported but unused
+./workflow_memory_intelligence_fixed.py:13:1: F401 'typing.Tuple' imported but unused
+./workflow_memory_intelligence_fixed.py:14:1: F401 'pathlib.Path' imported but unused
+./workflow_memory_intelligence_fixed.py:16:1: F401 'asyncio' imported but unused
+./workflow_memory_intelligence_fixed.py:26:5: F401 'todo_manager.list_open_tasks' imported but unused
+./workflow_memory_intelligence_fixed.py:26:5: F401 'todo_manager.hard_delete_task' imported but unused
+./workflow_memory_intelligence_fixed.py:26:5: F401 'todo_manager.mark_done' imported but unused
+./workflow_memory_intelligence_fixed.py:41:5: F401 'ollama_client.get_ollama_client' imported but unused
+./workflow_memory_intelligence_fixed.py:49:5: F401 'task_interruption_manager.auto_task_handler' imported but unused
+./workflow_memory_intelligence_fixed.py:49:5: F401 'task_interruption_manager.get_interruption_status' imported but unused
+./workflow_memory_intelligence_fixed.py:56:5: F401 'task_state_manager.save_task_state' imported but unused
+./workflow_memory_intelligence_fixed.py:56:5: F401 'task_state_manager.load_task_state' imported but unused
+./workflow_memory_intelligence_fixed.py:65:5: F401 'memory_system.services.memory_provider.get_provider' imported but unused
+./workflow_memory_intelligence_fixed.py:65:5: F401 'memory_system.services.memory_provider.MemoryProvider' imported but unused
+./workflow_memory_intelligence_fixed.py:1583:17: F811 redefinition of unused 'list_open_tasks' from line 26
 workspace $ 
-
-
-
-
-
-
-
-workspace $ python3 tpython3 tools/validate_ports_unique.py
-[PORT-COLLISION] pc2_code/config/startup_config.v2.yaml: Port-base 8131 reused: [('TieredResponder', 'health_check_port'), ('TutoringAgent', 'health_check_port')]
-[PORT-COLLISION] docker-compose.individual.yml: Parse error: while parsing a block mapping
-  in "docker-compose.individual.yml", line 4, column 1
-expected <block end>, but found '<block mapping start>'
-  in "docker-compose.individual.yml", line 25, column 3
-FAIL: Found 2 port uniqueness issues
-workspace $ 
-
-
-
-workspace $ python3 tpython3 tools/validate_yaml_no_dupes.py | cat
-OK: No YAML issues (compose/k8s/goss skipped; multi-doc supported)
-workspace $ 
-
-
-
-
-workspace $ flake8 --flake8 --select=F401,F811
-<unknown>:931: SyntaxWarning: invalid escape sequence '\.'
-./PC2_AGENT_STATUS_TEST.py:7:1: F401 'sys' imported but unused
-./PC2_AGENT_STATUS_TEST.py:10:1: F401 'pathlib.Path' imported but unused
-./SIMPLE_CURRENT_CHECK.py:9:1: F401 'json' imported but unused
-./SIMPLE_CURRENT_CHECK.py:12:1: F401 'os' imported but unused
-./add_missing_healthchecks.py:7:1: F401 'os' imported but unused
-./add_missing_healthchecks.py:9:1: F401 'json' imported but unused
-./add_missing_healthchecks.py:11:1: F401 're' imported but unused
-./add_missing_healthchecks.py:12:1: F401 'typing.Dict' imported but unused
-./add_missing_healthchecks.py:12:1: F401 'typing.List' imported but unused
-./affective_processing_center/app.py:15:1: F401 'time' imported but unused
-./affective_processing_center/app.py:17:1: F401 'typing.List' imported but unused
-d but unused
-./affective_processing_center/app.py:32:1: F401 'core.schemas.AudioChunk' imported but unused
-./affective_processing_center/app.py:32:1: F401 'core.schemas.Transcript' imported but unused
-used
-ut unused
-./affective_processing_center/app.py:40:1: F401 'yaml' imported but unused
-./affective_processing_center/core/cache.py:5:1: F401 'typing.Union' imported but unused
-./affective_processing_center/core/cache.py:14:1: F401 'typing.Tuple' imported but unused
-nused
-./affective_processing_center/core/fusion.py:5:1: F401 'typing.Optional' imported but unused
-./affective_processing_center/core/schemas.py:6:1: F401 'numpy as np' imported but unused
-./affective_processing_center/modules/base.py:4:1: F401 'typing.Optional' imported but unused
-./affective_processing_center/modules/base.py:7:1: F401 'asyncio' imported but unused
-./affective_processing_center/modules/base.py:8:1: F401 'datetime.datetime' imported but unused
-t unused
- but unused
-imported but unused
-ed but unused
-ported but unused
-d
-ed but unused
-ted but unused
-y' imported but unused
- unused
-ed but unused
-./affective_processing_center/verification_gate.py:24:1: F401 'subprocess' imported but unused
- unused
-cutor' imported but unused
-./affective_processing_center/verification_gate.py:28:1: F401 'json' imported but unused
-ted but unused
-ported but unused
-./agent_inventory_analyzer.py:12:1: F401 'pathlib.Path' imported but unused
-./agent_inventory_analyzer.py:14:1: F401 'sys' imported but unused
-./agent_scanner.py:9:1: F401 'os' imported but unused
-./agent_scanner.py:10:1: F401 'sys' imported but unused
-./agent_scanner.py:16:1: F401 'typing.Set' imported but unused
-./agent_scanner.py:16:1: F401 'typing.Tuple' imported but unused
-./agent_script_path_analysis.py:6:1: F401 'pathlib' imported but unused
-./agent_script_path_analysis.py:6:1: F401 'pprint' imported but unused
-./agent_script_path_analysis.py:6:1: F401 'sys' imported but unused
-./agent_script_path_analysis.py:6:1: F401 'itertools' imported but unused
-./agent_validation_checklist.py:9:1: F401 'sys' imported but unused
-./agent_validation_checklist.py:11:1: F401 'inspect' imported but unused
-./agent_validation_checklist.py:14:1: F401 'typing.Tuple' imported but unused
-./agents/simple_smart_home_agent.py:10:1: F401 'json' imported but unused
-./ai_system_migration_summary.py:6:1: F401 'pathlib' imported but unused
-./ai_task_completion_hook.py:8:1: F401 'json' imported but unused
-./ai_task_completion_hook.py:9:1: F401 'os' imported but unused
-./ai_task_completion_hook.py:11:1: F401 'datetime.datetime' imported but unused
-./ai_task_completion_hook.py:12:1: F401 'pathlib.Path' imported but unused
-d
-ed
- but unused
- but unused
-d but unused
-./analysis_results/claude_4_opus_max/fix_critical_agents.py:10:1: F401 're' imported but unused
-st' imported but unused
-ple' imported but unused
-ut unused
-ed but unused
-ted but unused
-rted but unused
-ple' imported but unused
-ut unused
- but unused
-./analyze_duplicate_folders.py:7:1: F401 'os' imported but unused
-./app.py:11:1: F401 'asyncio' imported but unused
-./app.py:14:1: F401 'flask.request' imported but unused
-./app.py:14:1: F401 'flask.redirect' imported but unused
-./app.py:14:1: F401 'flask.url_for' imported but unused
-./architecture_mode_engine.py:22:1: F401 'os' imported but unused
-./auto_detect_chunker.py:10:1: F401 'math' imported but unused
-./auto_state_sync_hook.py:12:1: F401 'pathlib.Path' imported but unused
-./auto_sync_manager.py:9:1: F401 'logging' imported but unused
-./auto_sync_manager.py:13:1: F401 'dataclasses.dataclass' imported but unused
-./auto_sync_manager.py:13:1: F401 'dataclasses.asdict' imported but unused
-./automated_todo_generator.py:10:1: F401 'os' imported but unused
-./automated_todo_generator.py:12:1: F401 'datetime.datetime' imported but unused
-./automated_todo_generator.py:12:1: F401 'datetime.timezone' imported but unused
-./automated_todo_generator.py:12:1: F401 'datetime.timedelta' imported but unused
-./automated_todo_generator.py:14:1: F401 'typing.Optional' imported but unused
-./automated_todo_generator.py:22:5: F401 'todo_manager.new_task' imported but unused
-but unused
-a' imported but unused
-t unused
-ager.get_service_ip' imported but unused
-ager.get_service_url' imported but unused
-ager.get_redis_url' imported but unused
-pool.get_req_socket' imported but unused
-pool.get_rep_socket' imported but unused
-pool.get_pub_socket' imported but unused
-pool.get_sub_socket' imported but unused
-.start_http_server' imported but unused
-.push_to_gateway' imported but unused
-unused 'asyncio' from line 18
-unused
-ger.get_service_url' imported but unused
-ger.get_redis_url' imported but unused
-imported but unused
-but unused
-a' imported but unused
-ted but unused
-nager.get_service_url' imported but unused
-nager.get_redis_url' imported but unused
-nused 'Path' from line 8
-used
- but unused
-./backups/unused_import_cleanup/common/api/contract.py:13:1: F401 'asyncio' imported but unused
-r' from line 95
-imported but unused
-get_env' imported but unused
-.Status' imported but unused
-imported but unused
-ed but unused
-n' imported but unused
-unused
-unused
-rted but unused
-datetime' imported but unused
-timedelta' imported but unused
-st' from line 14
-sed
-ted but unused
-' from line 6
-reading' from line 11
-ErrorReport' imported but unused
-ErrorSeverity' imported but unused
-get_json_logger' imported but unused
-_service_ip' imported but unused
-_service_url' imported but unused
-_redis_url' imported but unused
-xporter.PrometheusExporter' imported but unused
- unused
-unused
- unused
-t unused
-ut unused
- but unused
-ported but unused
-ported but unused
-h_manager.PathManager' imported but unused
-ied_config_manager.UnifiedConfigManager' imported but unused
-a_models.SystemEvent' imported but unused
-a_models.ErrorReport' imported but unused
-a_models.ErrorSeverity' imported but unused
-a_models.AgentRegistration' imported but unused
-ger_util.get_json_logger' imported but unused
-rs.get_env' imported but unused
-andardized_health.StandardizedHealthChecker' imported but unused
-andardized_health.HealthStatus' imported but unused
-nager.get_service_ip' imported but unused
-nager.get_service_url' imported but unused
-nager.get_redis_url' imported but unused
-.unified_error_handler.UnifiedErrorHandler' imported but unused
-.unified_error_handler.create_unified_error_handler' imported but unused
-metheus_exporter.create_agent_exporter' imported but unused
-metheus_exporter.PrometheusExporter' imported but unused
- imported but unused
- imported but unused
- unused
-sed
-but unused
-mported but unused
-Severity' imported but unused
-Category' imported but unused
-r.get_service_ip' imported but unused
-r.get_service_url' imported but unused
-r.get_redis_url' imported but unused
-unused
- but unused
-ut unused
-ut unused
-ErrConnectionClosed' imported but unused
-ErrTimeout' imported but unused
-ErrNoServers' imported but unused
-orted but unused
-' imported but unused
-mported but unused
-elta' imported but unused
-ed but unused
- imported but unused
-ut unused
-ted but unused
-ported but unused
- but unused
-orted but unused
-ath' imported but unused
-ported but unused
-ted but unused
-d but unused
-t unused
-ted but unused
-ted but unused
-orted but unused
-ed but unused
-t unused
-nager' imported but unused
-d
-ted but unused
-rted but unused
-d
- unused
-orted but unused
-ager' imported but unused
-ed
- unused
- unused
-ed
- but unused
- but unused
-ture' imported but unused
-mported but unused
-ted but unused
-thod' imported but unused
-ut unused
-used
-rted but unused
-mported but unused
-rted but unused
-imported but unused
-orted but unused
-t unused
-unused
-rimitives.kdf.pbkdf2.PBKDF2HMAC' imported but unused
-rimitives.kdf.hkdf.HKDF' imported but unused
-get_service_ip' imported but unused
-get_service_url' imported but unused
-get_redis_url' imported but unused
-sed
-t unused
-' imported but unused
-e' imported but unused
-http' imported but unused
-ing.Union' imported but unused
-etime.timedelta' imported but unused
-ient.CircuitBreakerState' imported but unused
-mon.utils.hostname_resolver.resolve_service_address' imported but unused
-mon.utils.hostname_resolver.DiscoveryMode' imported but unused
-used
-mported but unused
-e' imported but unused
-d but unused
-orted but unused
-./backups/unused_import_cleanup/common/utils/path_env.py:2:1: F401 'sys' imported but unused
-unused
-nused
-ut unused
-unused
- 'resolve_path' from line 204
-nt.REGISTRY' imported but unused
-nused
-nused
-mported but unused
- but unused
- imported but unused
- but unused
-_service_url' imported but unused
-_redis_url' imported but unused
-used
-but unused
-ed but unused
-ed 'logging' from line 17
-ed but unused
-ted but unused
-t unused
- imported but unused
-mmon.utils.path_manager.PathManager' imported but unused
-mon.config_manager.get_service_ip' imported but unused
-mon.config_manager.get_service_url' imported but unused
-mon.config_manager.get_redis_url' imported but unused
-reading' imported but unused
-in_pc_code.utils.network_utils.get_machine_ip' imported but unused
-efinition of unused 'sys' from line 15
-efinition of unused 'os' from line 10
-' imported but unused
-efinition of unused 'Path' from line 16
-mmon.env_helpers.get_env' imported but unused
-definition of unused 'traceback' from line 18
-401 'os' imported but unused
-F401 'json' imported but unused
-F401 'argparse' imported but unused
-mmon.config_manager.get_service_ip' imported but unused
-mmon.config_manager.get_service_url' imported but unused
-mmon.config_manager.get_redis_url' imported but unused
-yping.Union' imported but unused
-hreading' imported but unused
-definition of unused 'Dict' from line 23
-rgparse' imported but unused
-definition of unused 'os' from line 11
-s' imported but unused
-definition of unused 'Path' from line 12
-definition of unused 'Path' from line 36
-ommon_utils.zmq_helper.create_socket' imported but unused
-mon.config_manager.get_service_ip' imported but unused
-mon.config_manager.get_service_url' imported but unused
-mon.config_manager.get_redis_url' imported but unused
-efinition of unused 'os' from line 11
-util' imported but unused
-ping.List' imported but unused
-ping.Union' imported but unused
-ansformers.AutoModelForCausalLM' imported but unused
-ansformers.AutoTokenizer' imported but unused
-rch' imported but unused
-tasets.load_dataset' imported but unused
-mpy as np' imported but unused
-efinition of unused 'Dict' from line 26
-efinition of unused 'os' from line 23
-efinition of unused 'Path' from line 12
-efinition of unused 'Path' from line 44
-efinition of unused 'datetime' from line 25
-mmon_utils.zmq_helper.create_socket' imported but unused
-g_manager.get_service_ip' imported but unused
-g_manager.get_service_url' imported but unused
-g_manager.get_redis_url' imported but unused
-.AutoModelForSeq2SeqLM' imported but unused
-.AutoTokenizer' imported but unused
- imported but unused
-imported but unused
- imported but unused
-nal' imported but unused
-.utils.network_utils.get_machine_ip' imported but unused
-elpers.get_env' imported but unused
- of unused 'traceback' from line 22
- 'argparse' imported but unused
- 'typing.List' imported but unused
- 'typing.Union' imported but unused
- redefinition of unused 'sys' from line 16
- redefinition of unused 'os' from line 15
- 'pathlib.Path' imported but unused
-1 'os' imported but unused
-1 'typing.List' imported but unused
-1 'common.config_manager.get_service_ip' imported but unused
-1 'common.config_manager.get_service_url' imported but unused
-1 'common.config_manager.get_redis_url' imported but unused
-1 redefinition of unused 'PathManager' from line 33
-1 redefinition of unused 'config' from line 57
-11 redefinition of unused 'traceback' from line 28
-n.config_manager.get_service_ip' imported but unused
-n.config_manager.get_service_url' imported but unused
-n.config_manager.get_redis_url' imported but unused
-' imported but unused
-lib.Path' imported but unused
-ading' imported but unused
-ng.Optional' imported but unused
-ng.Union' imported but unused
-ng.cast' imported but unused
-inition of unused 'sys' from line 12
-inition of unused 'os' from line 11
-on.env_helpers.get_env' imported but unused
-lib.Path' imported but unused
-lib.Path' imported but unused
-inition of unused 'sys' from line 10
-inition of unused 'os' from line 9
-athlib.Path' imported but unused
-definition of unused 'sys' from line 10
-definition of unused 'os' from line 9
-lib.Path' imported but unused
-ommon.config_manager.get_service_ip' imported but unused
-ommon.config_manager.get_service_url' imported but unused
-ommon.config_manager.get_redis_url' imported but unused
-time' imported but unused
-pathlib.Path' imported but unused
-common.env_helpers.get_env' imported but unused
-edefinition of unused 'time' from line 12
- 'common.env_helpers.get_env' imported but unused
- 'common.config_manager.get_service_ip' imported but unused
- 'common.config_manager.get_service_url' imported but unused
- 'common.config_manager.get_redis_url' imported but unused
-config_manager.get_service_ip' imported but unused
-config_manager.get_service_url' imported but unused
-config_manager.get_redis_url' imported but unused
-' imported but unused
-ported but unused
-.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/DynamicIdentityAgent.py:12:1: F401 'datetime.datetime' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/DynamicIdentityAgent.py:22:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/DynamicIdentityAgent.py:22:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/DynamicIdentityAgent.py:434:5: F811 redefinition of unused 'asyncio' from line 13
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:6:1: F811 redefinition of unused 'sys' from line 1
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:7:1: F811 redefinition of unused 'os' from line 2
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:8:1: F811 redefinition of unused 'os' from line 7
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:9:1: F811 redefinition of unused 'sys' from line 6
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:10:1: F401 'pathlib.Path' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:19:1: F401 'common.pools.zmq_pool.get_req_socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:19:1: F401 'common.pools.zmq_pool.get_rep_socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:19:1: F401 'common.pools.zmq_pool.get_pub_socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:19:1: F401 'common.pools.zmq_pool.get_sub_socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:20:1: F401 'json' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:24:1: F401 'typing.List' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:24:1: F401 'typing.Optional' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/EmpathyAgent.py:27:1: F401 'main_pc_code.utils.service_discovery_client.register_service' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:23:1: F401 'typing.List' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:23:1: F401 'typing.Optional' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:23:1: F401 'typing.Tuple' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:28:1: F401 'signal' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:31:1: F811 redefinition of unused 'datetime' from line 24
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:35:1: F811 redefinition of unused 'sys' from line 29
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:36:1: F811 redefinition of unused 'os' from line 22
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:37:1: F401 'pathlib.Path' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/HumanAwarenessAgent.py:41:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/IntentionValidatorAgent.py:12:1: F401 'datetime.datetime' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/IntentionValidatorAgent.py:13:1: F401 'typing.Tuple' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/IntentionValidatorAgent.py:21:1: F401 'common.utils.path_manager.PathManager' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/IntentionValidatorAgent.py:23:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/IntentionValidatorAgent.py:23:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/IntentionValidatorAgent.py:441:5: F811 redefinition of unused 'asyncio' from line 7
-./backups/unused_import_cleanup/main_pc_code/agents/ProactiveAgent.py:11:1: F401 'datetime.timedelta' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/ProactiveAgent.py:20:1: F401 'common.utils.path_manager.PathManager' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/ProactiveAgent.py:22:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/ProactiveAgent.py:22:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/ProactiveAgent.py:572:5: F811 redefinition of unused 'asyncio' from line 7
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/LearningAgent.py:8:1: F401 'typing.Optional' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/LearningAgent.py:8:1: F401 'typing.Tuple' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/LearningAgent.py:12:1: F811 redefinition of unused 'datetime' from line 7
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/SecurityPolicyAgent.py:8:1: F401 'typing.List' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/SecurityPolicyAgent.py:8:1: F401 'typing.Set' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/SecurityPolicyAgent.py:10:1: F811 redefinition of unused 'datetime' from line 7
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/asr/streaming_whisper_asr.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/asr/streaming_whisper_asr.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/asr/streaming_whisper_asr.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/asr/streaming_whisper_asr.py:14:1: F401 'os' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/asr/streaming_whisper_asr.py:27:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py:17:1: F401 'typing.Tuple' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py:19:1: F401 'datetime.datetime' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py:20:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_text_processing/streaming_text_processor.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_text_processing/streaming_text_processor.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_text_processing/streaming_text_processor.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_text_processing/streaming_text_processor.py:17:1: F401 'typing.Tuple' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_text_processing/streaming_text_processor.py:19:1: F401 'datetime.datetime' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/legacy_text_processing/streaming_text_processor.py:20:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_agent.py:3:1: F401 'json' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_agent.py:6:1: F401 'typing.List' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_agent.py:6:1: F401 'typing.Any' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_agent.py:11:1: F811 redefinition of unused 'datetime' from line 7
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_client.py:3:1: F401 'json' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_client.py:5:1: F401 'typing.Any' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_client.py:6:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_client.py:7:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_client.py:7:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_client.py:7:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/context_manager.py:10:1: F401 'json' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_pattern_memory.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_pattern_memory.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_pattern_memory.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_pattern_memory.py:16:1: F401 'datetime.datetime' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_pattern_memory.py:17:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/learning_mode_agent.py:4:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/learning_mode_agent.py:4:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/learning_mode_agent.py:4:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/learning_mode_agent.py:16:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/memory_client.py:3:1: F401 'json' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/memory_client.py:5:1: F401 'typing.Optional' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/memory_client.py:6:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/memory_client.py:7:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/memory_client.py:7:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/memory_client.py:7:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/unified_memory_reasoning_agent.py:3:1: F401 'json' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/unified_memory_reasoning_agent.py:7:1: F401 'typing.Optional' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/unified_memory_reasoning_agent.py:10:1: F811 redefinition of unused 'datetime' from line 6
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/misc/whisper_test.py:1:1: F401 'main_pc_code.src.core.base_agent.BaseAgent' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/misc/whisper_test.py:6:1: F401 'os' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/chain_of_thought_agent.py:2:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/chain_of_thought_agent.py:2:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/chain_of_thought_agent.py:2:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/chain_of_thought_agent.py:10:1: F401 'os' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/chain_of_thought_agent.py:11:1: F401 'threading' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/chain_of_thought_agent.py:17:1: F811 redefinition of unused 'datetime' from line 15
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/chain_of_thought_agent.py:18:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/translation/taglish_detector.py:1:1: F401 'main_pc_code.src.core.base_agent.BaseAgent' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/tts/coqui_fallback.py:1:1: F401 'main_pc_code.src.core.base_agent.BaseAgent' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/tts/coqui_fallback.py:4:1: F401 'numpy as np' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/web/unified_web_agent_main_pc.py:15:1: F401 'os' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/web/unified_web_agent_main_pc.py:20:1: F401 'typing.Any' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/web/unified_web_agent_main_pc.py:20:1: F401 'typing.Union' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/web_utils/browser_automation.py:9:1: F401 'common.env_helpers.get_env' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/web_utils/browser_automation.py:10:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/web_utils/browser_automation.py:10:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/_trash_2025-06-13/archive/web_utils/browser_automation.py:10:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/active_learning_monitor.py:11:1: F401 'datetime.datetime' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/active_learning_monitor.py:11:1: F401 'datetime.timedelta' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/active_learning_monitor.py:12:1: F401 'typing.Tuple' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/active_learning_monitor.py:21:1: F401 'common.utils.path_manager.PathManager' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/active_learning_monitor.py:23:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/active_learning_monitor.py:23:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/active_learning_monitor.py:707:5: F811 redefinition of unused 'asyncio' from line 7
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:11:1: F401 'common.config_manager.get_service_ip' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:11:1: F401 'common.config_manager.get_service_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:11:1: F401 'common.config_manager.get_redis_url' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:15:1: F401 'pathlib.Path' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:23:1: F811 redefinition of unused 'os' from line 14
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:26:1: F401 'subprocess' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:27:1: F401 'threading' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:29:1: F401 'typing.Union' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:30:1: F401 'datetime.datetime' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:31:1: F401 'psutil' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:32:1: F401 'common.pools.zmq_pool.get_req_socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:32:1: F401 'common.pools.zmq_pool.get_rep_socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:32:1: F401 'common.pools.zmq_pool.get_pub_socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:32:1: F401 'common.pools.zmq_pool.get_sub_socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:34:1: F401 'main_pc_code.agents.needtoverify.custom_command_handler.ZMQ_JARVIS_MEMORY_PORT' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/advanced_command_handler.py:36:1: F401 'common.env_helpers.get_env' imported but unused
-mported but unused
-imported but unused
-.core.base_agent.BaseAgent' imported but unused
-onfig_manager.get_service_ip' imported but unused
-onfig_manager.get_service_url' imported but unused
-onfig_manager.get_redis_url' imported but unused
-tion of unused 'os' from line 14
-mported but unused
-orted but unused
-List' imported but unused
-Optional' imported but unused
-Union' imported but unused
-Tuple' imported but unused
-tion of unused 'Path' from line 15
-e' imported but unused
-ng' imported but unused
-tion of unused 'os' from line 20
-orted but unused
-tion of unused 'Path' from line 30
-tion of unused 'get_env' from line 45
-' imported but unused
-me.datetime' imported but unused
-ition of unused 'traceback' from line 26
- imported but unused
-f unused 'os' from line 9
-zmq_pool.get_req_socket' imported but unused
-zmq_pool.get_pub_socket' imported but unused
-zmq_pool.get_sub_socket' imported but unused
-al' imported but unused
-imported but unused
-_manager.load_unified_config' imported but unused
-lpers.get_env' imported but unused
-lib.Path' imported but unused
-inition of unused 'os' from line 13
-on.pools.zmq_pool.get_req_socket' imported but unused
-on.pools.zmq_pool.get_pub_socket' imported but unused
-on.pools.zmq_pool.get_sub_socket' imported but unused
-ng.Optional' imported but unused
-ng.List' imported but unused
-on.config_manager.load_unified_config' imported but unused
-on.core.enhanced_base_agent.EnhancedBaseAgent' imported but unused
-on.core.enhanced_base_agent.PerformanceMetrics' imported but unused
-on.core.unified_config_manager.UnifiedConfigManager' imported but unused
-on.env_helpers.get_env' imported but unused
-n.config_manager.get_service_ip' imported but unused
-n.config_manager.get_service_url' imported but unused
-n.config_manager.get_redis_url' imported but unused
-nition of unused 'sys' from line 2
-nition of unused 'os' from line 3
-lib.Path' imported but unused
-on.pools.zmq_pool.get_req_socket' imported but unused
-on.pools.zmq_pool.get_rep_socket' imported but unused
-on.pools.zmq_pool.get_pub_socket' imported but unused
-on.pools.zmq_pool.get_sub_socket' imported but unused
-' imported but unused
-imported but unused
-time.timedelta' imported but unused
-ections.defaultdict' imported but unused
-' imported but unused
-ts.model_events.VRAMEvent' imported but unused
-ts.model_events.create_model_load_request' imported but unused
-ts.memory_events.create_memory_operation' imported but unused
-ts.memory_events.MemoryType' imported but unused
-ts.event_bus.event_handler' imported but unused
-ts.event_bus.auto_subscribe_handlers' imported but unused
-il' imported but unused
-ase_agent.BaseAgent' imported but unused
-.zmq_pool.get_req_socket' imported but unused
-.zmq_pool.get_rep_socket' imported but unused
-.zmq_pool.get_sub_socket' imported but unused
-elpers.get_env' imported but unused
-r.get_service_ip' imported but unused
-r.get_service_url' imported but unused
-r.get_redis_url' imported but unused
-imported but unused
-ed 'get_req_socket' from line 11
-ed 'get_rep_socket' from line 11
-ed 'get_pub_socket' from line 11
-ed 'get_sub_socket' from line 11
-ol.get_req_socket' imported but unused
-ol.get_rep_socket' imported but unused
-ol.get_pub_socket' imported but unused
-ol.get_sub_socket' imported but unused
-ed 'get_env' from line 19
-nition of unused 'sys' from line 4
-nition of unused 'os' from line 5
-nition of unused 'Path' from line 12
-nition of unused 'PathManager' from line 3
-n.pools.zmq_pool.get_req_socket' imported but unused
-n.pools.zmq_pool.get_pub_socket' imported but unused
-n.pools.zmq_pool.get_sub_socket' imported but unused
-.nn' imported but unused
-.nn.functional as F' imported but unused
-.utils.data.DataLoader' imported but unused
-.spatial.distance.cosine' imported but unused
-device as sd' imported but unused
-sa' imported but unused
-file as sf' imported but unused
-nition of unused 'get_env' from line 24
-nition of unused 'os' from line 17
-nition of unused 'Path' from line 18
-inition of unused 'traceback' from line 9
-01 'sys' imported but unused
-401 'threading' imported but unused
-401 'zmq' imported but unused
-401 'common.env_helpers.get_env' imported but unused
-g_manager.get_service_ip' imported but unused
-g_manager.get_service_url' imported but unused
-g_manager.get_redis_url' imported but unused
-s.zmq_pool.get_req_socket' imported but unused
-s.zmq_pool.get_rep_socket' imported but unused
-s.zmq_pool.get_pub_socket' imported but unused
-s.zmq_pool.get_sub_socket' imported but unused
-ted but unused
-' imported but unused
-onal' imported but unused
-n' imported but unused
-helpers.get_env' imported but unused
-eading' imported but unused
-finition of unused 'os' from line 15
-finition of unused 'Path' from line 16
-py.signal' imported but unused
-rosa' imported but unused
-finition of unused 'os' from line 27
-finition of unused 'Path' from line 31
-mon.env_helpers.get_env' imported but unused
-'BaseAgent' imported but unused
-'common.env_helpers.get_env' imported but unused
-'common.config_manager.get_service_ip' imported but unused
-'common.config_manager.get_service_url' imported but unused
-'common.config_manager.get_redis_url' imported but unused
-nager.get_service_ip' imported but unused
-nager.get_service_url' imported but unused
-nager.get_redis_url' imported but unused
-ut unused
-unused 'sys' from line 8
-unused 'os' from line 9
-t unused
-unused 'Path' from line 16
-ta_models.TaskResult' imported but unused
-orted but unused
-Tuple' imported but unused
-e.timedelta' imported but unused
-utils.error_handling.SafeExecutor' imported but unused
-model_events.ModelLoadEvent' imported but unused
-model_events.VRAMEvent' imported but unused
-model_events.ModelPerformanceEvent' imported but unused
-model_events.CrossMachineModelEvent' imported but unused
-model_events.create_model_load_request' imported but unused
-model_events.create_vram_warning' imported but unused
-memory_events.MemoryEventType' imported but unused
-memory_events.create_memory_operation' imported but unused
-memory_events.create_cross_machine_replication' imported but unused
-memory_events.MemoryType' imported but unused
-event_bus.publish_memory_event' imported but unused
-ed but unused
-imedelta' imported but unused
-el_events.create_model_load_request' imported but unused
-el_events.create_vram_warning' imported but unused
-el_events.create_model_status_change' imported but unused
-el_events.ModelStatus' imported but unused
-nt_bus.event_handler' imported but unused
-nt_bus.auto_subscribe_handlers' imported but unused
- imported but unused
-n' imported but unused
-ing.Tuple' imported but unused
-aclasses.field' imported but unused
-tapi.staticfiles.StaticFiles' imported but unused
-nts.model_events.ModelLoadEvent' imported but unused
-nts.model_events.VRAMEvent' imported but unused
-nts.model_events.ModelPerformanceEvent' imported but unused
-nts.model_events.CrossMachineModelEvent' imported but unused
-nts.memory_events.MemoryPerformanceEvent' imported but unused
-ition of unused 'os' from line 9
-.Optional' imported but unused
-ition of unused 'os' from line 21
-ition of unused 'os' from line 29
-ition of unused 'Path' from line 10
-b.Path' imported but unused
-.env_helpers.get_env' imported but unused
-mported but unused
-:1: F401 'common.config_manager.get_service_ip' imported but unused
-:1: F401 'common.config_manager.get_service_url' imported but unused
-:1: F401 'common.config_manager.get_redis_url' imported but unused
-2:1: F401 'time' imported but unused
-3:1: F401 'uuid' imported but unused
-5:1: F401 'pickle' imported but unused
-1:1: F811 redefinition of unused 'os' from line 9
-4:1: F401 'common.env_helpers.get_env' imported but unused
-ig_manager.get_service_ip' imported but unused
-ig_manager.get_service_url' imported but unused
-ig_manager.get_redis_url' imported but unused
-h' imported but unused
-ted but unused
- of unused 'os' from line 15
-' imported but unused
-' imported but unused
-onal' imported but unused
-orted but unused
-helpers.get_env' imported but unused
-'common.config_manager.get_service_ip' imported but unused
-'common.config_manager.get_service_url' imported but unused
-'common.config_manager.get_redis_url' imported but unused
- 'common.pools.zmq_pool.get_req_socket' imported but unused
- 'common.pools.zmq_pool.get_rep_socket' imported but unused
- 'common.pools.zmq_pool.get_pub_socket' imported but unused
- 'common.pools.zmq_pool.get_sub_socket' imported but unused
- 'psutil' imported but unused
- 'typing.Union' imported but unused
- 'typing.Tuple' imported but unused
- 'uuid.UUID' imported but unused
- redefinition of unused 'sys' from line 15
- redefinition of unused 'os' from line 16
- redefinition of unused 'Path' from line 25
- 'pathlib.Path' imported but unused
- 'common.env_helpers.get_env' imported but unused
-01 'main_pc_code.utils.network_utils.get_zmq_connection_string' imported but unused
-01 'main_pc_code.utils.network_utils.get_machine_ip' imported but unused
- 'common.config_manager.get_service_ip' imported but unused
- 'common.config_manager.get_service_url' imported but unused
- 'common.config_manager.get_redis_url' imported but unused
-1 'common.pools.zmq_pool.get_req_socket' imported but unused
-1 'common.pools.zmq_pool.get_pub_socket' imported but unused
-1 'common.pools.zmq_pool.get_sub_socket' imported but unused
-1 'psutil' imported but unused
-1 'typing.List' imported but unused
-1 'typing.Optional' imported but unused
-1 redefinition of unused 'sys' from line 10
-1 redefinition of unused 'os' from line 11
-1 redefinition of unused 'Path' from line 20
-1 'pathlib.Path' imported but unused
-ted but unused
-rted but unused
-st' imported but unused
-ple' imported but unused
-on of unused 'sys' from line 7
-on of unused 'os' from line 8
-on of unused 'Path' from line 19
-ils.data_models.TaskResult' imported but unused
-ils.data_models.TaskStatus' imported but unused
-fig_manager.get_service_ip' imported but unused
-fig_manager.get_service_url' imported but unused
-fig_manager.get_redis_url' imported but unused
-ath' imported but unused
-on of unused 'os' from line 10
-ols.zmq_pool.get_req_socket' imported but unused
-ols.zmq_pool.get_rep_socket' imported but unused
-ols.zmq_pool.get_pub_socket' imported but unused
-ols.zmq_pool.get_sub_socket' imported but unused
-orted but unused
-ple' imported but unused
-v_helpers.get_env' imported but unused
-ing.List' imported but unused
-efinition of unused 'datetime' from line 6
-'json' imported but unused
-1 'sys' imported but unused
-1 'os' imported but unused
-1 'uuid' imported but unused
-1 'pathlib.Path' imported but unused
-1 'typing.Callable' imported but unused
-F401 'pathlib.Path' imported but unused
-01 'numpy as np' imported but unused
-01 'datetime.datetime' imported but unused
-01 'typing.Tuple' imported but unused
-01 'typing.Set' imported but unused
-01 'collections.defaultdict' imported but unused
-01 'collections.Counter' imported but unused
-01 'time' imported but unused
-401 'json' imported but unused
-F401 'typing.List' imported but unused
-F401 'typing.Union' imported but unused
-atetime.datetime' imported but unused
-yping.List' imported but unused
-yping.Tuple' imported but unused
-yping.Union' imported but unused
-01 'datetime.datetime' imported but unused
-01 'typing.Optional' imported but unused
-01 'typing.Tuple' imported but unused
-01 'typing.Set' imported but unused
-11 redefinition of unused 'os' from line 8
- F401 'main_pc_code.src.core.base_agent.BaseAgent' imported but unused
-401 'common.config_manager.get_service_ip' imported but unused
-401 'common.config_manager.get_service_url' imported but unused
-401 'common.config_manager.get_redis_url' imported but unused
-F401 'threading' imported but unused
-F401 'main_pc_code.agents.context_manager.get_context' imported but unused
-F401 'main_pc_code.agents.context_manager.clear_context' imported but unused
-F401 'common.env_helpers.get_env' imported but unused
-imported but unused
-process' imported but unused
-nal' imported but unused
-ing.Optional' imported but unused
- F401 'common.config_manager.get_service_ip' imported but unused
- F401 'common.config_manager.get_service_url' imported but unused
- F401 'common.config_manager.get_redis_url' imported but unused
-: F401 'sys' imported but unused
-: F401 'os' imported but unused
-: F401 'uuid' imported but unused
-: F401 'typing.Union' imported but unused
-: F401 'common.env_helpers.get_env' imported but unused
- 'common.config_manager.get_service_ip' imported but unused
- 'common.config_manager.get_service_url' imported but unused
- 'common.config_manager.get_redis_url' imported but unused
-1 'common.env_helpers.get_env' imported but unused
-F401 'typing.Dict' imported but unused
-F401 'typing.Any' imported but unused
-3:1: F401 'common.utils.async_io.read_file_async' imported but unused
-3:1: F401 'common.utils.async_io.write_file_async' imported but unused
-3:1: F401 'common.utils.async_io.read_json_async' imported but unused
-3:1: F401 'common.utils.async_io.write_json_async' imported but unused
-4:1: F401 'common.config_manager.get_service_ip' imported but unused
-4:1: F401 'common.config_manager.get_service_url' imported but unused
-4:1: F401 'common.config_manager.get_redis_url' imported but unused
-20:1: F401 'common.env_helpers.get_env' imported but unused
-:10:1: F401 'json' imported but unused
-:15:1: F401 'typing.List' imported but unused
-:15:1: F401 'typing.Tuple' imported but unused
-:17:1: F401 're' imported but unused
-:21:1: F401 'datetime.datetime' imported but unused
-:21:1: F401 'datetime.timedelta' imported but unused
-:26:1: F811 redefinition of unused 'get_env' from line 23
-:26:1: F401 'common.utils.env_standardizer.get_mainpc_ip' imported but unused
-:26:1: F401 'common.utils.env_standardizer.get_current_machine' imported but unused
-ool.get_req_socket' imported but unused
-ool.get_pub_socket' imported but unused
-ool.get_sub_socket' imported but unused
- unused
-sed 'os' from line 27
-rted but unused
-fig_manager.get_service_ip' imported but unused
-fig_manager.get_service_url' imported but unused
-fig_manager.get_redis_url' imported but unused
-re.enhanced_base_agent.EnhancedBaseAgent' imported but unused
-re.enhanced_base_agent.PerformanceMetrics' imported but unused
-re.unified_config_manager.UnifiedConfigManager' imported but unused
-ols.zmq_pool.get_req_socket' imported but unused
-ols.zmq_pool.get_pub_socket' imported but unused
-ols.zmq_pool.get_sub_socket' imported but unused
-orted but unused
-on of unused 'os' from line 26
-ath' imported but unused
-config_manager.get_service_ip' imported but unused
-config_manager.get_service_url' imported but unused
-config_manager.get_redis_url' imported but unused
-.pools.zmq_pool.get_req_socket' imported but unused
-.pools.zmq_pool.get_rep_socket' imported but unused
-.pools.zmq_pool.get_pub_socket' imported but unused
-.pools.zmq_pool.get_sub_socket' imported but unused
-ported but unused
-imported but unused
-b.Path' imported but unused
-signal' imported but unused
-ition of unused 'datetime' from line 31
-.env_helpers.get_env' imported but unused
-: F401 'common.config_manager.get_service_ip' imported but unused
-: F401 'common.config_manager.get_service_url' imported but unused
-: F401 'common.config_manager.get_redis_url' imported but unused
-1: F401 'common.pools.zmq_pool.get_req_socket' imported but unused
-1: F401 'common.pools.zmq_pool.get_rep_socket' imported but unused
-1: F401 'common.pools.zmq_pool.get_pub_socket' imported but unused
-1: F401 'common.pools.zmq_pool.get_sub_socket' imported but unused
-1: F401 'os' imported but unused
-1: F401 'json' imported but unused
-1: F401 'pathlib.Path' imported but unused
-1: F401 'scipy.signal' imported but unused
-1: F811 redefinition of unused 'datetime' from line 36
-1: F401 'common.env_helpers.get_env' imported but unused
-ported but unused
-g' imported but unused
-ack' imported but unused
-.config_manager.get_service_ip' imported but unused
-.config_manager.get_service_url' imported but unused
-.config_manager.get_redis_url' imported but unused
-ition of unused 'PathManager' from line 27
-.pools.zmq_pool.get_req_socket' imported but unused
-.pools.zmq_pool.get_rep_socket' imported but unused
-.pools.zmq_pool.get_pub_socket' imported but unused
-.pools.zmq_pool.get_sub_socket' imported but unused
-mmon.config_manager.get_service_ip' imported but unused
-mmon.config_manager.get_service_url' imported but unused
-mmon.config_manager.get_redis_url' imported but unused
-mmon.pools.zmq_pool.get_pub_socket' imported but unused
-mmon.pools.zmq_pool.get_sub_socket' imported but unused
-efinition of unused 'os' from line 15
-efinition of unused 'Path' from line 16
-efinition of unused 'os' from line 27
-efinition of unused 'Path' from line 28
-ping.Tuple' imported but unused
-efinition of unused 'logger' from line 50
-psutil' imported but unused
-'psutil' imported but unused
-edefinition of unused 'traceback' from line 45
-' imported but unused
-gging' imported but unused
-ping.Optional' imported but unused
-ping.List' imported but unused
-mmon.utils.path_manager.PathManager' imported but unused
-mmon.config_manager.get_service_ip' imported but unused
-mmon.config_manager.get_service_url' imported but unused
-mmon.config_manager.get_redis_url' imported but unused
-in_pc_code.utils.network.get_host' imported but unused
-definition of unused 'threading' from line 14
-definition of unused 'time' from line 12
-core.base_agent.BaseAgent' imported but unused
-mported but unused
-ition of unused 'sys' from line 7
-ition of unused 'os' from line 6
-.utils.path_manager.PathManager' imported but unused
-ools.zmq_pool.get_req_socket' imported but unused
-ools.zmq_pool.get_rep_socket' imported but unused
-ools.zmq_pool.get_pub_socket' imported but unused
-ist' imported but unused
-onfig_manager.get_service_ip' imported but unused
-onfig_manager.get_service_url' imported but unused
-onfig_manager.get_redis_url' imported but unused
-ion of unused 'sys' from line 2
-ion of unused 'os' from line 3
-ion of unused 'Path' from line 14
-tils.data_models.TaskResult' imported but unused
-tils.data_models.TaskStatus' imported but unused
-tils.data_models.SystemEvent' imported but unused
-tils.data_models.ErrorReport' imported but unused
-er.get_service_ip' imported but unused
-er.get_service_url' imported but unused
-er.get_redis_url' imported but unused
-ed 'sys' from line 2
-sed 'os' from line 3
-rted but unused
-ool.get_req_socket' imported but unused
-ool.get_rep_socket' imported but unused
-ool.get_pub_socket' imported but unused
- imported but unused
-.env_loader.get_env' imported but unused
-s.common_tagalog_phrases.translate_common_phrase' imported but unused
-s.common_tagalog_phrases.check_and_replace_common_phrases' imported but unused
-s.common_tagalog_phrases.TAGALOG_TO_ENGLISH' imported but unused
-s.common_tagalog_phrases.ENGLISH_TO_TAGALOG' imported but unused
-sed 'TTS' from line 27
-ent.BaseAgent' imported but unused
-nused
-n.env_helpers.get_env' imported but unused
-ddevice as sd' imported but unused
-e' imported but unused
-ections.deque' imported but unused
-inition of unused 'sys' from line 26
-inition of unused 'os' from line 29
-inition of unused 'Path' from line 30
-lib.Path' imported but unused
-on.env_helpers.get_env' imported but unused
-finition of unused 'deque' from line 31
-eading' imported but unused
-efinition of unused '_get_health_status' from line 239
-ils.path_manager.PathManager' imported but unused
-ools.zmq_pool.get_req_socket' imported but unused
-ools.zmq_pool.get_rep_socket' imported but unused
-ools.zmq_pool.get_pub_socket' imported but unused
-ools.zmq_pool.get_sub_socket' imported but unused
-g' imported but unused
-ommon.config_manager.get_service_ip' imported but unused
-ommon.config_manager.get_service_url' imported but unused
-ommon.config_manager.get_redis_url' imported but unused
-ain_pc_code.utils.service_discovery_client.discover_service' imported but unused
-threading' imported but unused
-edefinition of unused 'register_service' from line 5
-edefinition of unused 'get_env' from line 6
-edefinition of unused 'psutil' from line 8
-edefinition of unused 'datetime' from line 9
-ommon.pools.zmq_pool.get_req_socket' imported but unused
-ommon.pools.zmq_pool.get_rep_socket' imported but unused
-ommon.pools.zmq_pool.get_pub_socket' imported but unused
-ommon.pools.zmq_pool.get_sub_socket' imported but unused
-psutil' imported but unused
-requests' imported but unused
-typing.Optional' imported but unused
-main_pc_code.utils.network_utils.get_machine_ip' imported but unused
-edefinition of unused 'get_env' from line 26
-mon.config_manager.get_service_ip' imported but unused
-mon.config_manager.get_service_url' imported but unused
-mon.config_manager.get_redis_url' imported but unused
-mmon.pools.zmq_pool.get_req_socket' imported but unused
-mmon.pools.zmq_pool.get_rep_socket' imported but unused
-mmon.pools.zmq_pool.get_pub_socket' imported but unused
-mmon.pools.zmq_pool.get_sub_socket' imported but unused
-on' imported but unused
-reading' imported but unused
-mmon.env_helpers.get_env' imported but unused
-mmon.utils.path_manager.PathManager' imported but unused
-'common.pools.zmq_pool.get_req_socket' imported but unused
-'common.pools.zmq_pool.get_rep_socket' imported but unused
-'common.pools.zmq_pool.get_pub_socket' imported but unused
-'common.pools.zmq_pool.get_sub_socket' imported but unused
-'tempfile' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/streaming_speech_recognition.py:21:1: F401 'wave' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/streaming_speech_recognition.py:22:1: F401 'orjson' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/streaming_speech_recognition.py:24:1: F401 'collections.deque' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/streaming_speech_recognition.py:26:1: F401 'uuid' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/streaming_speech_recognition.py:27:1: F401 'socket' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/streaming_speech_recognition.py:31:1: F401 'pathlib.Path' imported but unused
-./backups/unused_import_cleanup/main_pc_code/agents/streaming_speech_recognition.py:38:1: F401                                                                                                
