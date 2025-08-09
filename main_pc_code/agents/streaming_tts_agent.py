@@ -1,6 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
-
+from common.constants.service_names import ServiceNames
 
 # Import path manager for containerization-friendly paths
 import sys
@@ -107,7 +107,7 @@ class UltimateTTSAgent(BaseAgent):
             pass # Placeholder for secure ZMQ configuration if needed
         
         # Try to get the UnifiedSystemAgent address from service discovery
-        usa_address = get_service_address("UnifiedSystemAgent")
+        usa_address = get_service_address(ServiceNames.UnifiedSystemAgent)
         if not usa_address:
             # Fall back to configured port
             usa_address = f"tcp://localhost:{self.unified_system_port}"
@@ -177,7 +177,7 @@ class UltimateTTSAgent(BaseAgent):
             pass # Placeholder for secure ZMQ configuration if needed
         
         # Try to get the interrupt handler address from service discovery
-        interrupt_address = get_service_address("StreamingInterruptHandler")
+        interrupt_address = get_service_address(ServiceNames.StreamingInterruptHandler)
         if not interrupt_address:
             # Fall back to configured port
             interrupt_address = f"tcp://localhost:{self.interrupt_port}"
@@ -204,7 +204,7 @@ class UltimateTTSAgent(BaseAgent):
         """Register this agent with the service discovery system"""
         try:
             register_result = register_service(
-                name="StreamingTtsAgent",
+                name="StreamingTTSAgent",
                 port=self.port,
                 additional_info={
                     "capabilities": ["tts", "streaming", "multilingual"],
@@ -598,7 +598,7 @@ class UltimateTTSAgent(BaseAgent):
         """Update the service status in the service registry"""
         try:
             register_service(
-                name="StreamingTtsAgent",
+                name="StreamingTTSAgent",
                 port=self.port,
                 additional_info={
                     "capabilities": ["tts", "streaming", "multilingual"],
@@ -611,7 +611,7 @@ class UltimateTTSAgent(BaseAgent):
     
     def _shutdown(self):
         """Clean up resources"""
-        logger.info("Shutting down StreamingTtsAgent")
+        logger.info("Shutting down StreamingTTSAgent")
         
         # Update service status
         self._update_service_status("stopping")
@@ -644,7 +644,7 @@ class UltimateTTSAgent(BaseAgent):
             self.context.term()
             logger.info("Terminated ZMQ context")
         
-        logger.info("StreamingTtsAgent shut down successfully")
+        logger.info("StreamingTTSAgent shut down successfully")
 
 
     def health_check(self):

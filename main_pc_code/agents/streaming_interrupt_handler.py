@@ -27,6 +27,7 @@ from main_pc_code.utils.env_loader import get_env
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
+from common.constants.service_names import ServiceNames
 
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -110,7 +111,7 @@ class StreamingInterruptHandler(BaseAgent):
         self.tts_socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Try to get the TTS address from service discovery
-        tts_address = get_service_address("StreamingTtsAgent")
+        tts_address = get_service_address(ServiceNames.StreamingTTSAgent)
         if not tts_address:
             # Fall back to configured port
             tts_address = get_zmq_connection_string({TTS_PORT}, "localhost")

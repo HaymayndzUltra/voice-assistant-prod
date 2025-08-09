@@ -28,6 +28,7 @@ import pickle
 from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from common.utils.path_manager import PathManager
+from common.constants.service_names import ServiceNames
 # from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # Placeholder functions for secure_zmq (module doesn't exist)
@@ -342,18 +343,18 @@ class Responder(BaseAgent):
                         "face_recognition": False
                     }
                 }
-            # Connect to StreamingTtsAgent
-            streaming_tts_address = get_service_address("StreamingTtsAgent")
+            # Connect to StreamingTTSAgent
+            streaming_tts_address = get_service_address(ServiceNames.StreamingTTSAgent)
             if streaming_tts_address:
                 self.streaming_tts_socket = self.context.socket(zmq.REQ)
                 if is_secure_zmq_enabled():
                     self.streaming_tts_socket = configure_secure_client(self.streaming_tts_socket)
                 self.streaming_tts_socket.setsockopt(zmq.RCVTIMEO, self.ZMQ_REQUEST_TIMEOUT)
                 self.streaming_tts_socket.connect(streaming_tts_address)
-                logger.info(f"Connected to StreamingTtsAgent at {streaming_tts_address}")
+                logger.info(f"Connected to StreamingTTSAgent at {streaming_tts_address}")
                 self.health_status["connections"]["tts"] = True
             else:
-                logger.warning("StreamingTtsAgent not found in service discovery")
+                logger.warning("StreamingTTSAgent not found in service discovery")
             
             # Connect to TTSCache
             tts_cache_address = get_service_address("TTSCache")

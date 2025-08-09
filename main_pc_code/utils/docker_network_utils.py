@@ -93,7 +93,7 @@ def get_service_address(service_name: str) -> str:
         common_ports = {
             "SystemDigitalTwin": 7120,
             "TaskRouter": 8571,
-            "StreamingTtsAgent": 5562,
+            "StreamingTTSAgent": 5562,
             "TTSAgent": 5563,
             "ResponderAgent": 5637,
             "StreamingInterruptHandler": 5576
@@ -166,6 +166,6 @@ if __name__ == '__main__':
     print(f"Container IP: {get_container_ip()}")
     
     # Test service address resolution
-    services = ["SystemDigitalTwin", "TaskRouter", "StreamingTtsAgent", "TTSAgent"]
+    services = ["SystemDigitalTwin", "TaskRouter", "StreamingTTSAgent", "TTSAgent"]
     for service in services:
         print(f"{service} address: {get_service_address(service)}") 

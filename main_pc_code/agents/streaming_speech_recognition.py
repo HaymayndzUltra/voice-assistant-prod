@@ -173,11 +173,10 @@ class StreamingSpeechRecognition(BaseAgent):
         # Initialize ResourceManager
         self.resource_manager = ResourceManager()
         
-        # Initialize RequestCoordinator connection variables
-        self.request_coordinator_connection = None
-        self.request_coordinator_connected = False
-        # Start a background thread to connect to RequestCoordinator when it becomes available
-        threading.Thread(target=self._connect_to_request_coordinator, daemon=True).start()
+        # Initialize ModelOpsCoordinator (MOC) health monitor
+        self.moc_address = os.environ.get('MOC_GRPC_ADDR', 'localhost:7212')
+        self._moc_healthy = False
+        threading.Thread(target=self._moc_health_monitor, daemon=True).start()
 
         logger.info("Enhanced Streaming Speech Recognition initialized")
         
@@ -189,27 +188,27 @@ class StreamingSpeechRecognition(BaseAgent):
         self._running = False
         self.start_time = time.time()
 
-    def _connect_to_request_coordinator(self):
-        """Attempt to connect to the RequestCoordinator service."""
-        while not self.request_coordinator_connected and self._running:
+    def _moc_health_monitor(self):
+        """Periodically check ModelOpsCoordinator health via gRPC."""
+        try:
+            from core.gpu_lease_client import GpuLeaseClient  # lightweight client
+        except Exception:
+            self._moc_healthy = False
+            logger.warning("GpuLeaseClient not available; skipping MOC health monitor")
+            return
+        client = GpuLeaseClient(os.environ.get('MOC_GRPC_ADDR', 'localhost:7212'))
+        while self._running:
             try:
-                # Use service discovery to find the RequestCoordinator
-                coordinator_info = discover_service("RequestCoordinator")
-                if coordinator_info and isinstance(coordinator_info, dict) and coordinator_info.get("status") == "SUCCESS":
-                    host = coordinator_info.get("payload", {}).get("host")
-                    port = coordinator_info.get("payload", {}).get("port")
-                    
-                    # Initialize connection
-                    self.request_coordinator_connection = self.zmq_context.socket(zmq.REQ)
-                    self.request_coordinator_connection.connect(f"tcp://{host}:{port}")
-                    self.request_coordinator_connected = True
-                    logger.info(f"Connected to RequestCoordinator at {host}:{port}")
-                else:
-                    logger.warning("RequestCoordinator not found via service discovery, retrying in 10 seconds")
-                    time.sleep(10)
+                # Attempt a short lease request with zero cost to verify connectivity
+                # Using acquire with tiny MB and immediate release as health ping
+                ok = client.acquire(client="SSR-Health", model="health", mb=1, priority=5, ttl_seconds=5)
+                self._moc_healthy = bool(ok)
+                if ok:
+                    client.release()
             except Exception as e:
-                logger.error(f"Error connecting to RequestCoordinator: {str(e)}")
-                time.sleep(10)
+                self._moc_healthy = False
+                logger.debug(f"MOC health check failed: {e}")
+            time.sleep(10)
 
     def _init_sockets(self):
         """Initialize all ZMQ sockets."""
@@ -810,8 +809,6 @@ class StreamingSpeechRecognition(BaseAgent):
             self.health_socket.close()
         if hasattr(self, 'model_manager_socket') and self.model_manager_socket:
             self.model_manager_socket.close()
-        if hasattr(self, 'request_coordinator_connection') and self.request_coordinator_connection:
-            self.request_coordinator_connection.close()
         
         # Terminate ZMQ context
         if self.zmq_context:

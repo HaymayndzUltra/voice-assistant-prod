@@ -424,7 +424,6 @@ agent_groups:
       required: true
       dependencies:
       - FusedAudioPreprocessor
-      - RequestCoordinator
       - STTService
       - SystemDigitalTwin
     StreamingTTSAgent:
@@ -433,7 +432,6 @@ agent_groups:
       health_check_port: "${PORT_OFFSET}+6562"
       required: true
       dependencies:
-      - RequestCoordinator
       - TTSService
       - SystemDigitalTwin
       - UnifiedSystemAgent

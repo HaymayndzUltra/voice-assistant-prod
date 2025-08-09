@@ -126,7 +126,6 @@ agent_groups:
       health_check_port: 6574
       required: true
       dependencies:
-        - RequestCoordinator
         - SystemDigitalTwin
         - MemoryClient
         - ObservabilityHub

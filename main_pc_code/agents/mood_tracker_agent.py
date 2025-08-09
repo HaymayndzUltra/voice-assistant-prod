@@ -20,6 +20,9 @@ from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
 from common.utils.env_standardizer import get_env
 from main_pc_code.agents.error_publisher import ErrorPublisher
+from common.constants.service_names import ServiceNames
+from main_pc_code.utils.service_discovery_client import get_service_address
+import zmq
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -46,11 +49,20 @@ class MoodTrackerAgent(BaseAgent):
         self.running = True
         self.start_time = time.time()
         
-        # SUB socket for subscribing to EmotionEngine broadcasts
+        # Subscribe to APC topic using service discovery, fallback to legacy port
         self.emotion_sub_socket = self.context.socket(zmq.SUB)
-        _host = config.get('host', os.environ.get('HOST', '127.0.0.1'))
-        self.emotion_sub_socket.connect(f"tcp://{_host}:{self.emotion_engine_port}")
-        self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all messages
+        apc_address = get_service_address(ServiceNames.AffectiveProcessingCenter)
+        if apc_address:
+            # APC publishes multipart [topic, json]
+            self.emotion_sub_socket.connect(apc_address)
+            self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "affect")
+            logger.info(f"Subscribed to APC at {apc_address} topic 'affect'")
+        else:
+            # Legacy fallback to EmotionEngine single-frame JSON
+            _host = config.get('host', os.environ.get('HOST', '127.0.0.1'))
+            self.emotion_sub_socket.connect(f"tcp://{_host}:{self.emotion_engine_port}")
+            self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+            logger.warning("AffectiveProcessingCenter not found; falling back to EmotionEngine framing")
         
         # Initialize poller for non-blocking socket operations
         self.poller = zmq.Poller()
@@ -88,11 +100,10 @@ class MoodTrackerAgent(BaseAgent):
         self.emotion_thread.start()
         
         logger.info(f"MoodTrackerAgent initialized on port {self.port}")
-        logger.info(f"Subscribed to EmotionEngine on port {self.emotion_engine_port}")
-        logger.info(f"Mood history size: {self.history_size}")
+        logger.info(f"Subscribed to emotion updates (APC preferred)")
     
     def _monitor_emotions(self):
-        """Monitor emotional state updates from EmotionEngine."""
+        """Monitor emotional state updates from APC/EmotionEngine."""
         logger.info("Starting emotion monitoring thread")
         while self.running:
             try:
@@ -100,19 +111,54 @@ class MoodTrackerAgent(BaseAgent):
                 socks = dict(self.poller.poll(1000))  # 1 second timeout
                 
                 if self.emotion_sub_socket in socks and socks[self.emotion_sub_socket] == zmq.POLLIN:
-                    message = self.emotion_sub_socket.recv_json()
-                    
-                    # Check if this is an emotional state update
-                    if isinstance(message, dict) and message.get('type') == 'emotional_state_update':
-                        emotional_state = message.get('data', {})
-                        if isinstance(emotional_state, dict):
-                            self._update_mood(emotional_state)
+                    try:
+                        # Try APC multipart first
+                        parts = self.emotion_sub_socket.recv_multipart(flags=zmq.NOBLOCK)
+                        if len(parts) == 2:
+                            topic = parts[0].decode('utf-8', errors='ignore')
+                            payload_json = parts[1].decode('utf-8', errors='ignore')
+                            import json
+                            message = json.loads(payload_json)
+                            self._handle_apc_message(topic, message)
+                            continue
                         else:
-                            logger.warning(f"Received invalid emotional state data (not a dict): {emotional_state}")
-                
+                            # Fallback to single-frame JSON
+                            msg = self.emotion_sub_socket.recv_json()
+                            self._handle_legacy_message(msg)
+                            continue
+                    except zmq.Again:
+                        # If non-blocking multipart read fails, fallback to blocking json
+                        msg = self.emotion_sub_socket.recv_json()
+                        self._handle_legacy_message(msg)
             except Exception as e:
                 logger.error(f"Error in emotion monitoring thread: {e}")
                 time.sleep(1)  # Sleep to avoid tight loop in case of error
+    
+    def _handle_apc_message(self, topic: str, message: Dict[str, Any]) -> None:
+        """Translate APC EmotionalContext schema to internal mood representation."""
+        try:
+            primary = message.get('primary_emotion', 'neutral')
+            confidence = float(message.get('emotion_confidence', 0.5))
+            valence = float(message.get('valence', 0.0))
+            # Map to sentiment [-1,1] using valence; intensity based on arousal
+            arousal = float(message.get('arousal', 0.5))
+            emotional_state = {
+                'dominant_emotion': primary,
+                'combined_emotion': primary,
+                'intensity': arousal,
+                'sentiment': valence,
+                'confidence': confidence
+            }
+            self._update_mood(emotional_state)
+        except Exception as e:
+            logger.warning(f"Invalid APC message format: {e}")
+    
+    def _handle_legacy_message(self, message: Dict[str, Any]) -> None:
+        # Legacy EmotionEngine framing: {type: 'emotional_state_update', data: {...}}
+        if isinstance(message, dict) and message.get('type') == 'emotional_state_update':
+            emotional_state = message.get('data', {})
+            if isinstance(emotional_state, dict):
+                self._update_mood(emotional_state)
     
     def _update_mood(self, emotional_state: Dict[str, Any]):
         """Update the current mood based on emotional state.

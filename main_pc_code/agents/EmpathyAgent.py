@@ -21,6 +21,8 @@ from main_pc_code.utils.service_discovery_client import get_service_address
 from common.utils.env_standardizer import get_env
 from main_pc_code.agents.error_publisher import ErrorPublisher
 # from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+from common.constants.service_names import ServiceNames
+import zmq
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -53,13 +55,32 @@ class EmpathyAgent(BaseAgent):
         self.initialization_status = {"is_initialized": False, "error": None}
         threading.Thread(target=self._initialize_connections, daemon=True).start()
         
+        # Subscribe to APC affect topic (multipart [topic, json]) with fallback
+        self.emotion_sub_socket = self.context.socket(zmq.SUB)
+        apc_address = get_service_address(ServiceNames.AffectiveProcessingCenter)
+        if apc_address:
+            self.emotion_sub_socket.connect(apc_address)
+            self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "affect")
+            logger.info(f"Subscribed to APC at {apc_address} topic 'affect'")
+        else:
+            # Fallback to legacy EmotionEngine port if available
+            _host = os.environ.get('HOST', '127.0.0.1')
+            legacy_port = int(config.get('emotionengine_port', 5592))
+            self.emotion_sub_socket.connect(f"tcp://{_host}:{legacy_port}")
+            self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+            logger.warning("AffectiveProcessingCenter not found; falling back to EmotionEngine framing")
+        
+        # Poller for both emotion updates and TTS responses
+        self.poller = zmq.Poller()
+        self.poller.register(self.emotion_sub_socket, zmq.POLLIN)
+        
         logger.info(f"EmpathyAgent initialized on port {self.port}")
 
     def _initialize_connections(self):
         """Initialize connections to dependent services."""
         try:
             # Connect to StreamingTTSAgent
-            tts_address = get_service_address("StreamingTTSAgent")
+            tts_address = get_service_address(ServiceNames.StreamingTTSAgent)
             if tts_address:
                 self.tts_socket = self.context.socket(zmq.REQ)
                 # if is_secure_zmq_enabled():
@@ -118,7 +139,7 @@ class EmpathyAgent(BaseAgent):
             return {'status': 'error', 'message': str(e)}
 
     def _monitor_emotions(self):
-        """Monitor emotional state updates from EmotionEngine."""
+        """Monitor emotional state updates from APC or legacy EmotionEngine."""
         logger.info("Starting emotion monitoring thread")
         while True:
             try:
@@ -126,30 +147,46 @@ class EmpathyAgent(BaseAgent):
                 socks = dict(self.poller.poll(1000))  # 1 second timeout
                 
                 if self.emotion_sub_socket in socks and socks[self.emotion_sub_socket] == zmq.POLLIN:
-                    message = self.emotion_sub_socket.recv_json()
-                    
-                    # Check if this is an emotional state update
-                    if message.get('type') == 'emotional_state_update':
-                        emotional_state = message.get('data', {})
-                        self._update_emotional_state(emotional_state)
+                    try:
+                        parts = self.emotion_sub_socket.recv_multipart(flags=zmq.NOBLOCK)
+                        if len(parts) == 2:
+                            topic = parts[0].decode('utf-8', errors='ignore')
+                            payload_json = parts[1].decode('utf-8', errors='ignore')
+                            import json
+                            message = json.loads(payload_json)
+                            self._handle_apc_message(topic, message)
+                            continue
+                        else:
+                            # Fallback to single-frame JSON
+                            message = self.emotion_sub_socket.recv_json()
+                            self._handle_legacy_message(message)
+                            continue
+                    except zmq.Again:
+                        message = self.emotion_sub_socket.recv_json()
+                        self._handle_legacy_message(message)
                 
             except Exception as e:
                 logger.error(f"Error in emotion monitoring thread: {e}")
                 time.sleep(1)  # Sleep to avoid tight loop in case of error
                 
-    def _update_emotional_state(self, emotional_state: Dict[str, Any]):
-        """Update the current emotional state and adjust voice settings.
-        
-        Args:
-            emotional_state: New emotional state from EmotionEngine
-        """
-        if emotional_state:
-            self.current_profile['persona'] = emotional_state.get('dominant_emotion', 'neutral')
+    def _handle_apc_message(self, topic: str, message: Dict[str, Any]) -> None:
+        """Translate APC EmotionalContext to EmpathyAgent profile and forward to TTS."""
+        try:
+            primary = message.get('primary_emotion', 'neutral')
+            confidence = float(message.get('emotion_confidence', 0.5))
+            # Determine voice settings from emotion
+            self.current_profile['persona'] = primary
             self.current_profile['voice_settings'] = self.determine_voice_settings()
-            logger.info(f"Updated emotional state: {self.current_profile}")
-            
+            logger.info(f"Updated emotional state from APC: {self.current_profile} (conf={confidence:.2f})")
             # Send updated voice settings to TTSConnector
             self.send_voice_settings_to_tts()
+        except Exception as e:
+            logger.warning(f"Invalid APC message: {e}")
+            
+    def _handle_legacy_message(self, message: Dict[str, Any]) -> None:
+        if message.get('type') == 'emotional_state_update':
+            emotional_state = message.get('data', {})
+            self._update_emotional_state(emotional_state)
     
     def determine_voice_settings(self) -> Dict[str, Any]:
         """Determine voice settings based on current emotional state.

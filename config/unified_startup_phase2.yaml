@@ -183,7 +183,6 @@ agent_groups:
       required: true
       dependencies:
         - FusedAudioPreprocessor
-        - RequestCoordinator
         - STTService
         - ObservabilityHub
         
@@ -203,7 +202,6 @@ agent_groups:
       health_check_port: 6562
       required: true
       dependencies:
-        - RequestCoordinator
         - TTSService
         - SystemDigitalTwin
         - ObservabilityHub
