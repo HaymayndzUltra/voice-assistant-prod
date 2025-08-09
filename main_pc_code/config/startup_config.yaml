@@ -689,15 +689,7 @@ agent_groups:
     - Executor
     - PredictiveHealthMonitor
     - SmartHomeAgent
-  emotion_system:
-    description: Emotional state modelling & awareness
-    agents:
-    - EmotionEngine
-    - MoodTrackerAgent
-    - HumanAwarenessAgent
-    - ToneDetector
-    - VoiceProfilingAgent
-    - EmpathyAgent
+  # emotion_system group removed (duplicate of detailed agent definitions above)
   gpu_scheduler:
     description: Cross-machine GPU load balancer
     agents:
