@@ -602,7 +602,6 @@ agent_groups:
       dependencies:
       - CloudTranslationService
       - SystemDigitalTwin
-    observability_ui:
     ObservabilityDashboardAPI:
       script_path: services/obs_dashboard_api/server.py
       port: ${PORT_OFFSET}+8001

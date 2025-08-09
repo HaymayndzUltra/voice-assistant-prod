@@ -3,10 +3,8 @@ import sys, os, re, glob, yaml
 from collections import defaultdict
 
 PATTERNS = [
-  "main_pc_code/config/**/*.yaml",
-  "pc2_code/config/**/*.yaml",
-  "config/**/*.yaml",
-  "docker-compose*.y*ml",
+  "main_pc_code/config/startup_config.yaml",
+  "pc2_code/config/startup_config.yaml",
 ]
 
 def normalize_port(v):
