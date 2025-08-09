@@ -23,7 +23,6 @@ version: '3.8'
 
   # Main-PC Individual Agents
   service_registry:
-service_registry:
   build:
     context: .
     dockerfile: docker/service_registry/Dockerfile
@@ -46,7 +45,6 @@ service_registry:
   restart: unless-stopped
 
   system_digital_twin:
-system_digital_twin:
   build:
     context: .
     dockerfile: docker/system_digital_twin/Dockerfile

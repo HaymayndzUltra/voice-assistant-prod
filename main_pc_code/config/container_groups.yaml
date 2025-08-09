@@ -1,4 +1,4 @@
-gi# MainPC Container Groups Configuration
+# MainPC Container Groups Configuration
 # This file defines how MainPC agents are grouped into containers
 
 # Core services - essential system services
