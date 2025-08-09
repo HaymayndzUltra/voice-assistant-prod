@@ -261,7 +261,7 @@ class Responder(BaseAgent):
         self.model_manager_socket = None
 
         # Connect to StreamingTTSAgent
-        tts_address = get_service_address("StreamingTTSAgent")
+        tts_address = get_service_address(ServiceNames.StreamingTTSAgent)
         if tts_address:
             self.tts_socket = self.context.socket(zmq.REQ)
             if is_secure_zmq_enabled():
@@ -370,7 +370,7 @@ class Responder(BaseAgent):
                 logger.warning("TTSCache not found in service discovery")
             
             # Connect to TTSConnector
-            tts_connector_address = get_service_address("StreamingTTSAgent")
+            tts_connector_address = get_service_address(ServiceNames.StreamingTTSAgent)
             if tts_connector_address:
                 self.tts_socket = self.context.socket(zmq.REQ)
                 if is_secure_zmq_enabled():

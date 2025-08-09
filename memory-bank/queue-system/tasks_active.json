@@ -21,11 +21,11 @@
       },
       {
         "text": "PHASE 4: CROSS-CUTTING SAFEGUARDS\n\n**Explanations:**\nThis final phase implements permanent, automated safeguards in the CI/CD pipeline to prevent the recurrence of the issues fixed in previous phases. This is a proactive measure to ensure long-term system health.\n\n**Technical Artifacts / Tasks:**\n**Task 1: Implement Contract Tests**\n*   **Approach:** Add contract tests to the CI pipeline that validate PUB/SUB message framing and the `EmotionalContext` schema between the APC and its consumers. The build should fail if the contract is broken.\n\n**Task 2: Implement Discovery Constants**\n*   **Approach:** Create a single source of truth (e.g., a constants module) for all service names. Refactor the codebase to use these constants instead of string literals. Add a static check to the CI pipeline to enforce this rule.\n\n**Task 3: Implement Migration Gates**\n*   **Approach:** Add a CI check that fails the build if any code references deprecated components like the `RequestCoordinator`, legacy MMA semantics, or incorrect service registry keys.\n\n**Concluding Step: Update Plan Status**\nAfter all technical tasks in this phase are successfully completed and verified, update the plan status.\n*   **Review Plan Details:** `python3 todo_manager.py show 2024_remediation_plan`\n*   **Mark This Phase as Complete:** `python3 todo_manager.py done 2024_remediation_plan 4`\n\n──────────────────────────────────\nIMPORTANT NOTE: This phase does not fix existing bugs but prevents future ones. Its successful completion is measured by the successful integration of these new checks into the main development branch.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-24T12:00:00Z",
-    "updated": "2025-08-09T23:26:18.970772+08:00"
+    "updated": "2025-08-09T23:29:12.964762+08:00"
   }
 ]
