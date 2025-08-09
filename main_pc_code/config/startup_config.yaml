@@ -21,7 +21,7 @@ global_settings:
     retries: 3
   performance_tuning:
     dynamic_batch_tuning: true
-    tuning_source: ObservabilityHub
+    tuning_source: UnifiedObservabilityCenter
     batch_optimization: true
     memory_optimization: true
     gpu_memory_fraction: 0.9
@@ -64,10 +64,10 @@ agent_groups:
       required: true
       dependencies: []
       config:
-        backend: memory
+        backend: ${SERVICE_REGISTRY_BACKEND:-redis}
         redis:
-          url: redis://localhost:6379/0
-          prefix: 'service_registry:'
+          url: ${SERVICE_REGISTRY_REDIS_URL:-redis://localhost:6379/0}
+          prefix: ${SERVICE_REGISTRY_PREFIX:-service_registry:}
     SystemDigitalTwin:
       script_path: main_pc_code/agents/system_digital_twin.py
       port: ${PORT_OFFSET}+7220
@@ -146,7 +146,7 @@ agent_groups:
       health_check_port: ${PORT_OFFSET}+9008
       required: true
       dependencies:
-      - ObservabilityHub
+      - UnifiedObservabilityCenter
       config:
         docker_sock: /var/run/docker.sock
     MemoryFusionHub:
@@ -156,12 +156,12 @@ agent_groups:
       required: true
       dependencies:
       - ServiceRegistry
-      - ObservabilityHub
+      - UnifiedObservabilityCenter
       config:
         zmq_port: ${PORT_OFFSET}+5713
         grpc_port: ${PORT_OFFSET}+5714
         metrics_port: ${PORT_OFFSET}+8080
-        redis_url: "redis://localhost:6379/0"
+        redis_url: "${REDIS_URL:-redis://localhost:6379/0}"
         sqlite_path: "/workspace/memory.db"
     ModelOpsCoordinator:
       script_path: model_ops_coordinator/app.py
@@ -170,7 +170,7 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
-      - ObservabilityHub
+      - UnifiedObservabilityCenter
       config:
         zmq_port: ${PORT_OFFSET}+7211
         grpc_port: ${PORT_OFFSET}+7212
@@ -197,7 +197,7 @@ agent_groups:
         zmq_endpoints:
         - "tcp://localhost:5555"
         - "tcp://localhost:5556"
-        redis_url: "redis://localhost:6379/0"
+        redis_url: "${REDIS_URL:-redis://localhost:6379/0}"
         cache_ttl: 3600
         batch_size: 10
     RealTimeAudioPipeline:
@@ -500,7 +500,7 @@ agent_groups:
       script_path: main_pc_code/agents/streaming_interrupt_handler.py
       port: ${PORT_OFFSET}+5576
       health_check_port: ${PORT_OFFSET}+6576
-      required: true
+      required: ${RTAP_ENABLED:-false} == 'false'
       dependencies:
       - StreamingSpeechRecognition
       - StreamingTTSAgent
@@ -537,7 +537,7 @@ agent_groups:
       script_path: main_pc_code/agents/streaming_language_analyzer.py
       port: ${PORT_OFFSET}+5579
       health_check_port: ${PORT_OFFSET}+6579
-      required: true
+      required: ${RTAP_ENABLED:-false} == 'false'
       dependencies:
       - StreamingSpeechRecognition
       - SystemDigitalTwin
@@ -615,25 +615,26 @@ agent_groups:
       dependencies:
       - CloudTranslationService
       - SystemDigitalTwin
-  observability_ui:
+    observability_ui:
     ObservabilityDashboardAPI:
       script_path: services/obs_dashboard_api/server.py
       port: ${PORT_OFFSET}+8001
       health_check_port: ${PORT_OFFSET}+9007
       required: true
       dependencies:
-      - ObservabilityHub
-docker_groups:
-  infra_core:
-    description: Core service discovery & digital-twin infrastructure
-    agents:
-    - ServiceRegistry
-    - SystemDigitalTwin
+      - UnifiedObservabilityCenter
+  docker_groups:
+    infra_core:
+      description: Core service discovery & digital-twin infrastructure
+      agents:
+      - ServiceRegistry
+      - SystemDigitalTwin
+  # NOTE: Legacy “observability” docker group removed; unified on UOC
   # DECOMMISSIONED: Legacy coordination services replaced by ModelOpsCoordinator
   # coordination:
   #   description: Request routing, GPU model lifecycle & VRAM optimisation
   #   agents:
-  #   - RequestCoordinator
+#   - RequestCoordinator
   #   - ModelManagerSuite
   #   - VRAMOptimizerAgent
   observability:

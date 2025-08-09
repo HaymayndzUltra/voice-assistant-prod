@@ -23,12 +23,11 @@ from common.config_manager import load_unified_config
 from common.utils.env_standardizer import get_env
 from main_pc_code.agents.error_publisher import ErrorPublisher
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address
-from main_pc_code.utils.env_loader import get_env
 from main_pc_code.utils.network_utils import get_zmq_connection_string
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from main_pc_code.utils import model_client
-from common.env_helpers import get_env
 from common.utils.path_manager import PathManager
+import zmq
 
 # Parse command line arguments
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -46,7 +45,7 @@ logger = configure_logging(__name__)
 logger = logging.getLogger("StreamingLanguageAnalyzer")
 
 # Port configuration from args or defaults
-ZMQ_SUB_PORT = int(config.get("streaming_speech_recognition_port", 5576) or 5576)
+ZMQ_SUB_PORT = int(config.get("streaming_speech_recognition_port", 6553) or 6553)
 ZMQ_PUB_PORT = int(config.get("port", 5577) or 5577)
 ZMQ_HEALTH_PORT = int(config.get("health_port", 5597) or 5597)
 ZMQ_REQUEST_TIMEOUT = int(config.get("zmq_request_timeout", 5000) or 5000)
@@ -136,7 +135,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
         # Try to get the speech recognition address from service discovery
         stt_address = get_service_address("StreamingSpeechRecognition")
         if not stt_address:
-            # Fall back to configured port
+            # Fall back to RTAP transcripts default port 6553
             stt_address = get_zmq_connection_string(ZMQ_SUB_PORT, "localhost")
             
         self.sub_socket.connect(stt_address)
@@ -603,27 +602,27 @@ class StreamingLanguageAnalyzer(BaseAgent):
         logger.info("Cleaning up resources")
         try:
             if hasattr(self, 'sub_socket') and self.sub_socket:
-                self.sub_
+                self.sub_socket.close()
                 logger.info("Closed subscription socket")
                 
             if hasattr(self, 'pub_socket') and self.pub_socket:
-                self.pub_
+                self.pub_socket.close()
                 logger.info("Closed publisher socket")
                 
             if hasattr(self, 'health_socket') and self.health_socket:
-                self.health_
+                self.health_socket.close()
                 logger.info("Closed health socket")
                 
             if hasattr(self, 'tagabert_socket') and self.tagabert_socket:
-                self.tagabert_
+                self.tagabert_socket.close()
                 logger.info("Closed TagaBERTa socket")
                 
             if hasattr(self, 'translation_socket') and self.translation_socket:
-                self.translation_
+                self.translation_socket.close()
                 logger.info("Closed Translation socket")
                 
             if hasattr(self, 'context') and self.context:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.context.term()
                 logger.info("Terminated ZMQ context")
                 
             logger.info("All resources cleaned up successfully")

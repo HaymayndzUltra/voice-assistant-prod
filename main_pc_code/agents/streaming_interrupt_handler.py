@@ -5,6 +5,7 @@ from common.utils.env_standardizer import get_env
 from main_pc_code.utils.service_discovery_client import register_service
 from common.env_helpers import get_env
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.agents.responder import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
 from main_pc_code.agents.error_publisher import ErrorPublisher
@@ -25,6 +26,7 @@ import os
 from main_pc_code.utils.service_discovery_client import get_service_address, register_service
 from main_pc_code.utils.env_loader import get_env
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.utils.network_utils import get_zmq_connection_string
 import psutil
 from datetime import datetime
 from common.constants.service_names import ServiceNames
@@ -84,7 +86,7 @@ class StreamingInterruptHandler(BaseAgent):
         stt_address = get_service_address("StreamingSpeechRecognition")
         if not stt_address:
             # Fall back to configured port
-            stt_address = get_zmq_connection_string({ZMQ_SUB_PORT}, get_env("STREAMING_STT_HOST", "streaming-stt"))
+            stt_address = get_zmq_connection_string(ZMQ_SUB_PORT, get_env("STREAMING_STT_HOST", "streaming-stt"))
             
         self.sub_socket.connect(stt_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -114,7 +116,7 @@ class StreamingInterruptHandler(BaseAgent):
         tts_address = get_service_address(ServiceNames.StreamingTTSAgent)
         if not tts_address:
             # Fall back to configured port
-            tts_address = get_zmq_connection_string({TTS_PORT}, "localhost")
+            tts_address = get_zmq_connection_string(TTS_PORT, "localhost")
             
         self.tts_socket.connect(tts_address)
         logger.info(f"Connected to TTS agent at {tts_address}")

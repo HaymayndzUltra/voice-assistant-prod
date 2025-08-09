@@ -69,7 +69,7 @@ except Exception:
     DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7200))
     DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8200))
     
-DEFAULT_BACKEND = os.getenv("SERVICE_REGISTRY_BACKEND", "memory")
+DEFAULT_BACKEND = os.getenv("SERVICE_REGISTRY_BACKEND", "redis")
 DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6379/0")
 DEFAULT_PREFIX = os.getenv("SERVICE_REGISTRY_PREFIX", "service_registry:")
 
@@ -125,19 +125,23 @@ class MemoryBackend:
     """Simple in-memory backend for the service registry."""
     
     def __init__(self) -> None:
-        self.registry: Dict[str, Dict[str, Any]] = {}
+        self._data: Dict[str, Dict[str, Any]] = {}
+        import threading
+        self._lock = threading.Lock()
     
-    def get(self, agent_id: str) -> Optional[Dict[str, Any]]:
+    def get(self, agent_name: str) -> Optional[Dict[str, Any]]:
         """Get agent data by ID."""
-        return self.registry.get(agent_id)
+        # reads are safe without lock for CPython dict atomicity; copy to avoid races
+        return dict(self._data.get(agent_name, {})) if agent_name in self._data else None
     
     def set(self, agent_id: str, data: Dict[str, Any]) -> None:
         """Store agent data by ID."""
-        self.registry[agent_id] = data
+        with self._lock:
+            self._data[agent_id] = data
     
     def list_agents(self) -> list[str]:
         """List all registered agent IDs."""
-        return list(self.registry.keys())
+        return list(self._data.keys())
     
     def close(self) -> None:
         """Close any resources."""

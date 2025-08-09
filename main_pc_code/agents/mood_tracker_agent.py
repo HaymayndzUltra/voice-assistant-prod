@@ -55,8 +55,8 @@ class MoodTrackerAgent(BaseAgent):
         if apc_address:
             # APC publishes multipart [topic, json]
             self.emotion_sub_socket.connect(apc_address)
-            self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "affect")
-            logger.info(f"Subscribed to APC at {apc_address} topic 'affect'")
+            self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "emotional_context")
+            logger.info(f"Subscribed to APC at {apc_address} topic 'emotional_context'")
         else:
             # Legacy fallback to EmotionEngine single-frame JSON
             _host = config.get('host', os.environ.get('HOST', '127.0.0.1'))

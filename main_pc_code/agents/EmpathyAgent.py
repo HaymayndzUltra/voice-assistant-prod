@@ -60,8 +60,8 @@ class EmpathyAgent(BaseAgent):
         apc_address = get_service_address(ServiceNames.AffectiveProcessingCenter)
         if apc_address:
             self.emotion_sub_socket.connect(apc_address)
-            self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "affect")
-            logger.info(f"Subscribed to APC at {apc_address} topic 'affect'")
+            self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "emotional_context")
+            logger.info(f"Subscribed to APC at {apc_address} topic 'emotional_context'")
         else:
             # Fallback to legacy EmotionEngine port if available
             _host = os.environ.get('HOST', '127.0.0.1')
