@@ -47,6 +47,8 @@ from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Configure logging
 logger = logging.getLogger(__name__)
+UOC_URL = os.getenv("UOC_URL", os.getenv("OBS_HUB", "http://localhost:9100"))
+UOC_TOKEN = os.getenv("UOC_TOKEN", "")
 
 # Load config
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -1509,8 +1511,18 @@ class PredictiveHealthMonitor(BaseAgent):
                         # Small delay between checks to prevent overwhelming the system
                         time.sleep(2)
                         
-                    # Update system metrics
-                    system_metrics = self._get_system_metrics()
+                    # Update system metrics (prefer UOC)
+                    system_metrics = None
+                    try:
+                        import requests
+                        headers = {"Authorization": f"Bearer {UOC_TOKEN}"} if UOC_TOKEN else {}
+                        r = requests.get(f"{UOC_URL}/metrics", timeout=3, headers=headers)
+                        if r.status_code == 200:
+                            system_metrics = {"uoc_metrics_raw": r.text[:8192]}
+                    except Exception:
+                        pass
+                    if system_metrics is None:
+                        system_metrics = self._get_system_metrics()
                     self._record_system_metrics(system_metrics)
                     
                     # Predict potential failures
@@ -1555,8 +1567,18 @@ class PredictiveHealthMonitor(BaseAgent):
         
         # Add agent-specific metrics
         try:
-            # System metrics
-            system_metrics = self._get_system_metrics()
+            # System metrics (prefer UOC)
+            system_metrics = None
+            try:
+                import requests
+                headers = {"Authorization": f"Bearer {UOC_TOKEN}"} if UOC_TOKEN else {}
+                r = requests.get(f"{UOC_URL}/metrics", timeout=3, headers=headers)
+                if r.status_code == 200:
+                    system_metrics = {"uoc_metrics_raw": r.text[:2048]}
+            except Exception:
+                pass
+            if system_metrics is None:
+                system_metrics = self._get_system_metrics()
             
             # Agent monitoring stats
             monitored_agents = len(self.agent_health)

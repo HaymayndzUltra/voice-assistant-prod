@@ -42,6 +42,7 @@ from pc2_code.agents.utils.config_loader import Config
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from common.env_helpers import get_env
+from core.gpu_lease_client import GpuLeaseClient
 
 
 # Load PC2 specific configuration system
@@ -99,8 +100,7 @@ logger = logging.getLogger("RemoteConnector")
 
 # Get ZMQ ports from app_config (formerly 'config')
 REMOTE_CONNECTOR_PORT = app_config.get('zmq.remote_connector_port', 5557)
-MODEL_MANAGER_PORT = app_config.get('zmq.model_manager_port', 5556)  # Base port for MMA
-MODEL_MANAGER_HOST = app_config.get('zmq.model_manager_host', '192.168.100.16')  # Main PC's IP address
+# Legacy MMA constants retained for compatibility but unused
 TASK_ROUTER_PORT = app_config.get('zmq.task_router_port', 5558) # Unused in this snippet
 
 class RemoteConnectorAgent(BaseAgent):
@@ -152,33 +152,23 @@ class RemoteConnectorAgent(BaseAgent):
         self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}") # Use self.health_port
         logger.info(f"Remote Connector health check bound to port {self.health_port}")
 
-        # Socket to communicate with model manager
-        self.model_manager = self.context.socket(zmq.REQ)
-        self.model_manager_port = app_config.get('zmq.model_manager_port', 5555) # Use app_config
+        # MOC client (gRPC)
+        self.moc_addr = os.environ.get('MOC_GRPC_ADDR', 'localhost:7212')
+        try:
+            self._moc_client = GpuLeaseClient(self.moc_addr)
+            self.moc_available = True
+            logger.info(f"Using ModelOpsCoordinator at {self.moc_addr}")
+        except Exception as e:
+            self._moc_client = None
+            self.moc_available = False
+            logger.warning(f"ModelOpsCoordinator unavailable ({e}); operating without MOC")
+
+        # Legacy MMA paths removed
         self.model_manager_connected = False
-        try:
-            self.model_manager.connect(f"tcp://{MODEL_MANAGER_HOST}:{self.model_manager_port}")
-            self.model_manager.setsockopt(zmq.RCVTIMEO, 500)  # 500ms timeout
-            self.model_manager_connected = True
-            logger.info(f"Connected to Model Manager on {MODEL_MANAGER_HOST}:{self.model_manager_port}")
-        except Exception as e:
-            logger.warning(f"Could not connect to Model Manager: {e}. Will operate in standalone mode.")
+        self.model_status = None
 
-        # Socket to subscribe to model status updates
-        self.model_status = self.context.socket(zmq.SUB)
-        # Publisher port is typically base + 1, so if MMA is 5555, publisher might be 5556
-        # Or it could be explicitly defined in config as 'model_status_pub_port'
-        self.model_status_port = app_config.get('zmq.model_status_pub_port', self.model_manager_port + 1) # Use app_config
-        try:
-            self.model_status.connect(f"tcp://{MODEL_MANAGER_HOST}:{self.model_status_port}")
-            self.model_status.setsockopt_string(zmq.SUBSCRIBE, "")
-            self.model_status.setsockopt(zmq.RCVTIMEO, 500)  # 500ms timeout
-            logger.info(f"Subscribed to Model Manager status updates on {MODEL_MANAGER_HOST}:{self.model_status_port}")
-        except Exception as e:
-            logger.warning(f"Could not connect to Model Manager status updates: {e}. Will operate without live model status.")
-
-        # Set all models as available in standalone mode
-        self.standalone_mode = not self.model_manager_connected
+        # Set all models as available in standalone mode when no MOC
+        self.standalone_mode = not self.moc_available
 
         # Setup response cache
         self.cache_enabled = app_config.get('models.cache_enabled', True) # Use app_config
@@ -482,33 +472,26 @@ class RemoteConnectorAgent(BaseAgent):
             logger.info(f"[Standalone Mode] Model {model_name} availability: {available}")
             return available
 
-        # Ask the model manager if connected
-        if self.model_manager_connected:
+        # Ask ModelOpsCoordinator if available
+        if self.moc_available and self._moc_client:
             try:
-                request = {
-                    "action": "check_model",
-                    "model": model_name
-                }
-                logger.debug(f"Querying Model Manager for status of {model_name}")
-                self.model_manager.send_string(json.dumps(request)
-                response_str = self.model_manager.recv_string()
-                response = json.loads(response_str)
-
-                available = response.get('available', False)
-                status_info = response.get('status', 'unknown') # Get full status info
-
-                # Update cache
+                # Lightweight lease attempt as availability probe
+                ok = self._moc_client.acquire(client="RemoteConnectorProbe", model=model_name, mb=1, priority=5, ttl_seconds=5)
+                available = bool(ok)
+                if ok:
+                    self._moc_client.release()
+                status_info = 'online' if available else 'offline'
                 self.model_cache[model_name] = {
                     'available': available,
                     'timestamp': time.time(),
                     'status': status_info,
-                    'source': 'model_manager'
+                    'source': 'moc_grpc'
                 }
-                logger.info(f"Model Manager reported {model_name} as {status_info} (Available: {available})")
+                logger.info(f"MOC reported {model_name} as {status_info}")
                 return available
             except Exception as e:
-                logger.warning(f"Error checking model status with Model Manager for {model_name}: {e}", exc_info=True)
-                # Fall through to default behavior or direct Ollama check
+                logger.warning(f"Error checking model status with MOC for {model_name}: {e}", exc_info=True)
+                # Fall through to default behavior or direct check
 
         # Default to checking Ollama directly for Ollama models if Model Manager not connected/failed
         if model_name.startswith("ollama/"):
@@ -749,7 +732,7 @@ class RemoteConnectorAgent(BaseAgent):
 
         # Close ZMQ sockets
         try:
-            for sock in [self.receiver, self.model_manager, self.model_status, self.health_socket]:
+            for sock in [self.receiver, self.health_socket]:
                 if hasattr(self, 'context') and sock and not sock.closed:
                     sock.close()
                     logger.info(f"Closed ZMQ socket: {sock}")
