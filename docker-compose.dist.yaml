@@ -6,6 +6,21 @@ services:
     networks: [core_net]
     environment:
       ROLE: "authoritative"
+      MFH_METRICS_PORT: "8080"
+    ports:
+      - "5713:5713"   # ZMQ
+      - "5714:5714"   # gRPC
+      - "8080:8080"   # metrics
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket,sys;s=socket.socket();
+try:
+ s.connect(('127.0.0.1',8080));sys.exit(0)
+except Exception:
+ sys.exit(1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   rtap-pre:
     build: ./real_time_audio_pipeline
@@ -65,6 +80,20 @@ services:
       TARGET_MFH_PORT: "5714"
       CACHE_TTL_SEC: "60"
       PROXY_GRPC_PORT: "5715"
+      PROXY_METRICS_PORT: "8082"
+    ports:
+      - "5715:5715"   # proxy gRPC
+      - "8082:8082"   # proxy metrics
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket,sys;s=socket.socket();
+try:
+ s.connect(('127.0.0.1',5715));sys.exit(0)
+except Exception:
+ sys.exit(1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   uoc-central:
     build: ./unified_observability_center

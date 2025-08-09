@@ -72,7 +72,7 @@ except Exception:
     sys.exit(1)" || exit 1
 
 # Expose ports
-EXPOSE 8080 50051 5555
+EXPOSE 8080 5714 5713
 
 # Production configuration
 ENV MFH_ENV=production
