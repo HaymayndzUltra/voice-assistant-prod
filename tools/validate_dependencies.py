@@ -6,7 +6,7 @@ FILES = [
   "pc2_code/config/startup_config.yaml",
 ]
 
-ALLOW_MISSING = {"CloudTranslationService", "UnifiedSystemAgent"}
+ALLOW_MISSING = {"CloudTranslationService", "UnifiedSystemAgent", "UnifiedObservabilityCenter"}
 
 LEGACY_BLOCKERS = {"ObservabilityHub"}
 
