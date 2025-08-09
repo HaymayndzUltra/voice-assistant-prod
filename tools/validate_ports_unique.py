@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, re, glob, yaml
+import sys, re, glob, yaml
 from collections import defaultdict
 
 PATTERNS = [

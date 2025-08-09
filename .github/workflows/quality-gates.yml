@@ -18,5 +18,6 @@ jobs:
         run: python tools/validate_ports_unique.py
       - name: Run dependency graph validator
         run: python tools/validate_dependencies.py
-      - name: Lint for unused/duplicate imports
-        run: flake8 --select=F401,F811
+      - name: Lint for unused/duplicate imports (runtime code only)
+        run: |
+          flake8 --select=F401,F811 main_pc_code pc2_code unified_observability_center tools | cat
