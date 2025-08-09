@@ -17,6 +17,7 @@ from datetime import datetime
 import grpc
 from grpc import aio
 from pydantic import ValidationError, BaseModel
+from grpc_reflection.v1alpha import reflection
 
 from ..core.fusion_service import FusionService
 from ..core.models import MemoryItem, SessionData, KnowledgeRecord, MemoryEvent
@@ -396,6 +397,13 @@ class GRPCServer:
             # Add servicer
             servicer = MemoryFusionServicer(self.fusion_service)
             add_MemoryFusionServiceServicer_to_server(servicer, self.server)
+
+            # Enable server reflection for grpcurl/introspection
+            service_names = (
+                'memory_fusion.MemoryFusionService',
+                reflection.SERVICE_NAME,
+            )
+            reflection.enable_server_reflection(service_names, self.server)
             
             # Add port
             listen_addr = f'[::]:{self.port}'

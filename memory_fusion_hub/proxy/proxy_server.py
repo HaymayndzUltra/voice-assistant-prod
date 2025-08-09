@@ -23,6 +23,7 @@ from typing import Dict, Optional, Tuple, List
 import grpc
 from grpc import aio
 from prometheus_client import Counter, Gauge, start_http_server
+from grpc_reflection.v1alpha import reflection
 
 try:
     # When executed within the memory_fusion_hub package
@@ -208,6 +209,13 @@ class MFHProxyServer:
         self._server = aio.server()
         servicer = MFHProxyServicer(self._upstream_addr, self._cache_ttl_sec)
         add_MemoryFusionServiceServicer_to_server(servicer, self._server)
+
+        # Enable reflection for grpcurl/introspection
+        service_names = (
+            'memory_fusion.MemoryFusionService',
+            reflection.SERVICE_NAME,
+        )
+        reflection.enable_server_reflection(service_names, self._server)
         self._server.add_insecure_port(f"[::]:{self._grpc_port}")
         await self._server.start()
 

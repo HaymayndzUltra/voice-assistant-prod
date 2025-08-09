@@ -2,6 +2,7 @@ pydantic==1.10.13
 pyzmq==26.0.3
 grpcio>=1.74.0,<2
 grpcio-tools>=1.74.0,<2
+grpcio-reflection>=1.74.0,<2
 redis==5.0.1
 sqlalchemy==2.0.30
 aiosqlite==0.19.0

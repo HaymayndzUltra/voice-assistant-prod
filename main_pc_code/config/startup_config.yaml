@@ -139,20 +139,20 @@ agent_groups:
       - ObservabilityHub
       config:
         docker_sock: /var/run/docker.sock
-    MemoryFusionHub:
-      script_path: memory_fusion_hub/app.py
-      port: ${PORT_OFFSET}+5713
-      health_check_port: ${PORT_OFFSET}+6713
+    MemoryFusionProxy:
+      script_path: memory_fusion_hub/proxy/proxy_server.py
+      port: ${PORT_OFFSET}+5715
+      health_check_port: ${PORT_OFFSET}+6715
       required: true
       dependencies:
       - ServiceRegistry
       - ObservabilityHub
       config:
-        zmq_port: ${PORT_OFFSET}+5713
-        grpc_port: ${PORT_OFFSET}+5714
-        metrics_port: ${PORT_OFFSET}+8080
-        redis_url: "redis://localhost:6379/0"
-        sqlite_path: "/workspace/memory.db"
+        proxy_grpc_port: ${PORT_OFFSET}+5715
+        proxy_metrics_port: ${PORT_OFFSET}+8082
+        target_mfh_host: "pc2-mfh"
+        target_mfh_port: ${PORT_OFFSET}+5714
+        cache_ttl_sec: 60
     ModelOpsCoordinator:
       script_path: model_ops_coordinator/app.py
       port: ${PORT_OFFSET}+7212
@@ -303,7 +303,7 @@ agent_groups:
       required: true
       dependencies:
       - ModelOpsCoordinator
-      - MemoryFusionHub
+      - MemoryFusionProxy
       - SystemDigitalTwin
     LearningManager:
       script_path: main_pc_code/agents/learning_manager.py
@@ -311,7 +311,7 @@ agent_groups:
       health_check_port: ${PORT_OFFSET}+6580
       required: true
       dependencies:
-      - MemoryFusionHub
+      - MemoryFusionProxy
       - ModelOpsCoordinator
       - SystemDigitalTwin
     ActiveLearningMonitor:
@@ -593,7 +593,7 @@ docker_groups:
   core_hubs:
     description: Unified core service hubs (Memory & ModelOps)
     agents:
-    - MemoryFusionHub
+    - MemoryFusionProxy
     - ModelOpsCoordinator
   # DECOMMISSIONED: Legacy memory stack replaced by MemoryFusionHub
   # memory_stack:
