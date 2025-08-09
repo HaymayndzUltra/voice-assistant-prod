@@ -5,13 +5,12 @@ Prevents terminal session failures and provides recovery mechanisms
 """
 
 import os
-import sys
 import time
 import psutil
 import subprocess
 import signal
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 class TerminalHealthMonitor:
     def __init__(self, max_memory_mb: int = 1024, max_cpu_percent: float = 80.0):

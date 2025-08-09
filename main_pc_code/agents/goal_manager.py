@@ -4,7 +4,6 @@
 # Pinagsasama nito ang goal-setting ng GoalOrchestrator at ang
 # task execution/swarm logic ng MultiAgentSwarmManager.
 
-import sys
 import time
 import logging
 import threading
@@ -17,7 +16,6 @@ from datetime import datetime
 
 
 # Import path manager for containerization-friendly paths
-import sys
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
@@ -28,8 +26,6 @@ from common.utils.data_models import TaskDefinition, TaskStatus, ErrorSeverity
 from main_pc_code.agents.memory_client import MemoryClient
 
 from common.config_manager import load_unified_config
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Load configuration at the module level
 config = load_unified_config(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"))

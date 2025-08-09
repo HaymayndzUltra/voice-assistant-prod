@@ -11,10 +11,8 @@ Refactored to follow the best agent pattern:
 - All ZMQ endpoints and DB paths are dynamic/configurable
 """
 
-import sys
 import os
 import time
-import logging
 from common.utils.log_setup import configure_logging
 import threading
 import json
@@ -26,7 +24,6 @@ from typing import Dict, Any, List, Optional
 
 
 # Import path manager for containerization-friendly paths
-import sys
 import os
 from common.utils.path_manager import PathManager
 
@@ -40,8 +37,6 @@ from common.config_manager import load_unified_config
 
 # --- Shared Utilities ---
 from main_pc_code.agents.request_coordinator import CircuitBreaker
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # --- Logging Setup ---
 log_dir = 'logs'

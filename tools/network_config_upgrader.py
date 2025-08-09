@@ -16,7 +16,6 @@ Usage:
     python tools/network_config_upgrader.py --apply      # Apply changes
 """
 
-import os
 import yaml
 import argparse
 import logging

@@ -1,7 +1,6 @@
 import zmq
 from typing import Dict, Any, Optional
 import yaml
-import sys
 import threading
 from typing import Callable, Any, Dict, Optional
 from functools import wraps
@@ -14,12 +13,10 @@ from collections import deque, defaultdict
 from pathlib import Path
 import asyncio
 from dataclasses import dataclass, field
-import heapq
 import threading
 
 
 # Import path manager for containerization-friendly paths
-import sys
 from pathlib import Path
 
 # Canonical import stack (TODO 1 compliance) - NO sys.path hacks
@@ -27,10 +24,8 @@ from pathlib import Path
 
 # Canonical import stack (TODO 1 compliance)
 from common.utils.env_standardizer import (
-    get_mainpc_ip, get_pc2_ip, get_env, get_current_machine
+    get_mainpc_ip, get_pc2_ip
 )
-from common.utils.path_manager import PathManager
-from common.config_manager import get_service_url, get_redis_url
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
 from common.utils.log_setup import configure_logging
@@ -40,7 +35,6 @@ from pc2_code.utils.config_loader import load_config, parse_agent_args
 # Migrated to unified config manager (replacing Pattern 5)
 from common.config.unified_config_manager import Config
 # Containerization-friendly paths (Blueprint.md Step 5)
-from common.utils.path_manager import PathManager
 
 # Load configuration at the module level
 config = Config.for_agent(__file__)

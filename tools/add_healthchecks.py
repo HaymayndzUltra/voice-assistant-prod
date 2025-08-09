@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import yaml
 import sys
-import re
 
 def add_healthchecks(compose_file):
     with open(compose_file, 'r') as f:

@@ -8,7 +8,6 @@ from common.env_helpers import get_env
 from main_pc_code.agents.responder import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 """
 

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 """
 Session Memory Agent
 ------------------
@@ -13,26 +10,16 @@ Maintains context memory and session awareness:
 """
 
 # Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
-import logging
 import time
 import threading
-import uuid
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Union
-from common.utils.path_manager import PathManager
+from datetime import datetime
+from typing import Dict, Any
 
 
 # Import path manager for containerization-friendly paths
-import sys
-import os
 # Removed 
 from common.core.base_agent import BaseAgent
-from common.config_manager import load_unified_config
 from main_pc_code.agents.memory_client import MemoryClient
 
 # Configure logging using canonical approach

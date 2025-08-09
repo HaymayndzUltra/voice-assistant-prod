@@ -4,14 +4,10 @@ Streams audio chunks in real-time to downstream modules via ZMQ
 Includes integrated wake word detection using Whisper
 """
 
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Removed import sys
 import os
-from pathlib import Path
 
 import time
 import pickle
@@ -20,7 +16,6 @@ import numpy as np
 import logging
 import json
 import threading
-import sys
 import wave
 import os
 from datetime import datetime
@@ -33,7 +28,6 @@ import psutil
 
 
 # Import path manager for containerization-friendly paths
-import sys
 import os
 from common.utils.path_manager import PathManager
 

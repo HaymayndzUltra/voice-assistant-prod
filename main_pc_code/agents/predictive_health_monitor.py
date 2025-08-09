@@ -11,7 +11,6 @@ from common.utils.path_manager import PathManager
 
 # Removed 
 import logging
-from common.utils.log_setup import configure_logging
 import socket
 from common.pools.zmq_pool import get_req_socket, get_rep_socket
 
@@ -43,7 +42,6 @@ from common_utils.error_handling import SafeExecutor
 from common.config_manager import load_unified_config
 from common.env_helpers import get_env
 from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Configure logging
 logger = logging.getLogger(__name__)

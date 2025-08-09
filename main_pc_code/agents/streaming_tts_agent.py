@@ -3,11 +3,9 @@ from common.config_manager import load_unified_config
 from common.constants.service_names import ServiceNames
 
 # Import path manager for containerization-friendly paths
-import sys
 import os
 from common.utils.path_manager import PathManager
 from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Removed # Path setup completed above
 
@@ -23,8 +21,6 @@ Tier 4: Console Print (Final) - Text output as last resort
 import zmq
 import json
 import time
-import logging
-import sys
 import os
 import threading
 import queue

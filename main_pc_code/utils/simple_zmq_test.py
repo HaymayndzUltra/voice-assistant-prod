@@ -2,7 +2,6 @@
 """Simple ZMQ connection test"""
 
 import zmq
-import json
 import time
 
 def test_simple_zmq():

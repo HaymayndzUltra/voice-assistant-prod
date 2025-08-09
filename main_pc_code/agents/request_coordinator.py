@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-import sys
 import os
 import json
 import time
-import logging
 import threading
 import argparse
 import zmq
@@ -19,7 +17,6 @@ from common.config_manager import load_unified_config
 
 
 # Import path manager for containerization-friendly paths
-import sys
 import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
@@ -32,7 +29,6 @@ from utils.service_discovery_client import get_service_address, register_service
 from utils.env_loader import get_env
 # from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 from common.utils.data_models import (
     TaskDefinition, ErrorSeverity
 )

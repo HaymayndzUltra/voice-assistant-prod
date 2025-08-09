@@ -25,7 +25,6 @@ import sys
 import os
 import time
 import json
-import logging
 import threading
 
 # Phase 3.2: Module alias to maintain import paths for backward compatibility

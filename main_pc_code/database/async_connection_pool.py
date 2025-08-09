@@ -23,7 +23,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import asyncio
 import time
 import json
-import logging
 import threading
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
@@ -818,7 +817,6 @@ async def close_global_pool() -> None:
 if __name__ == "__main__":
     # Example usage
     import asyncio
-    import logging
     
     logger = configure_logging(__name__, level="INFO")
     

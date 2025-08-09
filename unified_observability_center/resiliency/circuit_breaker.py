@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Callable, Coroutine, Optional, TypeVar, Awaitable
+from typing import Callable, Optional, TypeVar, Awaitable
 
 T = TypeVar("T")
 

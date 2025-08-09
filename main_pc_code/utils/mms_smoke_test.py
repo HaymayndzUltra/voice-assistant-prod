@@ -4,11 +4,8 @@ MMS Smoke Test - Basic functionality test for ModelManagerSuite
 Tests: load-model, generate, health_check
 """
 
-import json
 import zmq
-import time
 import requests
-import sys
 
 def test_mms_smoke(port=7721):
     """Basic smoke test for ModelManagerSuite on specified port"""

@@ -25,7 +25,6 @@ import ast
 import subprocess
 import time
 import json
-import logging
 import threading
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field
@@ -926,7 +925,6 @@ class IntelligentRefactoring(BaseAgent):
 if __name__ == "__main__":
     # Example usage
     import asyncio
-    import logging
     
     logger = configure_logging(__name__, level="INFO")
     

@@ -23,7 +23,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import ast
 import time
 import json
-import logging
 import threading
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
@@ -838,7 +837,6 @@ class ComplexityAnalyzer(BaseAgent):
 if __name__ == "__main__":
     # Example usage
     import asyncio
-    import logging
     
     logger = configure_logging(__name__, level="INFO")
     

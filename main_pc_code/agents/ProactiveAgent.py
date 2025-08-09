@@ -19,9 +19,6 @@ import zmq
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration
-from common.utils.env_standardizer import get_env
-from common.utils.log_setup import configure_logging
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 class ProactivityLevel(Enum):
     """Levels of proactive engagement"""

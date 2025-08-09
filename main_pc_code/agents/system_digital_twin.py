@@ -23,7 +23,6 @@ from common.utils.path_manager import PathManager
 
 import time
 import json
-import logging
 from main_pc_code.agents.error_publisher import ErrorPublisher
 import threading
 from common.pools.zmq_pool import get_rep_socket
@@ -46,11 +45,10 @@ except Exception:
         return False
     def start_auth():
         return None
-from common.utils.data_models import AgentRegistration, SystemEvent, ErrorReport
+from common.utils.data_models import SystemEvent, ErrorReport
 from common.env_helpers import get_env
 from common.pools.redis_pool import get_redis_client_sync
 from common_utils.port_registry import get_port
-from common.utils.env_standardizer import get_pc2_ip
 
 # Configure logging using canonical approach
 from common.utils.log_setup import configure_logging

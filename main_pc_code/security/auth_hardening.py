@@ -23,7 +23,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import asyncio
 import time
 import json
-import logging
 import hashlib
 import secrets
 from typing import Dict, List, Optional, Any, Tuple, Set
@@ -972,7 +971,6 @@ class AuthenticationHardening(BaseAgent):
 if __name__ == "__main__":
     # Example usage
     import asyncio
-    import logging
     
     logger = configure_logging(__name__, level="INFO")
     

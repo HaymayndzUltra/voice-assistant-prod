@@ -22,7 +22,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import time
 import json
-import logging
 import threading
 import gc
 from typing import Dict, List, Optional, Any, Tuple, Set

@@ -2,7 +2,7 @@ import os
 import json
 from collections import deque
 from pathlib import Path
-from typing import Deque, List, Optional
+from typing import Deque, List
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer

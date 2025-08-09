@@ -7,24 +7,18 @@ Stores and retrieves factual information using the central memory system.
 """
 
 import os
-import sys
 import json
 import time
-import logging
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common.utils.path_manager import PathManager
 from main_pc_code.agents.memory_client import MemoryClient
-from common.env_helpers import get_env
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
+from common.utils.env_standardizer import get_pc2_ip
 
 # -----------------------------------------------------------------------------
 # Configuration & Logging

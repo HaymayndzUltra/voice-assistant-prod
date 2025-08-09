@@ -2,7 +2,6 @@
 Emotion Engine Agent
 Manages and processes emotional states and responses
 """
-from common.utils.path_manager import PathManager
 
 # Import path manager for containerization-friendly paths
 import sys
@@ -12,7 +11,6 @@ import os
 import os
 from common.pools.zmq_pool import get_rep_socket
 import json
-import logging
 import threading
 import time
 import psutil
@@ -23,8 +21,6 @@ from common.core.base_agent import BaseAgent
 
 # Configure logging using canonical approach
 from common.utils.log_setup import configure_logging
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 logger = configure_logging(__name__, log_to_file=True)
 
 class EmotionEngine(BaseAgent):

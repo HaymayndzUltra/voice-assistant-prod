@@ -1,11 +1,8 @@
 import subprocess
-import json
 import zmq
 import time
 from pc2_code.config.system_config import pc2_settings
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from common.env_helpers import get_env
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from main_pc_code.utils.network_utils import get_zmq_connection_string
 
 def check_agent_health(agent_name, port):
     """Check agent health using ZMQ"""

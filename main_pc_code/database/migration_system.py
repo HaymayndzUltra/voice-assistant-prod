@@ -23,7 +23,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import asyncio
 import time
 import json
-import logging
 import hashlib
 from typing import Dict, List, Optional, Any, Tuple, Set
 from dataclasses import dataclass, field
@@ -985,7 +984,6 @@ class DatabaseMigrationSystem(BaseAgent):
 
 if __name__ == "__main__":
     # Example usage
-    import logging
     
     logger = configure_logging(__name__, level="INFO")
     

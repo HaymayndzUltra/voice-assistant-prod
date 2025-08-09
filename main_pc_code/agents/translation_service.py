@@ -1,5 +1,4 @@
 import logging
-from common.utils.log_setup import configure_logging
 from common.pools.zmq_pool import get_rep_socket
 import time
 import uuid
@@ -17,11 +16,8 @@ from common.utils.data_models import ErrorSeverity
 
 
 # Import path manager for containerization-friendly paths
-import sys
 import os
 from common.utils.path_manager import PathManager
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 # Removed # Try importing optional dependencies
 try:
     LANGDETECT_AVAILABLE = True

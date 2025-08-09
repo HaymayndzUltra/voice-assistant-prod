@@ -1,15 +1,11 @@
 from common.core.base_agent import BaseAgent
-import sys
 import os
 # Auto-accept Coqui CPML terms for non-commercial use.
 # Set the env var only if user hasn't explicitly provided one.
 
 # Add the project's main_pc_code directory to the Python path
-import sys
 import os
 from common.utils.path_manager import PathManager
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
 # Removed 
@@ -20,7 +16,6 @@ import json
 import numpy as np
 import threading
 import queue
-import pyttsx3
 # import torch  # Commented out for now to avoid dependency conflicts
 import logging
 import time

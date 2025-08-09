@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # Migrated to unified config manager - legacy imports maintained for compatibility
 from common.config.unified_config_manager import Config
-from common.utils.env_standardizer import get_env
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -25,8 +24,6 @@ except ImportError:
 import os
 from common.pools.zmq_pool import get_rep_socket
 import time
-import logging
-from main_pc_code.agents.error_publisher import ErrorPublisher
 import re
 import threading
 import traceback
@@ -36,9 +33,7 @@ from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integratio
 
 
 # Import path manager for containerization-friendly paths
-import sys
 import os
-from common.utils.path_manager import PathManager
 
 # Removed # Load configuration at module level
 # New unified config manager - cached singleton with environment awareness

@@ -21,7 +21,6 @@ from typing import Dict, Any
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address
 from main_pc_code.utils.network_utils import get_zmq_connection_string
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server

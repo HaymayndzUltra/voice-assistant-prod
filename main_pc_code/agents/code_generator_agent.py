@@ -14,16 +14,13 @@ from pathlib import Path
 import time
 import zmq
 import json
-import logging
 import traceback
-import sys
 from typing import Dict, Any
 from pathlib import Path
 import re
 
 
 # Import path manager for containerization-friendly paths
-import sys
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
@@ -34,7 +31,6 @@ from main_pc_code.utils.env_loader import get_env
 from common.env_helpers import get_env
 from common.utils.env_standardizer import get_env
 from common.core.base_agent import BaseAgent
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Parse command line arguments
 config = load_unified_config(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"))

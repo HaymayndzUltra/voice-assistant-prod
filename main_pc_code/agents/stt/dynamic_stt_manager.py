@@ -8,7 +8,6 @@ Supports multiple Whisper models and runtime selection based on context.
 """
 
 import sys
-import os
 import logging
 import threading
 from pathlib import Path

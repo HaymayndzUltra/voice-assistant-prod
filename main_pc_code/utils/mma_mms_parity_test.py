@@ -5,10 +5,7 @@ Functional diff test that fires identical JSON RPC calls to MMA (tcp://localhost
 and MMS (tcp://localhost:7721) and compares results for success status and key presence.
 """
 
-import json
 import zmq
-import time
-import pytest
 from typing import Dict, Any, List
 
 class ParityTester:

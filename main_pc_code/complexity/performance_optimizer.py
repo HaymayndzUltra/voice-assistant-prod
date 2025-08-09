@@ -28,7 +28,6 @@ import time
 import asyncio
 import threading
 import json
-import logging
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
@@ -853,7 +852,6 @@ SELECT * FROM large_table WHERE column = 'exact_match'
 if __name__ == "__main__":
     # Example usage
     import asyncio
-    import logging
     
     logger = configure_logging(__name__, level="INFO")
     

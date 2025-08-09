@@ -19,13 +19,11 @@ Usage:
 
 import os
 import ast
-import re
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Set
 from collections import defaultdict
-import importlib.util
 from common.utils.log_setup import configure_logging
 
 # Configure logging

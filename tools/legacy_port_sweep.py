@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import re
 
 legacy_ports = ['5570', '5575', '5617', '7222']
 results = []

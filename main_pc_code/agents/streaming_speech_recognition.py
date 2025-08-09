@@ -10,37 +10,25 @@ Features:
 - Multiple language support
 """
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import time
 import threading
-import logging
 import os
-import tempfile
-import wave
-import orjson
 import json  # Fallback for compatibility
-from collections import deque
 from datetime import datetime
-import uuid
-import socket
 import sys
 import noisereduce as nr
 from scipy import signal
-from pathlib import Path
 from queue import Queue
 import psutil
 import traceback
 
 # Import with canonical paths
 from common.core.base_agent import BaseAgent
-from common.config_manager import load_unified_config, get_service_ip, get_service_url, get_redis_url
+from common.config_manager import load_unified_config
 from common.utils.path_manager import PathManager
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
-from common.env_helpers import get_env
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Parse agent arguments at module level with canonical import
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

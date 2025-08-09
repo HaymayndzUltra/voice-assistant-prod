@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """Quick PC2 health checker for essential ZMQ services"""
 import zmq
 import json
-import sys
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from common.env_helpers import get_env
+from main_pc_code.utils.network_utils import get_zmq_connection_string
 services = [
     ("primary_translator", 5563, {"action": "health_check"}),
     ("fallback_translator", 5564, {"action": "health_check"}),

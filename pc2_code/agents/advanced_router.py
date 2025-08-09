@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Advanced Router Utility
 ----------------------
@@ -12,7 +11,6 @@ input, allowing agents to determine the most appropriate model or processing pat
 import re
 import json
 import logging
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import time
 import os
 import sys
@@ -20,7 +18,7 @@ import threading
 from datetime import datetime
 # TODO: web_automation.py not found. Feature disabled.
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory
-from typing import Dict, Any, List, Set, Tuple, Optional, Union
+from typing import Dict, Any, List
 from pathlib import Path
 
 
@@ -39,7 +37,7 @@ from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
-from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.utils.config_loader import parse_agent_args
 # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
 # Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 # Now using: self.report_error() method from BaseAgent
@@ -457,7 +455,6 @@ class AdvancedRouterAgent(BaseAgent):
         logger.info(f"AdvancedRouterAgent starting on port {self.port}")
         
         try:
-            import threading
             
             while self.running:
                 try:

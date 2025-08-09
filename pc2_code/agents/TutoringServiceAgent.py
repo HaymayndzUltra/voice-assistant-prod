@@ -1,11 +1,6 @@
-import os
-import zmq
-import json
 import logging
 import time
-import threading
-from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import sys
 from pathlib import Path
 import yaml
@@ -19,7 +14,6 @@ if str(project_root) not in sys.path:
 from common.core.base_agent import BaseAgent
 
 # Standard imports for PC2 agents
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
 
 # Configure logging

@@ -4,26 +4,21 @@ Handles VRAM monitoring, optimization, and model management
 Implements predictive model loading and fine-tuned unloading
 """
 
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 from common.core.base_agent import BaseAgent
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Add the project's main_pc_code directory to the Python path
-import sys
 import os
 from pathlib import Path
 
-import logging
 import time
 import threading
 import zmq
-import sys
 import os
 import json
 import yaml
 from pathlib import Path
-from typing import Dict, Optional, List, Any, Union
+from typing import Dict, Optional
 import torch
 import psutil
 import GPUtil
@@ -31,7 +26,6 @@ from collections import defaultdict
 
 
 # Import path manager for containerization-friendly paths
-import sys
 import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
@@ -40,7 +34,7 @@ from common.utils.path_manager import PathManager
 from common.config_manager import load_unified_config
 from common_utils.error_handling import SafeExecutor
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.env_standardizer import get_pc2_ip
 
 # Parse agent arguments
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -371,7 +365,6 @@ class VramOptimizerAgent(BaseAgent):
                 self.sdt_socket.setsockopt(zmq.SNDTIMEO, 5000)
                 # Try to reconnect to PC2 SystemDigitalTwin
                 try:
-                    from pathlib import Path
                     from main_pc_code.config.pc2_services_config import get_service_connection
                     
                     # Get connection string for SystemDigitalTwin

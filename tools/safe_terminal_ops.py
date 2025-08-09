@@ -4,14 +4,12 @@ Safe Terminal Operations Wrapper
 Provides timeout-protected terminal operations with automatic recovery
 """
 
-import os
 import sys
 import time
 import signal
 import subprocess
 import threading
-from typing import Optional, Tuple, Dict, Any, List
-from pathlib import Path
+from typing import Optional, Dict, Any, List
 
 class TimeoutError(Exception):
     """Raised when operation times out"""

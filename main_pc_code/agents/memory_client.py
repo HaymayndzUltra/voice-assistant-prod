@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.log_setup import configure_logging
-from main_pc_code.agents.error_publisher import ErrorPublisher
 """
 Memory Client
 
@@ -12,17 +9,16 @@ allowing other agents to store and retrieve memories.
 import os
 import json
 import zmq
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import logging
 import time
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List
 from common.core.base_agent import BaseAgent
 from common.utils.path_manager import PathManager
 
 from common.config_manager import load_unified_config
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.env_standardizer import get_pc2_ip
 
 # Load configuration at the module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

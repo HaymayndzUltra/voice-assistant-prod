@@ -1,8 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common.utils.path_manager import PathManager
-from common.utils.env_standardizer import get_env
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 """
 Wake Word Detector
@@ -18,7 +16,6 @@ import pvporcupine
 import numpy as np
 import json
 import os
-import logging
 from common.utils.log_setup import configure_logging
 import threading
 import time

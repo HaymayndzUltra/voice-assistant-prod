@@ -23,7 +23,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import time
 import json
-import logging
 import threading
 import hashlib
 import ipaddress
@@ -1168,7 +1167,6 @@ class SecurityMonitor(BaseAgent):
 
 if __name__ == "__main__":
     # Example usage
-    import logging
     
     logger = configure_logging(__name__, level="INFO")
     

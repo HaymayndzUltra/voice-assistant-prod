@@ -1,9 +1,6 @@
-import asyncio
-from typing import Optional
 
 import yaml
 
-from unified_observability_center.bus.nats_client import NatsClient
 from unified_observability_center.core.collector_manager import CollectorManager
 from unified_observability_center.core.alert_engine import AlertEngine
 from unified_observability_center.core.healing_engine import HealingEngine

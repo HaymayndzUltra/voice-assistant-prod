@@ -23,7 +23,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import asyncio
 import time
 import json
-import logging
 import hashlib
 import threading
 import pickle
@@ -1060,7 +1059,6 @@ def close_global_optimizer() -> None:
 if __name__ == "__main__":
     # Example usage
     import asyncio
-    import logging
     
     logger = configure_logging(__name__, level="INFO")
     

@@ -7,30 +7,22 @@ Handles natural conversational interactions:
 - Maintains conversation context
 - Integrates with personality engine
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 from common.utils.env_standardizer import get_pc2_ip
 
 # Add the project's main_pc_code directory to the Python path
-import sys
 import os
-from pathlib import Path
 # Removed 
 import zmq
-import json
-import logging
 import time
 import threading
 import uuid
-import psutil
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
-from common.env_helpers import get_env
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-from main_pc_code.agents.error_publisher import ErrorPublisher
+from common.pools.zmq_pool import get_rep_socket
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 

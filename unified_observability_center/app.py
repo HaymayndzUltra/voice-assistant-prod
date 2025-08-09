@@ -21,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import BaseAgent and golden utilities
 from common.core.base_agent import BaseAgent
 from common.utils.unified_config_loader import UnifiedConfigLoader
-from common.utils.path_manager import PathManager
 
 # Import UOC core components
 from unified_observability_center.core.kernel import Kernel

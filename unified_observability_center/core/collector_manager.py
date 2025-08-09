@@ -1,6 +1,6 @@
 import asyncio
 import importlib
-from typing import Any, Dict, List
+from typing import Dict, List
 
 
 class CollectorManager:
