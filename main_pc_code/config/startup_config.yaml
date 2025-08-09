@@ -288,7 +288,7 @@ agent_groups:
       required: true
       dependencies:
       - ModelOpsCoordinator
-      - ObservabilityHub
+      - UnifiedObservabilityCenter
   reasoning_services:
     ChainOfThoughtAgent:
       script_path: main_pc_code/FORMAINPC/chain_of_thought_agent.py
@@ -627,7 +627,7 @@ agent_groups:
   observability:
     description: Centralised telemetry, metrics, prediction & health
     agents:
-    - ObservabilityHub
+    - UnifiedObservabilityCenter
   core_hubs:
     description: Unified core service hubs (All 5 consolidated hubs)
     agents:
