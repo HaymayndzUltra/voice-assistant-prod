@@ -171,6 +171,42 @@ class GPUManager:
         threshold = self.config.resources.eviction_threshold_pct
         
         if usage_percent > threshold:
+            # Emit memory pressure event (dual-write migration)
+            try:
+                import os, time as _t
+                device = f"cuda:{0}"
+                usage_mb = self._used_vram_mb
+                total_mb = self._total_vram_mb
+                severity = "critical" if usage_percent >= threshold else "warning"
+                payload = f"{device},{usage_mb},{total_mb},{severity},{_t.time()}".encode()
+                nats_url = os.getenv("NATS_URL")
+                if nats_url:
+                    from nats.aio.client import Client as NATS  # type: ignore
+                    import asyncio as _asyncio
+                    async def _pub():
+                        n = NATS()
+                        await n.connect(servers=[nats_url])
+                        js = n.jetstream()
+                        try:
+                            await js.add_stream(name="MEMORY", subjects=["memory.*"])  # type: ignore
+                        except Exception:
+                            pass
+                        await js.publish("memory.pressure.warning", payload)  # type: ignore
+                        await n.drain()
+                    _asyncio.get_event_loop().create_task(_pub())
+                else:
+                    # Best-effort in-proc event bus if present
+                    try:
+                        from events.event_bus import EventBus  # type: ignore
+                        bus = EventBus()
+                        class _E:
+                            event_type = "memory.pressure.warning"
+                            source_agent = "GPUManager"
+                        bus.publish(_E())
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             # Trigger eviction of least recently used models
             self._evict_lru_models(target_percent=threshold * 0.8)  # Evict to 80% of threshold
     

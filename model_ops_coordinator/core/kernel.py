@@ -131,11 +131,17 @@ class Kernel:
 
     def _init_vram_module(self):
         """Initialize the event-driven VRAM optimization module (dry-run)."""
+        def _apply_unload(model_name: str) -> bool:
+            try:
+                return self.lifecycle.unload(model_name, force=False)
+            except Exception:
+                return False
         self.vram_module = VramOptimizationModule(
             bus=self.event_bus,
             logger=self.metrics.logger if hasattr(self.metrics, 'logger') else None or __import__('logging').getLogger(__name__),
             dry_run=True,
             budget_pct=0.85,
+            apply_unload=_apply_unload,
         )
 
     async def initialize(self):

@@ -11,7 +11,7 @@ VramOptimizationModule
 import asyncio
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 from ..adapters.event_bus_adapter import EventBusAdapter
 
@@ -33,13 +33,15 @@ class OptimizationPlan:
 
 
 class VramOptimizationModule:
-    def __init__(self, bus: EventBusAdapter, logger, dry_run: bool = True, budget_pct: float = 0.85) -> None:
+    def __init__(self, bus: EventBusAdapter, logger, dry_run: bool = True, budget_pct: float = 0.85,
+                 apply_unload: Optional[Callable[[str], bool]] = None) -> None:
         self.bus = bus
         self.logger = logger
         self.dry_run = dry_run
         self.budget_pct = budget_pct
         self.loaded_models: Dict[str, Dict[str, Any]] = {}
         self._started = False
+        self._apply_unload = apply_unload
 
     async def start(self) -> None:
         if self._started:
@@ -81,13 +83,28 @@ class VramOptimizationModule:
             self.logger.warning("[VRAM] No candidates to unload on %s under pressure", device)
             return
 
-        # Dry-run: only log the plan; in enforce mode, call into Lifecycle to apply
-        self.logger.info(
-            "[VRAM] Dry-run plan on %s: free %dMB via %s",
-            device,
-            plan.expected_freed_mb,
-            [a.model_id for a in plan.actions],
-        )
+        if self.dry_run or self._apply_unload is None:
+            self.logger.info(
+                "[VRAM] Dry-run plan on %s: free %dMB via %s",
+                device,
+                plan.expected_freed_mb,
+                [a.model_id for a in plan.actions],
+            )
+            return
+
+        # Enforcement path
+        freed = 0
+        for a in plan.actions:
+            try:
+                ok = self._apply_unload(a.model_id)
+                self.logger.info("[VRAM] Unload %s result=%s", a.model_id, ok)
+                if ok:
+                    freed += a.expected_freed_mb
+                    self.loaded_models.pop(a.model_id, None)
+                if usage_mb - freed <= budget_mb:
+                    break
+            except Exception as e:
+                self.logger.error("[VRAM] Failed to unload %s: %s", a.model_id, e)
 
     def _build_plan(self, device: str, usage_mb: int, budget_mb: int) -> OptimizationPlan:
         # oldest-first (ts ascending), skip critical models by naming heuristic
