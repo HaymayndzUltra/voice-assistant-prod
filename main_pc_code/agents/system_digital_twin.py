@@ -32,6 +32,7 @@ import sqlite3
 import redis
 from datetime import datetime
 from typing import Dict, Any, Optional, TypeVar
+from collections import deque
 
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.service_discovery_client import get_service_discovery_client
@@ -67,7 +68,7 @@ ZMQ_REQUEST_TIMEOUT = 5000
 # Database & Cache Defaults
 
 DEFAULT_CONFIG = {
-    "prometheus_url": "http://prometheus:9090",
+    "prometheus_url": os.getenv("PROMETHEUS_URL", "http://prometheus:9090"),
     "metrics_poll_interval": 5,
     "metrics_history_length": 60,
     "vram_capacity_mb": 24000,
@@ -133,9 +134,13 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.main_port = self.port
         # Health port using standard pattern
         
+        history_len = int(self.config.get("metrics_history_length", DEFAULT_CONFIG.get("metrics_history_length", 60)))
         self.metrics_history = {
-            "cpu_usage": [], "vram_usage_mb": [], "ram_usage_mb": [],
-            "network_latency_ms": [], "timestamps": []
+            "cpu_usage": deque(maxlen=history_len),
+            "vram_usage_mb": deque(maxlen=history_len),
+            "ram_usage_mb": deque(maxlen=history_len),
+            "network_latency_ms": deque(maxlen=history_len),
+            "timestamps": deque(maxlen=history_len),
         }
         
         vram_capacity = self.config.get("vram_capacity_mb", 24000)
@@ -337,10 +342,10 @@ class SystemDigitalTwinAgent(BaseAgent):
             "status": "success",
             "history": {
                 "timestamps": [ts.isoformat() for ts in self.metrics_history["timestamps"]],
-                "cpu_usage": self.metrics_history["cpu_usage"],
-                "vram_usage_mb": self.metrics_history["vram_usage_mb"],
-                "ram_usage_mb": self.metrics_history["ram_usage_mb"],
-                "network_latency_ms": self.metrics_history["network_latency_ms"]
+                "cpu_usage": list(self.metrics_history["cpu_usage"]),
+                "vram_usage_mb": list(self.metrics_history["vram_usage_mb"]),
+                "ram_usage_mb": list(self.metrics_history["ram_usage_mb"]),
+                "network_latency_ms": list(self.metrics_history["network_latency_ms"])
             }
         }
 

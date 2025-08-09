@@ -126,13 +126,6 @@ agent_groups:
     #     parallel_health_checks: true
     #     prediction_enabled: true
     #     dynamic_batch_tuning: true
-    UnifiedObservabilityCenter:
-      script_path: unified_observability_center/app.py
-      port: ${PORT_OFFSET}+9100
-      health_check_port: ${PORT_OFFSET}+10100
-      required: true
-      dependencies:
-      - SystemDigitalTwin
     UnifiedSystemAgent:
       script_path: main_pc_code/agents/unified_system_agent.py
       port: ${PORT_OFFSET}+7201
@@ -217,13 +210,7 @@ agent_groups:
         zmq_port: ${PORT_OFFSET}+5557
         grpc_port: ${PORT_OFFSET}+5558
         cuda_device: "cuda:0"
-    UnifiedObservabilityCenter:
-      script_path: unified_observability_center/app.py
-      port: ${PORT_OFFSET}+9100
-      health_check_port: ${PORT_OFFSET}+10100
-      required: true
-      dependencies:
-      - SystemDigitalTwin
+    # UnifiedObservabilityCenter defined in foundation services; duplicate removed
     # DECOMMISSIONED: Legacy memory agents replaced by MemoryFusionHub
     # memory_system:
     #   MemoryClient:
