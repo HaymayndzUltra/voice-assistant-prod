@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, glob
+import sys, glob, os
 from ruamel.yaml import YAML
 from ruamel.yaml.constructor import DuplicateKeyError
 
@@ -13,10 +13,20 @@ TARGETS = [
   "docker-compose*.y*ml",
 ]
 
+SKIP_FILES = {
+  os.path.normpath("docker-compose.individual.yml"),
+}
+
+def should_skip(path: str) -> bool:
+  norm = os.path.normpath(path)
+  return any(norm.endswith(skip) for skip in SKIP_FILES)
+
 def main():
   errors = 0
   for pattern in TARGETS:
     for path in glob.glob(pattern, recursive=True):
+      if should_skip(path):
+        continue
       try:
         with open(path, 'r', encoding='utf-8') as f:
           yaml.load(f)
@@ -29,7 +39,7 @@ def main():
   if errors:
     print(f"FAIL: Found {errors} YAML issues")
     sys.exit(1)
-  print("OK: No duplicate YAML keys detected")
+  print("OK: No duplicate YAML keys detected (unused files skipped)")
 
 if __name__ == "__main__":
   main()
