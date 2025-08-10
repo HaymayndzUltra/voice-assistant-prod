@@ -7,6 +7,8 @@ CACHE_REF="ghcr.io/${GHCR_ORG}/cache"
 DATE_TAG="${DATE_TAG:-$(date -u +%Y%m%d)}"
 GIT_SHA="${GIT_SHA:-$(git rev-parse --short HEAD)}"
 TAG="${DATE_TAG}-${GIT_SHA}"
+# Optional: extra flags passed to all docker buildx build calls (e.g., --network=host)
+BUILDX_EXTRA_FLAGS="${BUILDX_EXTRA_FLAGS:-}"
 
 # Auth (optional for local; required for push). Use GHCR_PAT or GITHUB_TOKEN if provided
 if [[ -n "${GHCR_PAT:-}" || -n "${GITHUB_TOKEN:-}" ]]; then
@@ -24,6 +26,7 @@ fi
 
 echo "🏷️  Using tag: ${TAG}"
 echo "🏬 Registry org: ${GHCR_ORG}"
+[[ -n "${BUILDX_EXTRA_FLAGS}" ]] && echo "➕ Extra buildx flags: ${BUILDX_EXTRA_FLAGS}"
 
 build_push() {
   local name="$1"; shift
@@ -33,6 +36,7 @@ build_push() {
     --push \
     --cache-to type=registry,ref=${CACHE_REF},mode=max \
     --cache-from type=registry,ref=${CACHE_REF} \
+    ${BUILDX_EXTRA_FLAGS} \
     "$@" \
     -t ghcr.io/${GHCR_ORG}/${name}:${TAG} \
     .
