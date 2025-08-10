@@ -2,6 +2,9 @@ ARG ORG
 ARG BASE_TAG
 FROM ghcr.io/${ORG}/family-torch-cu121:${BASE_TAG}
 
+# We need elevated permissions for build-time compiles and file cleanup
+USER root
+
 # Optional: include llama-cpp build (heavy). Control via build-arg.
 ARG INCLUDE_LLAMA_CPP=0
 
@@ -13,6 +16,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install --no-binary=:all: llama-cpp-python==0.2.86 && \
         apt-get purge -y --auto-remove cmake g++ && rm -rf /var/lib/apt/lists/*; \
     fi && \
-    rm -f /tmp/requirements.txt
+    rm -f /tmp/requirements.txt || true
 
+# Drop privileges for runtime
 USER appuser
