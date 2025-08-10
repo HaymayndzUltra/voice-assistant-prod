@@ -1,91 +1,18 @@
-# Git & Docker
+# General
 .git
-.gitignore
-.github
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.so
 
-# Python Caches & Environments
-__pycache__/
-*.pyc
-.venv/
-venv/
-
-# Large Data Directories (to be mounted as volumes)
+# Data
 models/
 data/
 logs/
-artifacts/
 
-# analysis artefacts
-analysis_output/
-analysis_results/
-memory-bank/
-screenshots/
-*.mdmp
-*.bin
-*.pt
-*.safetensors
-*.gguf
-*/models/
-*/logs/
-
-# IDE / OS specific
-.idea/
-.vscode/ 
-# WP-02 Security Patterns
-# Exclude sensitive files and directories
-
-# Development files
-*.pyc
-__pycache__/
-.pytest_cache/
-.coverage
-.tox/
-.venv/
-venv/
+# IDE/Env
 .env
-.env.local
-.env.*.local
-
-# IDE files
 .vscode/
 .idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Git files
-.git/
-.gitignore
-
-# Security sensitive
-certificates/*.key
-certificates/*.pem
-*.key
-*.pem
-*.crt
-secrets/
-
-# Logs and temp files
-logs/*.log
-*.log
-temp/
-tmp/
-
-# Large model files (handle separately)
-models/*.bin
-models/*.safetensors
-*.gguf
-
-# Documentation (can be excluded from runtime)
-docs/
-README*.md
-CHANGELOG.md
-LICENSE
-
-# Test files
-tests/
-test_*.py
-*_test.py
+**/.ipynb_checkpoints/
