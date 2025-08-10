@@ -25,10 +25,45 @@ class OpenAIProvider:
                                     base_url=os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1"),
                                     organization=os.getenv("OPENAI_ORGANIZATION"))
 
-    # --- Public wrappers -------------------------------------------------
-    async def call(self, **kwargs) -> Any:
-        """Generic call used by mock router until specific tasks mapped."""
+    # --- Task-specific wrappers -----------------------------------------
+    async def stt(self, audio_bytes: bytes, language: str = "en-US", model: str | None = None) -> Any:
         async def _inner():
-            await asyncio.sleep(0.05)
-            return {"provider": self.name, "result": "openai-mock"}
+            import tempfile, asyncio as _aio
+            mdl = model or "whisper-1"
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp.write(audio_bytes)
+                tmp.flush()
+                with open(tmp.name, "rb") as f:
+                    resp = await _aio.to_thread(
+                        self.client.audio.transcriptions.create,
+                        model=mdl,
+                        file=f,
+                        language=language.split("-")[0] if language != "auto" else None,
+                    )
+                return {"text": resp.text, "provider": self.name, "confidence": 0.9}
+
         return await self.breaker.call_async(_inner)
+
+    async def tts(self, text: str, voice: str | None = None, model: str | None = None) -> Any:
+        async def _inner():
+            import asyncio as _aio
+            mdl = model or "tts-1-hd"
+            v = voice or "alloy"
+            resp = await _aio.to_thread(
+                self.client.audio.speech.create,
+                model=mdl,
+                voice=v,
+                input=text,
+            )
+            return {"audio_bytes": resp.content, "provider": self.name}
+
+        return await self.breaker.call_async(_inner)
+
+    # --- Generic dispatcher used by router for now ----------------------
+    async def call(self, **kwargs) -> Any:
+        if "audio_bytes" in kwargs:
+            return await self.stt(kwargs["audio_bytes"], kwargs.get("language", "en-US"))
+        elif "text" in kwargs:
+            return await self.tts(kwargs["text"], kwargs.get("voice"))
+        else:
+            return {"provider": self.name, "error": "unknown payload"}
