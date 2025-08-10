@@ -1,0 +1,24 @@
+version: 1
+services:
+  stt:
+    strategy: local_first
+    providers:
+      local:
+        - name: whisper_local
+      cloud:
+        - name: openai_stt
+    fallback_criteria:
+      latency_threshold_ms: 500
+      confidence_score_threshold: 0.75
+      per_call_timeout_ms: 4000
+
+  tts:
+    strategy: cloud_first
+    providers:
+      primary:
+        - name: openai_tts
+      secondary:
+        - name: google_tts
+      local:
+        - name: local_tts
+    per_call_timeout_ms: 3000
