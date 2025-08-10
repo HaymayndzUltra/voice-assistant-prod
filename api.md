@@ -1,0 +1,6 @@
+openai= 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
+
+googletrans = AIzaSyCMct6qTy3CPjteIYKEso4oyl4rIG3i4R8
+
+
+picovoice = NUv4S1SW3VoT8vbF5XLn6nn2+czHtMsEX3U+YM42LwPTAtiNjSpkww==
