@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 ARG ORG
 ARG BASE_TAG
 FROM ghcr.io/${ORG}/family-torch-cu121:${BASE_TAG}
