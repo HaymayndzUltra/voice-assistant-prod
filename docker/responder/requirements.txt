@@ -1,7 +1,0 @@
-# Auto-optimized requirements.txt (aggressive mode)
-# Original backed up as requirements.txt.backup
-
-TTS
-numpy
-pyttsx3
-tkinter
