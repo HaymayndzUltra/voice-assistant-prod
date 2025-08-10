@@ -1,5 +1,5 @@
-ARG ORG
-ARG BASE_TAG
+ARG ORG=haymayndzultra
+ARG BASE_TAG=latest
 FROM ghcr.io/${ORG}/family-torch-cu121:${BASE_TAG}
 
 # We need elevated permissions for build-time compiles and file cleanup
