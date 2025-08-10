@@ -1,11 +1,23 @@
-# Legacy Docker Files Marked for Deletion
+# Legacy Container Files Marked for Deletion (Docker & Podman)
 
-**Generated:** 2025-08-10 03:10:49
+**Generated:** 2025-08-10 03:13:33
 **Repository:** /workspace
+
+## File Type Summary
+
+### Docker Files Found:
+- **Dockerfiles:** 129
+- **docker-compose.yml files:** 125
+- **docker-compose.yaml files:** 4
+
+### Podman Files Found:
+- **Containerfiles:** 0
+- **podman-compose.yml files:** 0
+- **podman-compose.yaml files:** 0
 
 ## Summary
 
-This document contains a comprehensive list of all Docker-related files that are considered legacy and are candidates for deletion. The following files are **excluded** from this list as they belong to the five modern consolidated hubs:
+This document contains a comprehensive list of all container-related files (Docker and Podman) that are considered legacy and are candidates for deletion. The following files are **excluded** from this list as they belong to the five modern consolidated hubs:
 
 ### Protected Files (NOT for deletion):
 - `/workspace/affective_processing_center/Dockerfile`
@@ -20,17 +32,21 @@ This document contains a comprehensive list of all Docker-related files that are
 - `/workspace/unified_observability_center/Dockerfile`
 
 
-## Legacy Docker Files for Deletion
+## Legacy Container Files for Deletion
 
-The following files are legacy Docker files that should be deleted:
+The following files are legacy container files that should be deleted:
 
-### Root Level Docker Files (12 files)
+### Root Level Container Files (16 files)
 /workspace/Dockerfile
+/workspace/docker-compose.dist.yaml
 /workspace/docker-compose.foundation-test.yml
+/workspace/docker-compose.ha.yaml
 /workspace/docker-compose.hybrid.yml
 /workspace/docker-compose.individual.yml
 /workspace/docker-compose.mainpc-local.yml
 /workspace/docker-compose.mainpc.FIXED.yml
+/workspace/docker-compose.mainpc.override.yaml
+/workspace/docker-compose.mainpc.uocfix.yaml
 /workspace/docker-compose.observability.yml
 /workspace/docker-compose.pc2-local.yml
 /workspace/docker-compose.pc2.yml
@@ -285,17 +301,17 @@ The following files are legacy Docker files that should be deleted:
 
 ## Total Count
 
-**Total Docker files in repository:** 254
-**Docker files in safe hubs:** 10
-**Total legacy Docker files identified for deletion:** 244
+**Total container files in repository:** 258
+**Container files in safe hubs:** 10
+**Total legacy container files identified for deletion:** 248
 
 ## Next Steps
 
 1. Review this list to ensure no critical files are mistakenly included
 2. Create a backup of these files before deletion (optional)
 3. Execute the deletion script to remove all listed files
-4. Verify that only the modern hub Docker files remain
+4. Verify that only the modern hub container files remain
 
 ---
 
-**Note:** This list was generated automatically by scanning the repository and excluding only the Docker files in the five modern consolidated hubs: MemoryFusionHub, ModelOpsCoordinator, AffectiveProcessingCenter, RealTimeAudioPipeline, and UnifiedObservabilityCenter.
+**Note:** This list was generated automatically by scanning the repository for both Docker and Podman container files, excluding only those in the five modern consolidated hubs: MemoryFusionHub, ModelOpsCoordinator, AffectiveProcessingCenter, RealTimeAudioPipeline, and UnifiedObservabilityCenter.
