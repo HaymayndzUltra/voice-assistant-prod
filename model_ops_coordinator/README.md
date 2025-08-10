@@ -1,33 +1,88 @@
-# ModelOps Coordinator (MOC)
+# ModelOps Coordinator
 
-This service orchestrates model lifecycle, GPU/VRAM management, inference routing, and learning jobs.
+Central GPU resource management and model lifecycle hub for AI System.
 
-## Event-Driven VRAM Optimization
+## Features
 
-MOC now embeds an event-driven `VramOptimizationModule` based on the EnhancedVRAMOptimizer design:
+- GPU resource management and VRAM optimization
+- Model lifecycle management (load/unload/inference)
+- Learning job orchestration
+- Goal-driven task management
+- Circuit breaker resiliency patterns
+- **Hybrid Inference Routing (Local ⇄ Cloud)**
 
-- Subscribes to:
-  - `models.model.loaded` (model_id, model_type, vram_mb, device, ts)
-  - `memory.pressure.warning` (device, usage_mb, total_mb, severity, ts)
-- Default mode is dry-run; plans are logged but not applied. Enable enforcement in a later phase.
-- Event bus: NATS JetStream if `NATS_URL` is set; otherwise falls back to an in-process bus.
+## Hybrid Inference Architecture
 
-## Migration (Dual-Write)
+The ModelOps Coordinator includes a sophisticated hybrid inference system that intelligently routes requests between local models and cloud providers.
 
-- `ModelManagerSuite` emits `models.model.loaded` on successful loads.
-- GPU monitors should emit `memory.pressure.warning` periodically under pressure.
-- Keep existing VRAM eviction safeguards during Phase 1; the VRAM module runs observe-only.
+### Key Features
 
-## Decommission Plan for VramOptimizerAgent
+- **Local-First Strategy** (STT/Reasoning): Prioritizes local models with intelligent fallback to cloud
+- **Cloud-First Strategy** (TTS/Translation): Prioritizes cloud providers with local fallback
+- **Hedged Requests**: Launches parallel requests when latency or quality thresholds aren't met
+- **Circuit Breakers**: Automatic failure detection and recovery for each provider
+- **Policy-Driven**: Configurable thresholds and provider priorities via YAML
 
-1. Phase 0-1: Dual-write events, keep legacy ZMQ calls; VRAM module dry-run only.
-2. Phase 2: Enable enforcement for non-critical models on a single node; remove direct ZMQ dependencies from callers.
-3. Phase 3: Full enforcement with cross-machine actions; remove `main_pc_code/agents/vram_optimizer_agent.py` and references.
+### Configuration
 
-## Configuration
+Configure hybrid routing in `config/hybrid_policy.yaml`:
 
-See `config/default.yaml` for server, resources, and `vram` section.
+```yaml
+services:
+  stt:
+    strategy: local_first
+    providers:
+      local:
+        - name: whisper_local
+      cloud:
+        - name: openai_stt
+    fallback_criteria:
+      latency_threshold_ms: 500
+      confidence_score_threshold: 0.75
+```
 
-- `NATS_URL`: optional, enables JetStream streams `MODELS` and `MEMORY`.
-- `vram.budget_pct`: VRAM budget target (default 0.85).
-- `vram.dry_run`: keep true until Phase 2.
+### API Endpoints
+
+- `POST /v1/stt` - Speech-to-text with hybrid routing
+- `POST /v1/tts` - Text-to-speech with hybrid routing  
+- `POST /v1/reason` - LLM reasoning with hybrid routing
+- `POST /v1/translate` - Translation with hybrid routing
+
+### Environment Variables
+
+Required for cloud providers:
+- `OPENAI_API_KEY` - OpenAI API key
+- `GOOGLE_APPLICATION_CREDENTIALS` - Path to Google Cloud service account JSON
+- `PICOVOICE_ACCESS_KEY` - Picovoice access key for wake word detection
+
+## Architecture
+
+The coordinator uses a micro-kernel architecture with pluggable modules:
+
+- **Kernel**: Core orchestration and initialization
+- **GPU Manager**: GPU resource tracking and allocation
+- **Lifecycle Module**: Model loading/unloading
+- **Inference Module**: Inference execution with bulkhead protection
+- **Learning Module**: Fine-tuning and training job management
+- **Goal Module**: Goal-driven task orchestration
+- **Hybrid Module**: Intelligent local/cloud routing
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+## Usage
+
+```python
+from model_ops_coordinator import ModelOpsCoordinator
+
+# Start the coordinator
+coordinator = ModelOpsCoordinator(port=7212)
+await coordinator.run()
+```
+
+## API Documentation
+
+Access the interactive API documentation at `http://localhost:8008/docs` when the service is running.

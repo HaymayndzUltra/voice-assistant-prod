@@ -1,5 +1,0 @@
-# Auto-optimized requirements.txt (aggressive mode)
-# Original backed up as requirements.txt.backup
-
-psutil
-pyzmq

@@ -14,6 +14,8 @@ from ..core.kernel import Kernel
 from ..core.schemas import InferenceRequest
 from ..core.errors import ModelOpsError
 from ..adapters.local_worker import LocalWorkerAdapter
+import base64
+import asyncio
 
 
 # Request/Response models for OpenAPI documentation
@@ -324,6 +326,57 @@ class RESTAPIServer:
                 
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}")
+        
+        # Hybrid Inference endpoints
+        @self.app.post("/v1/stt", tags=["Hybrid"])
+        async def hybrid_stt(audio_base64: str = None, language: str = "en-US", auth=self._auth_dependency):
+            """Speech-to-text using hybrid routing."""
+            try:
+                if not audio_base64:
+                    raise HTTPException(status_code=400, detail="No audio provided")
+                
+                audio_bytes = base64.b64decode(audio_base64)
+                result = await self.kernel.hybrid.stt(audio_bytes, language)
+                return result
+                
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"STT failed: {str(e)}")
+        
+        @self.app.post("/v1/tts", tags=["Hybrid"])
+        async def hybrid_tts(text: str, voice: str = None, language: str = "en-US", auth=self._auth_dependency):
+            """Text-to-speech using hybrid routing."""
+            try:
+                result = await self.kernel.hybrid.tts(text, voice, language)
+                
+                # Convert audio bytes to base64 for JSON response
+                if 'audio_bytes' in result:
+                    result['audio_base64'] = base64.b64encode(result['audio_bytes']).decode()
+                    del result['audio_bytes']
+                
+                return result
+                
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"TTS failed: {str(e)}")
+        
+        @self.app.post("/v1/reason", tags=["Hybrid"])
+        async def hybrid_reason(prompt: str, model: str = None, temperature: float = 0.7, auth=self._auth_dependency):
+            """Reasoning using hybrid routing."""
+            try:
+                result = await self.kernel.hybrid.reason(prompt, model, temperature)
+                return result
+                
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Reasoning failed: {str(e)}")
+        
+        @self.app.post("/v1/translate", tags=["Hybrid"])
+        async def hybrid_translate(text: str, target: str, source: str = "auto", auth=self._auth_dependency):
+            """Translation using hybrid routing."""
+            try:
+                result = await self.kernel.hybrid.translate(text, target, source)
+                return result
+                
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
         
         # Model management endpoints
         @self.app.post("/models/load", tags=["Models"])

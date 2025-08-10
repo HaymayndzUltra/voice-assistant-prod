@@ -1,5 +1,0 @@
-# PC2 Async Processor Requirements
-pyzmq>=25.0.0
-PyYAML>=6.0
-psutil>=5.9.0
-torch>=2.0.0

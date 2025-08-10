@@ -1,5 +1,0 @@
-noisereduce
-numpy
-psutil
-pyzmq
-torch

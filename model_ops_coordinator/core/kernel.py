@@ -3,6 +3,7 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
+from pathlib import Path
 
 from .schemas import Config
 from .telemetry import Telemetry
@@ -49,6 +50,7 @@ class Kernel:
             self._init_telemetry()
             self._init_gpu_manager()
             self._init_lifecycle()
+            self._init_hybrid()
             self._init_inference()
             self._init_learning()
             self._init_goals()
@@ -116,6 +118,12 @@ class Kernel:
     def _init_inference(self):
         """Initialize inference execution engine."""
         self.inference = InferenceModule(self.cfg, self.lifecycle, self.metrics)
+
+    def _init_hybrid(self):
+        """Initialize hybrid inference routing module."""
+        from .hybrid import HybridModule
+        cfg_path = Path(__file__).parent.parent / "config" / "hybrid_policy.yaml"
+        self.hybrid = HybridModule(cfg_path, self.lifecycle, self.metrics)
     
     def _init_learning(self):
         """Initialize learning and fine-tuning job manager."""

@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-pydantic
-redis
-nats-py
-aiohttp
-requests
-python-dotenv
-asyncio-mqtt
