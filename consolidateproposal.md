@@ -79,4 +79,3 @@ Increased attack surface → enforce OAuth2 proxy front-end and RBAC on APIs.
 Failure of observability stack → run as HA pair with raft-backed state; critical alerts mirrored to external pager service.
 Impact Score: 8/10 (clarifies SRE ownership, removes duplicated dashboards, improves MTTR)
 Overall, these five consolidation initiatives address functional cohesion, sequential pipelines, redundant logic, and configuration sprawl across 34 agents (≈43 % of the fleet). Executed incrementally—starting with Memory Fusion Hub and Real-Time Audio Pipeline—they will streamline data flow, cut latency, lower resource usage, and drastically simplify configuration management while preserving (and often enhancing) functionality.
-Confidence Score: 92 %

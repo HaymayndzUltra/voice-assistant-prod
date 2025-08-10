@@ -1,0 +1,149 @@
+name: Build base/family images, scan, and generate SBOMs
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths:
+      - 'docker/**'
+      - '.github/workflows/container-images.yml'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build and publish images (${{ matrix.machine }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [ mainpc_4090, pc2_3060 ]
+
+    concurrency:
+      group: docker-build-${{ github.ref }}-${{ matrix.machine }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR (push job only)
+        if: matrix.machine == 'mainpc_4090'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tagging metadata
+        id: meta
+        run: |
+          echo "DATE=$(date -u +%Y%m%d)" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "ORG_LOWER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+          echo "TAG=$(date -u +%Y%m%d)-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "cache_ref=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cache" >> $GITHUB_OUTPUT
+
+      - name: Build images in dependency order
+        env:
+          ORG_LOWER: ${{ env.ORG_LOWER }}
+          TAG: ${{ env.TAG }}
+          CACHE_REF: ${{ steps.meta.outputs.cache_ref }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ matrix.machine }}" == "mainpc_4090" ]]; then PUSH_ARGS=(--push); else PUSH_ARGS=(--load); fi
+          CACHE_ARGS=(--cache-from type=registry,ref="${CACHE_REF}" --cache-to type=registry,ref="${CACHE_REF}",mode=max)
+
+          build() {
+            local name="$1"; shift
+            local ctx="$1"; shift
+            local df="$1"; shift
+            local base_arg="${1:-}"
+            echo "\n➡️  Building ${name} as ghcr.io/${ORG_LOWER}/${name}:${TAG}"
+            docker buildx build "${ctx}" \
+              -f "${df}" \
+              --tag "ghcr.io/${ORG_LOWER}/${name}:${TAG}" \
+              ${base_arg:+--build-arg BASE_IMAGE=${base_arg}} \
+              --provenance=false \
+              "${CACHE_ARGS[@]}" \
+              "${PUSH_ARGS[@]}"
+          }
+
+          # 1) base-python
+          build base-python docker/base-images/base-python docker/base-images/base-python/Dockerfile
+          # 2) base-utils
+          build base-utils docker/base-images/base-utils docker/base-images/base-utils/Dockerfile "ghcr.io/${ORG_LOWER}/base-python:${TAG}"
+          # 3) base-cpu-pydeps
+          build base-cpu-pydeps docker/base-images/base-cpu-pydeps docker/base-images/base-cpu-pydeps/Dockerfile "ghcr.io/${ORG_LOWER}/base-utils:${TAG}"
+          # 4) family-web
+          build family-web docker/families/family-web docker/families/family-web/Dockerfile "ghcr.io/${ORG_LOWER}/base-cpu-pydeps:${TAG}"
+          # 5) base-gpu-cu121
+          build base-gpu-cu121 docker/base-images/base-gpu-cu121 docker/base-images/base-gpu-cu121/Dockerfile
+          # 6) family-torch-cu121
+          build family-torch-cu121 docker/families/family-torch-cu121 docker/families/family-torch-cu121/Dockerfile "ghcr.io/${ORG_LOWER}/base-gpu-cu121:${TAG}"
+          # 7) family-llm-cu121
+          build family-llm-cu121 docker/families/family-llm-cu121 docker/families/family-llm-cu121/Dockerfile "ghcr.io/${ORG_LOWER}/family-torch-cu121:${TAG}"
+          # 8) family-vision-cu121
+          build family-vision-cu121 docker/families/family-vision-cu121 docker/families/family-vision-cu121/Dockerfile "ghcr.io/${ORG_LOWER}/base-gpu-cu121:${TAG}"
+          # 9) legacy-py310-cpu
+          build legacy-py310-cpu docker/legacy/legacy-py310-cpu docker/legacy/legacy-py310-cpu/Dockerfile
+
+      - name: Trivy vulnerability scan (HIGH/CRITICAL fail)
+        if: matrix.machine == 'mainpc_4090'
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: 'image'
+          image-ref: ghcr.io/${{ env.ORG_LOWER }}/family-torch-cu121:${{ env.TAG }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
+
+      - name: Additional Trivy scans (other images)
+        if: matrix.machine == 'mainpc_4090'
+        run: |
+          set -euo pipefail
+          imgs=(
+            base-python base-utils base-cpu-pydeps family-web base-gpu-cu121 family-llm-cu121 family-vision-cu121 legacy-py310-cpu
+          )
+          for i in "${imgs[@]}"; do
+            echo "\n🔎 Scanning ghcr.io/${ORG_LOWER}/$i:${TAG}"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.54.1 image --severity HIGH,CRITICAL --exit-code 1 --no-progress ghcr.io/${ORG_LOWER}/$i:${TAG}
+          done
+
+      - name: Generate SBOMs (SPDX) for pushed images
+        if: matrix.machine == 'mainpc_4090'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ env.ORG_LOWER }}/family-torch-cu121:${{ env.TAG }}
+          output-file: sbom-family-torch-cu121.spdx.json
+
+      - name: Generate SBOMs (batch)
+        if: matrix.machine == 'mainpc_4090'
+        run: |
+          set -euo pipefail
+          pipx install syft || pip install syft
+          imgs=(
+            base-python base-utils base-cpu-pydeps family-web base-gpu-cu121 family-llm-cu121 family-vision-cu121 legacy-py310-cpu
+          )
+          for i in "${imgs[@]}"; do
+            syft "ghcr.io/${ORG_LOWER}/$i:${TAG}" -o spdx-json > "sbom-$i.spdx.json"
+          done
+
+      - name: Upload SBOM artifacts
+        if: matrix.machine == 'mainpc_4090'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sboms-${{ env.TAG }}
+          path: |
+            sbom-*.spdx.json
+
+
