@@ -5,6 +5,8 @@ FROM ${BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Ensure running as root for apt-get (fix permission denied)
+USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        git \

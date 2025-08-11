@@ -8,6 +8,8 @@ ENV TORCH_CUDA_ARCH_LIST="8.6;8.9;9.0+PTX" \
     LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
 
 # Add minimal audio tooling needed by common torch audio stacks
+# Ensure running as root for apt-get (fix permission denied)
+USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        ffmpeg \

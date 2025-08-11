@@ -10,6 +10,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
+# Ensure running as root for apt-get (fix permission denied)
+USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        ca-certificates \
