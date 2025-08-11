@@ -33,5 +33,13 @@ COPY --chown=ai:ai common_utils/ ./common_utils/
 # Switch to non-root user
 USER ai
 
+# Healthcheck
+ENV HEALTH_PORT=6590
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:${HEALTH_PORT}/health || exit 1
+
+# Use tini
+ENTRYPOINT ["/usr/bin/tini","--"]
+
 # Default to EmotionEngine, can be overridden in compose
 CMD ["python", "main_pc_code/agents/emotion_engine.py"] 

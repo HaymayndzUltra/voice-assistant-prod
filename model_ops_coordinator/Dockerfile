@@ -33,7 +33,8 @@ WORKDIR /app
 COPY --from=builder /wheels /wheels
 COPY requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --find-links=/wheels -r requirements.txt
+    pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
+    rm -rf /wheels
 
 # Copy application code (avoid venv duplication)
 COPY . .

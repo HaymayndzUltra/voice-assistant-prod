@@ -1,6 +1,15 @@
 # syntax=docker/dockerfile:1.7
 
 ARG BASE_IMAGE
+FROM ${BASE_IMAGE} AS base
+
+FROM python:3.11-slim AS builder
+WORKDIR /build
+COPY main_pc_code/agents/requirements.systemdigitaltwin.txt /build/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip wheel setuptools && \
+    pip wheel -w /wheels -r /build/requirements.txt
+
 FROM ${BASE_IMAGE}
 
 WORKDIR /app
@@ -10,11 +19,16 @@ COPY main_pc_code/agents/requirements.systemdigitaltwin.txt /app/requirements.tx
 RUN python -m pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r /app/requirements.txt
 
+COPY --from=builder /wheels /wheels
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --find-links=/wheels -r /app/requirements.txt
 COPY main_pc_code/agents/ /app/agents/
 ENV PYTHONPATH=/app
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
-  CMD ["python","-c","import importlib,sys; importlib.import_module('main_pc_code.agents.system_digital_twin'); sys.exit(0)"]
+  CMD curl -f http://localhost:8220/health || exit 1
+
+ENTRYPOINT ["/usr/bin/tini","--"]
 
 CMD ["python", "-u", "/app/agents/system_digital_twin.py"]
 

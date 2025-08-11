@@ -11,7 +11,7 @@ WORKDIR /build
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config curl git \
   && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt ./requirements.txt
+COPY requirements.txt requirements.runtime.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip wheel setuptools && \
     pip wheel -w /wheels -r requirements.txt
@@ -45,9 +45,10 @@ WORKDIR /app
 
 # Install Python deps from wheels
 COPY --from=builder /wheels /wheels
-COPY requirements.txt ./requirements.txt
+COPY requirements.txt requirements.runtime.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --find-links=/wheels -r requirements.txt
+    pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.runtime.txt && \
+    rm -rf /wheels
 
 # Copy application code
 COPY . .
