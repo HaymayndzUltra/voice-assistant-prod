@@ -269,16 +269,22 @@ class RESTAPIServer:
         @self.app.get("/health", tags=["System"])
         async def health_check():
             """Health check endpoint."""
-            health = {
-                "status": "healthy" if self.kernel.is_healthy() else "unhealthy",
-                "timestamp": datetime.utcnow().isoformat(),
-                "kernel_healthy": self.kernel.is_healthy(),
-                "worker_healthy": self.worker_adapter.is_healthy(),
-                "uptime_seconds": (datetime.utcnow() - self._start_time).total_seconds() if self._start_time else 0
-            }
+            # Check if service is healthy
+            is_healthy = self.kernel.is_healthy() and self.worker_adapter.is_healthy()
             
-            status_code = 200 if health["status"] == "healthy" else 503
-            return JSONResponse(content=health, status_code=status_code)
+            if is_healthy:
+                # Return exactly {"status": "ok"} as per plan requirement
+                return JSONResponse(content={"status": "ok"}, status_code=200)
+            else:
+                # Return unhealthy status with details
+                health = {
+                    "status": "unhealthy",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "kernel_healthy": self.kernel.is_healthy(),
+                    "worker_healthy": self.worker_adapter.is_healthy(),
+                    "uptime_seconds": (datetime.utcnow() - self._start_time).total_seconds() if self._start_time else 0
+                }
+                return JSONResponse(content=health, status_code=503)
         
         @self.app.get("/stats", tags=["System"])
         async def get_stats(auth=self._auth_dependency):

@@ -2,6 +2,7 @@
 # Optimized multi-stage Dockerfile for ModelOps Coordinator
 
 ARG BASE_IMAGE
+ARG MACHINE=mainpc
 
 # Base stage from family image provides CUDA/LLM stack
 FROM ${BASE_IMAGE} AS base
@@ -20,13 +21,33 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Runtime stage – install only needed wheels on top of family base
 FROM ${BASE_IMAGE} AS runtime
+
+# Hardware-aware defaults based on machine profile
+ARG MACHINE=mainpc
+COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Create non-root user matching plan defaults
-RUN groupadd -r moc && useradd -r -g moc -d /app -s /sbin/nologin moc
+# Set machine-specific environment variables from profile
+RUN if [ "$MACHINE" = "mainpc" ]; then \
+      export GPU_VISIBLE_DEVICES=0 && \
+      export TORCH_CUDA_ALLOC_CONF="max_split_size_mb:64" && \
+      export OMP_NUM_THREADS=16 && \
+      export UVICORN_WORKERS=32 && \
+      export MODEL_EVICT_THRESHOLD_PCT=90; \
+    elif [ "$MACHINE" = "pc2" ]; then \
+      export GPU_VISIBLE_DEVICES=0 && \
+      export TORCH_CUDA_ALLOC_CONF="max_split_size_mb:32" && \
+      export OMP_NUM_THREADS=4 && \
+      export UVICORN_WORKERS=8 && \
+      export MODEL_EVICT_THRESHOLD_PCT=70; \
+    fi
+
+# Create non-root user matching plan defaults (UID:GID 10001:10001)
+RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -d /app -s /sbin/nologin appuser
 WORKDIR /app
 
 # Copy wheels and install requirements using family-provided Python stack
@@ -43,10 +64,10 @@ COPY . .
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl procps \
   && rm -rf /var/lib/apt/lists/* && \
-  mkdir -p /app/data /app/logs /app/config && chown -R moc:moc /app
+  mkdir -p /app/data /app/logs /app/config && chown -R appuser:appuser /app
 COPY config/default.yaml /app/config/
 
-USER moc
+USER appuser
 
 # Health check and ports
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

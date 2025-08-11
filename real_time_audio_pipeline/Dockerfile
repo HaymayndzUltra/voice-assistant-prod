@@ -1,6 +1,7 @@
 # Real-Time Audio Pipeline (RTAP) - Optimized multi-stage image
 
 ARG BASE_IMAGE
+ARG MACHINE=mainpc
 
 # Base runtime (family provides CUDA/Torch stack)
 FROM ${BASE_IMAGE} AS base
@@ -18,6 +19,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Runtime stage: install only needed wheels on top of family base
 FROM ${BASE_IMAGE}
+
+# Hardware-aware defaults based on machine profile
+ARG MACHINE=mainpc
+COPY --from=base /workspace/model_ops_coordinator/config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Metadata
 LABEL maintainer="RTAP Team"
@@ -39,8 +44,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl wget ffmpeg htop procps netcat-openbsd \
   && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user and app dir
-RUN groupadd -r rtap && useradd -r -g rtap -s /sbin/nologin rtap
+# Create non-root user and app dir (use standard UID:GID 10001:10001)
+RUN groupadd -g 10001 rtap && useradd -u 10001 -g rtap -s /sbin/nologin rtap
 WORKDIR /app
 
 # Install Python deps from wheels

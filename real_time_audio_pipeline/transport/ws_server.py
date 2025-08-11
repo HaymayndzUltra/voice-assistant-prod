@@ -330,11 +330,15 @@ class WebSocketServer:
         @self.app.get("/health")
         async def health_check():
             """Health check endpoint."""
-            return {
-                "status": "healthy" if self.is_running else "stopped",
-                "connections": len(self.connection_manager.active_connections),
-                "uptime": time.perf_counter() - self.start_time if self.start_time > 0 else 0
-            }
+            if self.is_running:
+                # Return exactly {"status": "ok"} as per plan requirement
+                return {"status": "ok"}
+            else:
+                return {
+                    "status": "stopped",
+                    "connections": len(self.connection_manager.active_connections),
+                    "uptime": 0
+                }
 
         @self.app.get("/stats")
         async def get_stats():
