@@ -28,8 +28,7 @@ detect_new_session() {
 # Check if we're in AI workspace
 if [ "$PWD" = "/home/haymayndz/AI_System_Monorepo" ]; then
     if detect_new_session; then
-        echo "🤖 Auto-loading memory for new AI session..."
-        ./auto_load_memory.sh
+        ./auto_load_memory.sh >/dev/null 2>&1 || true
         echo $(date +%s) > /tmp/last_ai_session
     fi
 fi

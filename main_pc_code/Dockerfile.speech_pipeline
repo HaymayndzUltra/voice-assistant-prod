@@ -1,5 +1,6 @@
 # Speech Pipeline - GPU-bound STT/TTS & audio streaming
-FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+ARG BASE_IMAGE=nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+FROM ${BASE_IMAGE}
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -47,3 +48,11 @@ USER ai
 
 # Default to STTService, can be overridden in compose
 CMD ["python", "main_pc_code/services/stt_service.py"] 
+
+# Expose known service ports used by this suite (can be overridden per service)
+EXPOSE 5800 5801 5637 5703 5562 6553
+
+# Health check (service must expose /health on HEALTH_PORT)
+ENV HEALTH_PORT=8080
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${HEALTH_PORT}/health || exit 1

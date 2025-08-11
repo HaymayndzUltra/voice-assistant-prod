@@ -1,4 +1,5 @@
-<tee /home/kali/AI_SYSTEM_MONOREPO/pc2_diag.out | cat
+# NOTE: Path adjusted from PC2 legacy to main PC for consistency
+<tee /home/haymayndz/AI_System_Monorepo/pc2_diag.out | cat
 ===== IDENT =====
 ===== Hostname/IPs =====
 DESKTOP-HDP663G.localdomain
@@ -22,7 +23,7 @@ UBUNTU_CODENAME=jammy
 
 ===== REPO =====
 ===== Path =====
-/home/kali/AI_SYSTEM_MONOREPO
+/home/haymayndz/AI_System_Monorepo
 AI_CURSOR_INTELLIGENCE_INTEGRATION_GUIDE.md
 AI_SYSTEM_CODEBASE_AUDIT_REPORT.md
 BAFINDINGS.MD

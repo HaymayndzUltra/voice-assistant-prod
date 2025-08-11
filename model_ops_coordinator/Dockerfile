@@ -1,166 +1,63 @@
-# Multi-stage Dockerfile for ModelOps Coordinator
-# Production-ready container with optimized size and security
+# syntax=docker/dockerfile:1.7
+# Optimized multi-stage Dockerfile for ModelOps Coordinator
 
-# Build stage - Install dependencies and compile
-FROM python:3.10-slim as builder
+ARG BASE_IMAGE
 
-# Install system dependencies for building
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    make \
-    pkg-config \
-    libffi-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Base stage from family image provides CUDA/LLM stack
+FROM ${BASE_IMAGE} AS base
 
-# Set working directory
+# Builder stage – build wheels using slim Python, cache pip to speed up builds
+FROM python:3.11-slim AS builder
 WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential pkg-config curl git \
+    libffi-dev libssl-dev \
+  && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt ./requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip wheel setuptools && \
+    pip wheel -w /wheels -r requirements.txt
 
-# Copy requirements first for better layer caching
-COPY requirements.txt .
+# Runtime stage – install only needed wheels on top of family base
+FROM ${BASE_IMAGE} AS runtime
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Install Python dependencies in a virtual environment
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Upgrade pip and install dependencies
-RUN pip install --upgrade pip wheel setuptools
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy source code
-COPY . .
-
-# Validate Python syntax and basic imports
-RUN python -m py_compile app.py
-RUN python -c "import sys; sys.path.insert(0, '.'); from core.kernel import Kernel; print('✅ Import validation successful')"
-
-# Production stage - Minimal runtime environment
-FROM python:3.10-slim as production
-
-# Create non-root user for security
-RUN groupadd -r moc && useradd -r -g moc moc
-
-# Install minimal runtime dependencies
-RUN apt-get update && apt-get install -y \
-    procps \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-# Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Set working directory
+# Create non-root user matching plan defaults
+RUN groupadd -r moc && useradd -r -g moc -d /app -s /sbin/nologin moc
 WORKDIR /app
 
-# Copy application code
-COPY --from=builder /build .
+# Copy wheels and install requirements using family-provided Python stack
+COPY --from=builder /wheels /wheels
+COPY requirements.txt ./requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --find-links=/wheels -r requirements.txt
 
-# Create necessary directories with proper permissions
-RUN mkdir -p /app/data /app/logs /app/config && \
-    chown -R moc:moc /app
+# Copy application code (avoid venv duplication)
+COPY . .
 
-# Copy default configuration
+# Minimal runtime utilities
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl procps \
+  && rm -rf /var/lib/apt/lists/* && \
+  mkdir -p /app/data /app/logs /app/config && chown -R moc:moc /app
 COPY config/default.yaml /app/config/
 
-# Switch to non-root user
 USER moc
 
-# Health check
+# Health check and ports
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8008/health || exit 1
-
-# Expose ports
+  CMD curl -f http://localhost:8008/health || exit 1
 EXPOSE 7211 7212 8008
 
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-ENV MOC_LOG_LEVEL=INFO
-ENV MOC_CONFIG_DIR=/app/config
-
-# Labels for metadata
+# Metadata
 LABEL org.opencontainers.image.title="ModelOps Coordinator"
 LABEL org.opencontainers.image.description="Unified model lifecycle, inference, and resource management"
 LABEL org.opencontainers.image.version="1.0.0"
 LABEL org.opencontainers.image.authors="ModelOps Team"
-LABEL org.opencontainers.image.source="https://github.com/company/model-ops-coordinator"
 
-# Default command
+# Use tini as PID 1
+ENTRYPOINT ["/usr/bin/tini","--"]
 CMD ["python", "app.py"]
-
-# Development stage - Includes dev tools and test dependencies
-FROM production as development
-
-USER root
-
-# Install development dependencies
-RUN pip install --no-cache-dir \
-    pytest \
-    pytest-asyncio \
-    pytest-cov \
-    ruff \
-    mypy \
-    black
-
-# Install additional dev tools
-RUN apt-get update && apt-get install -y \
-    vim \
-    htop \
-    strace \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy test files
-COPY tests/ /app/tests/
-
-# Switch back to moc user
-USER moc
-
-# Override command for development
-CMD ["python", "app.py", "--dev"]
-
-# Debug stage - For troubleshooting and debugging
-FROM development as debug
-
-USER root
-
-# Install debug tools
-RUN pip install --no-cache-dir \
-    ipdb \
-    memory-profiler \
-    py-spy
-
-# Install system debug tools
-RUN apt-get update && apt-get install -y \
-    gdb \
-    valgrind \
-    net-tools \
-    tcpdump \
-    && rm -rf /var/lib/apt/lists/*
-
-USER moc
-
-# Set debug environment
-ENV MOC_LOG_LEVEL=DEBUG
-ENV PYTHONDEBUG=1
-
-CMD ["python", "-X", "dev", "app.py"]
-
-# Test stage - For running tests in CI/CD
-FROM development as test
-
-USER root
-
-# Copy all test files; conditionally include pytest.ini if present
-COPY tests/ /app/tests/
-# Use a build arg to optionally include pytest.ini without causing build failures when absent
-ARG INCLUDE_PYTEST_INI=false
-COPY pytest.ini /app/ 
-RUN if [ "$INCLUDE_PYTEST_INI" = "false" ]; then rm -f /app/pytest.ini 2>/dev/null || true; fi
-
-USER moc
-
-# Run tests by default
-CMD ["python", "-m", "pytest", "tests/", "-v", "--tb=short"]

@@ -1,6 +1,6 @@
 ---
 description: TASK , MEMORY , NEW SESSION
-alwaysApply: false
+alwaysApply: true
 ---
 ## **⚡ TASK EXECUTION PROTOCOL**
 
@@ -112,4 +112,22 @@ alwaysApply: false
     • Confirm AI only reads `memory-bank/queue-system/tasks_active.json`
 - On disconnect / reconnect events:
     - Look at cursor_state.json to resume cursor position.
+
+---
+
+## ✅ STRICT PLAN ADHERENCE (HARD ENFORCEMENT)
+- `memory-bank/queue-system/tasks_active.json` is the single source of truth.
+- No deviation or improvisation. If a step fails, follow its defined rollback.
+- All actions must map to a specific phase index in the plan.
+
+## 🔒 REQUIRED LOOP PER PHASE k
+1. Post-Review: Create `memory-bank/DOCUMENTS/<task_id>_phase{k}_postreview.md`
+   - Summarize what was done and validate against the phase’s "IMPORTANT NOTE".
+2. Next-Phase Pre-Analysis: Create `memory-bank/DOCUMENTS/<task_id>_phase{k+1}_preanalysis.md`
+   - Restate next phase "IMPORTANT NOTE", add risks and prerequisites.
+
+4. Done: Run `python3 todo_manager.py done <task_id> <k>`.
+5. Sync/Memory: Run `mcp_memory_store` and rely on auto-sync to update state files.
+
+
 

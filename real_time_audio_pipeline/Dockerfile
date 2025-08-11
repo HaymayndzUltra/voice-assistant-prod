@@ -1,95 +1,78 @@
-# Real-Time Audio Pipeline (RTAP) - Production Docker Image
-# Optimized for ultra-low-latency audio processing with ≤150ms p95 target
+# Real-Time Audio Pipeline (RTAP) - Optimized multi-stage image
 
-FROM python:3.11-slim-bullseye
+ARG BASE_IMAGE
+
+# Base runtime (family provides CUDA/Torch stack)
+FROM ${BASE_IMAGE} AS base
+
+# Builder stage: compile Python wheels with slim image
+FROM python:3.11-slim AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential pkg-config curl git \
+  && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt ./requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip wheel setuptools && \
+    pip wheel -w /wheels -r requirements.txt
+
+# Runtime stage: install only needed wheels on top of family base
+FROM ${BASE_IMAGE}
 
 # Metadata
 LABEL maintainer="RTAP Team"
 LABEL version="1.0"
 LABEL description="Real-Time Audio Pipeline - Ultra-low-latency speech processing service"
 
-# Set environment variables
+# Env
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Audio and system dependencies
-RUN apt-get update && apt-get install -y \
-    # Audio system dependencies
-    libasound2-dev \
-    alsa-utils \
-    pulseaudio \
-    pulseaudio-utils \
-    # System utilities
-    curl \
-    wget \
-    git \
-    # Build dependencies for Python packages
-    build-essential \
-    pkg-config \
-    # FFmpeg for audio processing
-    ffmpeg \
-    # System monitoring
-    htop \
-    procps \
-    # Network utilities
-    netcat-openbsd \
-    # Cleanup
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# System/audio deps (runtime only)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libasound2-dev alsa-utils pulseaudio pulseaudio-utils \
+    curl wget ffmpeg htop procps netcat-openbsd \
+  && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user for security
-RUN groupadd -r rtap && useradd -r -g rtap -s /bin/bash rtap
-
-# Create application directory
+# Create non-root user and app dir
+RUN groupadd -r rtap && useradd -r -g rtap -s /sbin/nologin rtap
 WORKDIR /app
 
-# Copy requirements first for better Docker layer caching
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python deps from wheels
+COPY --from=builder /wheels /wheels
+COPY requirements.txt ./requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --find-links=/wheels -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create necessary directories
+# Prepare directories and permissions
 RUN mkdir -p /app/logs /app/data /app/models && \
-    chown -R rtap:rtap /app
+    chown -R rtap:rtap /app && \
+    usermod -a -G audio rtap
 
-# Copy configuration files
-COPY config/ /app/config/
+# Health check and entrypoint scripts
+RUN chmod +x /app/healthcheck.sh /app/entrypoint.sh || true
 
-# Audio device permissions and setup
-RUN usermod -a -G audio rtap
-
-# Health check script
-COPY docker/healthcheck.sh /app/healthcheck.sh
-RUN chmod +x /app/healthcheck.sh
-
-# Create entrypoint script
-COPY docker/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-# Switch to non-root user
+# Switch to non-root
 USER rtap
 
 # Expose ports
-# 6552: ZMQ Events
-# 6553: ZMQ Transcripts (primary output)
-# 5802: WebSocket Server
-# 8080: Health check endpoint
 EXPOSE 6552 6553 5802 8080
 
-# Health check
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD /app/healthcheck.sh
+  CMD /app/healthcheck.sh
 
-# Volume mounts for configuration and data
+# Volumes
 VOLUME ["/app/config", "/app/logs", "/app/data", "/app/models"]
 
-# Default command
+# Entry
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["python3", "app.py", "--log-level", "INFO"]

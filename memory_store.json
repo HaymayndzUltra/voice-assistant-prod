@@ -5,5 +5,13 @@
       "content": "This is a test memory",
       "timestamp": 1752135169.5833309
     }
-  }
+  },
+  "notes": [
+    {
+      "timestamp": "2025-08-11T07:16:21.771471+08:00",
+      "task": "docker_arch_impl_20250810",
+      "tag": "progress",
+      "note": "Phase 4 gate OK; evidence saved; next: migrate main PC 4.1/4.2/4.4."
+    }
+  ]
 }

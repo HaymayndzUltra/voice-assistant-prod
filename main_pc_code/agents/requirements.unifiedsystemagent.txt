@@ -1,0 +1,6 @@
+pyzmq>=26.0.0
+redis>=5.0.0
+prometheus-client>=0.17.0
+pydantic>=2.4.0
+orjson>=3.10.0
+

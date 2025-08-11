@@ -1,8 +1,9 @@
 # Affective Processing Center (APC) - Production Dockerfile
 # Multi-stage build for optimal production deployment
 
-# Build stage
-FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS builder
+# Build stage (parameterized)
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} AS builder
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -40,8 +41,8 @@ COPY requirements.txt /tmp/requirements.txt
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Production stage
-FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+# Production stage (same base family)
+FROM ${BASE_IMAGE}
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -84,6 +85,10 @@ RUN mkdir -p /app/logs /app/data /app/models /app/cache && \
 
 # Switch to non-root user
 USER apc
+
+# Ensure NVIDIA runtime variables are present when using GPU family base images
+ENV NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

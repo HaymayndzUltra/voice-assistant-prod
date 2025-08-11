@@ -1,12 +1,12 @@
 ---
 description: todo_manager.py task execution command
-alwaysApply: false
+alwaysApply: true
 ---
 ### **1. TASK EXECUTION COMMANDS:**
 
 **SHOW HIERARCHICAL STRUCTURE:**
 ```bash
-python3 todo_manager.py show TASK_ID --hierarchical
+python3 todo_manager.py show TASK_ID 
 # Shows main TODOs with all sub-steps
 # Displays commands ready for execution
 ```
@@ -29,8 +29,7 @@ python3 todo_manager.py done TASK_ID 4
 ### **4. ENHANCED WORKFLOW SEQUENCE:**
 ```bash
 # 1. Check hierarchical status
-python3 todo_manager.py show TASK_ID --hierarchical
-
+python3 todo_manager.py show TASK_ID 
 # 2. Execute sub-step with command
 python3 todo_manager.py exec TASK_ID 4.1
 # → Runs: diff docker-compose.yml docker-compose.yml.backup
@@ -134,21 +133,30 @@ When Local Agent starts, it automatically reads:
 ## **📱 QUICK REFERENCE COMMANDS**
 
 ```bash
-# Show hierarchical structure
-python3 todo_manager.py show TASK_ID --hierarchical
+# Show plan
+python3 todo_manager.py show <TASK_ID>
 
-# Execute specific sub-step
-python3 todo_manager.py exec TASK_ID 4.1
+# Phase gate (REQUIRED before done)
 
-# Mark main TODO complete
-python3 todo_manager.py done TASK_ID 4
+# Mark main TODO complete (only after gate passes)
+python3 todo_manager.py done <TASK_ID> <PHASE_INDEX>
 
 # Show all active tasks
 python3 todo_manager.py list
-
-# Emergency rollback
-python3 todo_manager.py exec TASK_ID X.rollback
 ```
+
+## ✅ EXECUTION POLICY (ENFORCED)
+- BEFORE marking a phase done:
+  - MUST create: `memory-bank/DOCUMENTS/<task_id>_phase{k}_postreview.md`
+  - MUST create: `memory-bank/DOCUMENTS/<task_id>_phase{k+1}_preanalysis.md`
+  - MUST run the phase gate; HALT on failure
+  - MUST restate and check compliance with the current phase’s "IMPORTANT NOTE"
+- AFTER done:
+  - MUST show the plan to surface the next phase
+  - Auto-sync reflects focus in session state
+- ORDER ENFORCEMENT:
+  - No skipping phases; mark in sequence only
+  - If confidence < 90%, repeat review and pre-analysis
 
 ---
 

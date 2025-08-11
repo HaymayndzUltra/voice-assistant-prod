@@ -1,0 +1,12 @@
+---
+description: Phase gating (post-review + next-phase pre-analysis)
+alwaysApply: true
+---
+## HARD GATES
+- For phase k of task `<task_id>`:
+  - MUST have files:
+    - `memory-bank/DOCUMENTS/<task_id>_phase{k}_postreview.md`
+    - `memory-bank/DOCUMENTS/<task_id>_phase{k+1}_preanalysis.md`
+  - MUST quote the phase’s "IMPORTANT NOTE" inside the post-review and map each constraint to concrete evidence
+- Agent MUST NOT run `todo_manager.py done` unless the gate passes
+- Agent MUST NOT proceed to k+1 actions before creating the pre-analysis file
