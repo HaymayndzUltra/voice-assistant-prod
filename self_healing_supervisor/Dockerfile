@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
-# UnifiedObservabilityCenter - Per plan.md line 120
+# SelfHealingSupervisor - Per plan.md line 115
 
-ARG BASE_IMAGE=ghcr.io/haymayndzultra/family-web:20250810-9c99cc9
+ARG BASE_IMAGE=ghcr.io/haymayndzultra/base-cpu-pydeps:20250810-9c99cc9
 ARG MACHINE=mainpc
 
 # Builder stage
@@ -20,22 +20,20 @@ FROM ${BASE_IMAGE} AS runtime
 
 # Hardware-aware defaults
 ARG MACHINE=mainpc
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    UVICORN_WORKERS=1
+ENV PYTHONUNBUFFERED=1
 
 # Runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl tini ca-certificates \
+    curl tini docker.io \
   && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user per plan.md (UID:GID 10001:10001)
-RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
+RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser && \
+    usermod -aG docker appuser
 WORKDIR /app
 
-# Copy machine profile (optional for observability)
-COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json || true
+# Copy machine profile
+COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Install Python deps from wheels
 COPY --from=builder /wheels /wheels
@@ -54,16 +52,13 @@ RUN mkdir -p /app/logs /app/data && \
 
 USER appuser
 
-# Ports per plan.md line 120: 9100/9110
-EXPOSE 9100 9110
+# Ports per plan.md line 115: 7009/9008
+EXPOSE 7009 9008
 
 # Health check per plan.md
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:9110/health || exit 1
-
-ENV PYTHONPATH=/app
+    CMD curl -f http://localhost:9008/health || exit 1
 
 # Use tini as PID 1 per plan.md
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["python", "-m", "unified_observability_center.app"]
-
+CMD ["python", "app.py"]
