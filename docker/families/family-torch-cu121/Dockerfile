@@ -21,9 +21,9 @@ RUN apt-get update \
 
 RUN python -m pip install --upgrade pip setuptools wheel \
     && python -m pip install --no-cache-dir \
-        torch==2.3.1+cu121 \
-        torchvision==0.18.1+cu121 \
-        torchaudio==2.3.1+cu121 \
+        torch==2.2.2+cu121 \
+        torchvision==0.17.2+cu121 \
+        torchaudio==2.2.2+cu121 \
         --extra-index-url https://download.pytorch.org/whl/cu121
 
 WORKDIR /app

@@ -32,6 +32,9 @@ RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin ap
     usermod -aG docker appuser
 WORKDIR /app
 
+# Copy machine profile
+COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+
 # Install Python deps from wheels
 COPY --from=builder /wheels /wheels
 COPY requirements.txt ./

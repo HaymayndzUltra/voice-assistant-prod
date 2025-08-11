@@ -32,7 +32,13 @@ RUN apt-get update \
     && ln -sf /usr/local/bin/pip3.11 /usr/local/bin/pip \
     && rm -rf /var/lib/apt/lists/* /tmp/get-pip.py
 
+# Create non-root user per plan.md (UID:GID 10001:10001)
+RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
+
 WORKDIR /app
+RUN chown -R appuser:appuser /app
+
+USER appuser
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["bash", "-lc", "python --version && pip --version"]
