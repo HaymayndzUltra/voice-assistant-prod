@@ -9,6 +9,8 @@ ENV PORT=8000 \
 # Intentionally minimal; services add their own framework/runtime deps
 WORKDIR /app
 
+USER appuser
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["bash", "-lc", "python --version && echo 'family-web base ready'"]
 
 

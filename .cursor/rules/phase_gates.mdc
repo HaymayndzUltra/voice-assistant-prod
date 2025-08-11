@@ -1,12 +1,24 @@
 ---
-description: Phase gating (post-review + next-phase pre-analysis)
+description: Phase gates using read-only analyzers
 alwaysApply: true
 ---
-## HARD GATES
-- For phase k of task `<task_id>`:
-  - MUST have files:
-    - `memory-bank/DOCUMENTS/<task_id>_phase{k}_postreview.md`
-    - `memory-bank/DOCUMENTS/<task_id>_phase{k+1}_preanalysis.md`
-  - MUST quote the phase’s "IMPORTANT NOTE" inside the post-review and map each constraint to concrete evidence
-- Agent MUST NOT run `todo_manager.py done` unless the gate passes
-- Agent MUST NOT proceed to k+1 actions before creating the pre-analysis file
+## Phase Gates (Pre-Execution Checks)
+
+Before executing a phase or marking it done, enforce the following gates:
+
+1. Gate: Next-Phase Integrity (Required)
+   - Run: `python3 plan_next.py`
+   - Verify:
+     - The reported next phase matches expectation (index and title)
+     - "IMPORTANT NOTE:" is present for that phase
+     - Lint shows no non-monotonic completion
+
+2. Gate: Hierarchy Consistency (Recommended)
+   - Run: `python3 plain_hier.py <TASK_ID>`
+   - Verify:
+     - Progress counters are correct
+     - Phase list aligns with plan
+     - Command preview matches the intended actions
+
+Only after passing these gates should `todo_manager.py exec` or `done` be performed.
+

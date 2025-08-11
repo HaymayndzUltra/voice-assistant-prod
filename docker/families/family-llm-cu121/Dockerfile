@@ -11,6 +11,8 @@ RUN python -m pip install --no-cache-dir \
 
 WORKDIR /app
 
-CMD ["bash", "-lc", "python -c 'import transformers, tiktoken, sentencepiece; print("llm base ready")'"]
+USER appuser
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["bash", "-lc", "python -c 'import transformers, tiktoken, sentencepiece; print(\"llm base ready\")'"]
 
 
