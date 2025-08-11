@@ -1,56 +1,46 @@
-# Real-Time Audio Pipeline (RTAP) - Optimized multi-stage image
+# syntax=docker/dockerfile:1.7
+# Real-Time Audio Pipeline - Optimized per plan.md
 
 ARG BASE_IMAGE
 ARG MACHINE=mainpc
 
-# Base runtime (family provides CUDA/Torch stack)
-FROM ${BASE_IMAGE} AS base
-
-# Builder stage: compile Python wheels with slim image
+# Builder stage
 FROM python:3.11-slim AS builder
 WORKDIR /build
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config curl git \
+    libffi-dev libssl-dev \
   && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt requirements.runtime.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip wheel setuptools && \
-    pip wheel -w /wheels -r requirements.txt
+    pip wheel -w /wheels -r requirements.runtime.txt
 
-# Runtime stage: install only needed wheels on top of family base
-FROM ${BASE_IMAGE}
+# Runtime stage
+FROM ${BASE_IMAGE} AS runtime
 
-# Hardware-aware defaults based on machine profile
+# Hardware-aware defaults
 ARG MACHINE=mainpc
-COPY --from=base /workspace/model_ops_coordinator/config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
-
-# Metadata
-LABEL maintainer="RTAP Team"
-LABEL version="1.0"
-LABEL description="Real-Time Audio Pipeline - Ultra-low-latency speech processing service"
-
-# Env
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DEBIAN_FRONTEND=noninteractive \
-    NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    TORCH_CUDA_ARCH_LIST="8.9;8.6" \
+    GPU_VISIBLE_DEVICES=${GPU_VISIBLE_DEVICES:-0}
 
-# System/audio deps (runtime only)
+# Audio system dependencies (runtime only)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libasound2-dev alsa-utils pulseaudio pulseaudio-utils \
-    curl wget ffmpeg htop procps netcat-openbsd \
+    curl ffmpeg tini \
   && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user and app dir (use standard UID:GID 10001:10001)
-RUN groupadd -g 10001 rtap && useradd -u 10001 -g rtap -s /sbin/nologin rtap
+# Create non-root user per plan.md (UID:GID 10001:10001)
+RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
 WORKDIR /app
+
+# Copy machine profile
+COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Install Python deps from wheels
 COPY --from=builder /wheels /wheels
-COPY requirements.txt requirements.runtime.txt ./
+COPY requirements.runtime.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.runtime.txt && \
     rm -rf /wheels
@@ -58,27 +48,21 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Copy application code
 COPY . .
 
-# Prepare directories and permissions
+# Set permissions
 RUN mkdir -p /app/logs /app/data /app/models && \
-    chown -R rtap:rtap /app && \
-    usermod -a -G audio rtap
+    chown -R appuser:appuser /app && \
+    usermod -a -G audio appuser && \
+    chmod +x /usr/bin/tini
 
-# Health check and entrypoint scripts
-RUN chmod +x /app/healthcheck.sh /app/entrypoint.sh || true
+USER appuser
 
-# Switch to non-root
-USER rtap
+# Ports per plan.md line 119: 5557/6557
+EXPOSE 5557 6557
 
-# Expose ports
-EXPOSE 6552 6553 5802 8080
-
-# Healthcheck
+# Health check per plan.md
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD /app/healthcheck.sh
+  CMD curl -f http://localhost:6557/health || exit 1
 
-# Volumes
-VOLUME ["/app/config", "/app/logs", "/app/data", "/app/models"]
-
-# Entry
-ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["python3", "app.py", "--log-level", "INFO"]
+# Use tini as PID 1 per plan.md
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["python", "app.py"]

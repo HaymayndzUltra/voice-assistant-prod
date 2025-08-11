@@ -1,115 +1,75 @@
-# Affective Processing Center (APC) - Production Dockerfile
-# Multi-stage build for optimal production deployment
+# syntax=docker/dockerfile:1.7
+# Affective Processing Center - Optimized per plan.md
 
-# Build stage (parameterized)
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE} AS builder
+ARG MACHINE=mainpc
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+# Builder stage
+FROM python:3.11-slim AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential pkg-config curl git \
+    libffi-dev libssl-dev \
+  && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip wheel setuptools && \
+    pip wheel -w /wheels -r requirements.txt
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-dev \
-    python3-venv \
-    build-essential \
-    cmake \
-    git \
-    wget \
-    curl \
-    ffmpeg \
-    libsndfile1 \
-    libsndfile1-dev \
-    libasound2-dev \
-    portaudio19-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Runtime stage (family provides CUDA/Torch stack)
+FROM ${BASE_IMAGE} AS runtime
 
-# Create virtual environment
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Hardware-aware defaults
+ARG MACHINE=mainpc
+ENV PYTHONUNBUFFERED=1 \
+    TORCH_CUDA_ARCH_LIST="8.9;8.6" \
+    GPU_VISIBLE_DEVICES=${GPU_VISIBLE_DEVICES:-0}
 
-# Upgrade pip
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+# Runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl tini \
+    ffmpeg libsndfile1 \
+  && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt /tmp/requirements.txt
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
-
-# Production stage (same base family)
-FROM ${BASE_IMAGE}
-
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PATH="/opt/venv/bin:$PATH"
-
-# GPU sharing configuration for multi-service deployment
-ENV CUDA_MPS_ACTIVE_THREAD_PERCENTAGE=25
-ENV CUDA_VISIBLE_DEVICES=0
-ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-distutils \
-    ffmpeg \
-    libsndfile1 \
-    libasound2 \
-    portaudio19-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy virtual environment from builder stage
-COPY --from=builder /opt/venv /opt/venv
-
-# Create non-root user for security
-RUN groupadd -r apc && useradd -r -g apc -d /app -s /bin/bash apc
-
-# Create application directory
+# Create non-root user per plan.md (UID:GID 10001:10001)
+RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
 WORKDIR /app
 
+# Copy machine profile
+COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+
+# Install Python deps from wheels (no venv needed with family image)
+COPY --from=builder /wheels /wheels
+COPY requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
+    rm -rf /wheels
+
 # Copy application code
-COPY --chown=apc:apc . /app/
+COPY . .
 
-# Create necessary directories with proper permissions
-RUN mkdir -p /app/logs /app/data /app/models /app/cache && \
-    chown -R apc:apc /app
+# Set permissions
+RUN mkdir -p /app/logs /app/data /app/models /app/config && \
+    chown -R appuser:appuser /app && \
+    chmod +x /usr/bin/tini
 
-# Switch to non-root user
-USER apc
+# Copy config
+COPY config/default.yaml /app/config/
 
-# Ensure NVIDIA runtime variables are present when using GPU family base images
-ENV NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+USER appuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python3 -c "import requests; requests.get('http://localhost:8008/health', timeout=5)" || exit 1
+# Ports per plan.md line 118: 5560/6560
+EXPOSE 5560 6560
 
-# Expose ports
-EXPOSE 5591 5706 8008
+# Health check per plan.md
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:6560/health || exit 1
 
 # Production configuration
-ENV APC_ENV=production
-ENV APC_LOG_LEVEL=INFO
-ENV APC_CONFIG_PATH=/app/config/default.yaml
+ENV APC_ENV=production \
+    APC_LOG_LEVEL=INFO \
+    APC_CONFIG_PATH=/app/config/default.yaml
 
-# Run application
-CMD ["python3", "app.py", "--config", "/app/config/default.yaml", "--log-level", "INFO"]
-
-# Labels for container metadata
-LABEL maintainer="APC Team <apc-team@company.com>"
-LABEL version="1.0.0"
-LABEL description="Affective Processing Center - Real-time emotional context analysis"
-LABEL gpu.required="true"
-LABEL gpu.memory="4GB"
-LABEL service.type="emotion-processing"
-LABEL service.ports="5591,5706,8008"
+# Use tini as PID 1 per plan.md
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["python", "app.py"]

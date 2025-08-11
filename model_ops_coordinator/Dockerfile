@@ -69,10 +69,10 @@ COPY config/default.yaml /app/config/
 
 USER appuser
 
-# Health check and ports
+# Health check and ports (per plan.md line 117: 7212/8212)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:8008/health || exit 1
-EXPOSE 7211 7212 8008
+  CMD curl -f http://localhost:8212/health || exit 1
+EXPOSE 7212 8212
 
 # Metadata
 LABEL org.opencontainers.image.title="ModelOps Coordinator"
