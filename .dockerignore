@@ -1,91 +1,79 @@
-# Git & Docker
-.git
+# Git
+.git/
 .gitignore
-.github
+.github/
 
-# Python Caches & Environments
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.coverage
+.tox/
+
+# Virtual environments
 .venv/
 venv/
+env/
+ENV/
 
-# Large Data Directories (to be mounted as volumes)
-models/
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Large files that should be mounted
+models/*.bin
+models/*.safetensors
+models/*.gguf
 data/
 logs/
 artifacts/
 
-# analysis artefacts
+# Development/test files
+tests/
+test_*.py
+*_test.py
+
+# Documentation (optional, can be included if needed)
+# docs/
+# *.md
+
+# Secrets (never include)
+.env
+.env.*
+secrets/
+*.key
+*.pem
+*.crt
+certificates/*.key
+certificates/*.pem
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.bak
+
+# Analysis/debug outputs
 analysis_output/
 analysis_results/
 memory-bank/
 screenshots/
 *.mdmp
-*.bin
-*.pt
-*.safetensors
-*.gguf
-*/models/
-*/logs/
 
-# IDE / OS specific
-.idea/
-.vscode/ 
-# WP-02 Security Patterns
-# Exclude sensitive files and directories
+# Build artifacts
+dist/
+build/
+*.egg
 
-# Development files
-*.pyc
-__pycache__/
-.pytest_cache/
-.coverage
-.tox/
-.venv/
-venv/
-.env
-.env.local
-.env.*.local
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Git files
-.git/
-.gitignore
-
-# Security sensitive
-certificates/*.key
-certificates/*.pem
-*.key
-*.pem
-*.crt
-secrets/
-
-# Logs and temp files
-logs/*.log
-*.log
-temp/
-tmp/
-
-# Large model files (handle separately)
-models/*.bin
-models/*.safetensors
-*.gguf
-
-# Documentation (can be excluded from runtime)
-docs/
-README*.md
-CHANGELOG.md
-LICENSE
-
-# Test files
-tests/
-test_*.py
-*_test.py
+# Docker-specific
+Dockerfile*
+docker-compose*.yml
+.dockerignore

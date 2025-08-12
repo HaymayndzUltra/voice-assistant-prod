@@ -1,6 +1,38 @@
-!Dockerfile
-!requirements*.txt
-!config/
-!config/machine-profiles/
-!config/machine-profiles/*.json
-!*.py
+# Use root .dockerignore as base
+# Additional service-specific exclusions
+
+# Test files specific to this service
+tests/
+test_*.py
+*_test.py
+
+# Documentation
+*.md
+docs/
+
+# Large model files
+models/*.bin
+models/*.safetensors
+*.gguf
+
+# Logs and data (will be mounted)
+logs/
+data/
+artifacts/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
