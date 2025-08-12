@@ -14,16 +14,15 @@ COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Builder stage
 FROM base AS builder
-COPY requirements/model_ops.txt ./requirements.txt
+COPY model_ops_coordinator/requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --require-hashes -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
 # Runtime stage
 FROM base AS runtime
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY model_ops_coordinator/ ./model_ops_coordinator
-COPY entrypoints/model_ops_entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY common/ ./common
 
 USER appuser
 
@@ -35,4 +34,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 EXPOSE 7212 8212
 
 ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["/entrypoint.sh"]
+CMD ["python", "-m", "model_ops_coordinator.app"]

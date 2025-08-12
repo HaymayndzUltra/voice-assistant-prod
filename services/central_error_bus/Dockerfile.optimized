@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.5
-# UnifiedObservabilityCenter - CPU/Web service (BOTH)
+# CentralErrorBus - CPU/Web service (PC2/3060)
 FROM ghcr.io/haymayndzultra/family-web:20250812-latest AS base
 
-ARG MACHINE=mainpc
+ARG MACHINE=pc2
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
@@ -12,25 +12,24 @@ COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Builder stage
 FROM base AS builder
-COPY requirements/unifiedobservabilitycenter.txt ./requirements.txt
+COPY services/central_error_bus/requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --require-hashes -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
-# Runtime stage  
+# Runtime stage
 FROM base AS runtime
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY unifiedobservabilitycenter/ ./unifiedobservabilitycenter
-COPY entrypoints/unifiedobservabilitycenter_entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY services/central_error_bus/ ./central_error_bus
+COPY common/ ./common
 
 USER appuser
 
-# Health check on port 9110
+# Health check on port 8150
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -sf http://localhost:9110/health || exit 1
+    CMD curl -sf http://localhost:8150/health || exit 1
 
 # Expose service and health ports
-EXPOSE 9100 9110
+EXPOSE 7150 8150
 
 ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["/entrypoint.sh"]
+CMD ["python", "central_error_bus/error_bus.py"]

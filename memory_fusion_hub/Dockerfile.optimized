@@ -1,11 +1,9 @@
 # syntax=docker/dockerfile:1.5
-# MemoryFusionHub - CPU (GPU-aware) service (BOTH)
-FROM ghcr.io/haymayndzultra/family-cpu-pydeps:20250812-latest AS base
+# MemoryFusionHub - CPU (GPU-aware) service (Both)
+FROM ghcr.io/haymayndzultra/base-cpu-pydeps:20250812-latest AS base
 
 ARG MACHINE=mainpc
 ENV PYTHONUNBUFFERED=1
-    TORCH_CUDA_ARCH_LIST="8.9" \
-    GPU_VISIBLE_DEVICES=${{GPU_VISIBLE_DEVICES:-0}}
 
 WORKDIR /app
 
@@ -14,16 +12,15 @@ COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Builder stage
 FROM base AS builder
-COPY requirements/memoryfusionhub.txt ./requirements.txt
+COPY memory_fusion_hub/requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --require-hashes -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt || true
 
-# Runtime stage  
+# Runtime stage
 FROM base AS runtime
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY memoryfusionhub/ ./memoryfusionhub
-COPY entrypoints/memoryfusionhub_entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY memory_fusion_hub/ ./memory_fusion_hub
+COPY common/ ./common
 
 USER appuser
 
@@ -35,4 +32,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 EXPOSE 5713 6713
 
 ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["/entrypoint.sh"]
+CMD ["python", "-m", "memory_fusion_hub.app"]

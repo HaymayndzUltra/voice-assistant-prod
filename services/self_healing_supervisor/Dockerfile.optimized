@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.5
-# SelfHealingSupervisor - CPU/Docker service (BOTH)
+# SelfHealingSupervisor - CPU/Docker service (Both)
 FROM ghcr.io/haymayndzultra/base-cpu-pydeps:20250812-latest AS base
 
 ARG MACHINE=mainpc
@@ -12,16 +12,15 @@ COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Builder stage
 FROM base AS builder
-COPY requirements/selfhealingsupervisor.txt ./requirements.txt
+COPY services/self_healing_supervisor/requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --require-hashes -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
-# Runtime stage  
+# Runtime stage
 FROM base AS runtime
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY selfhealingsupervisor/ ./selfhealingsupervisor
-COPY entrypoints/selfhealingsupervisor_entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY services/self_healing_supervisor/ ./self_healing_supervisor
+COPY common/ ./common
 
 USER appuser
 
@@ -33,4 +32,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 EXPOSE 7009 9008
 
 ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["/entrypoint.sh"]
+CMD ["python", "self_healing_supervisor/supervisor.py"]

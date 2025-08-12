@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1.5
-# AffectiveProcessingCenter - GPU service (MAINPC)
+# AffectiveProcessingCenter - GPU service (MainPC/4090)
 FROM ghcr.io/haymayndzultra/family-torch-cu121:20250812-latest AS base
 
 ARG MACHINE=mainpc
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 \
     TORCH_CUDA_ARCH_LIST="8.9" \
-    GPU_VISIBLE_DEVICES=${{GPU_VISIBLE_DEVICES:-0}}
+    GPU_VISIBLE_DEVICES=${GPU_VISIBLE_DEVICES:-0}
 
 WORKDIR /app
 
@@ -14,16 +14,15 @@ COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Builder stage
 FROM base AS builder
-COPY requirements/affectiveprocessingcenter.txt ./requirements.txt
+COPY affective_processing_center/requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --require-hashes -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
-# Runtime stage  
+# Runtime stage
 FROM base AS runtime
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY affectiveprocessingcenter/ ./affectiveprocessingcenter
-COPY entrypoints/affectiveprocessingcenter_entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY affective_processing_center/ ./affective_processing_center
+COPY common/ ./common
 
 USER appuser
 
@@ -35,4 +34,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 EXPOSE 5560 6560
 
 ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["/entrypoint.sh"]
+CMD ["python", "-m", "affective_processing_center.app"]

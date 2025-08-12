@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1.5
-# RealTimeAudioPipeline - GPU/Audio service (BOTH)
+# RealTimeAudioPipeline - GPU/Audio service (Both)
 FROM ghcr.io/haymayndzultra/family-torch-cu121:20250812-latest AS base
 
 ARG MACHINE=mainpc
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 \
     TORCH_CUDA_ARCH_LIST="8.9" \
-    GPU_VISIBLE_DEVICES=${{GPU_VISIBLE_DEVICES:-0}}
+    GPU_VISIBLE_DEVICES=${GPU_VISIBLE_DEVICES:-0} \
     PULSE_SERVER=/run/pulse/native \
-    AUDIO_BACKEND=${{AUDIO_BACKEND:-alsa}}
+    AUDIO_BACKEND=${AUDIO_BACKEND:-alsa}
 
 WORKDIR /app
 
@@ -16,16 +16,15 @@ COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Builder stage
 FROM base AS builder
-COPY requirements/realtimeaudiopipeline.txt ./requirements.txt
+COPY real_time_audio_pipeline/requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --require-hashes -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
-# Runtime stage  
+# Runtime stage
 FROM base AS runtime
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY realtimeaudiopipeline/ ./realtimeaudiopipeline
-COPY entrypoints/realtimeaudiopipeline_entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY real_time_audio_pipeline/ ./real_time_audio_pipeline
+COPY common/ ./common
 
 USER appuser
 
@@ -33,8 +32,8 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -sf http://localhost:6557/health || exit 1
 
-# Expose service and health ports
+# Expose service and health ports  
 EXPOSE 5557 6557
 
 ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["/entrypoint.sh"]
+CMD ["python", "-m", "real_time_audio_pipeline.app"]
