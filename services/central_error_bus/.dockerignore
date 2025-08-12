@@ -2,5 +2,8 @@
 !Dockerfile
 !requirements.txt
 !error_bus.py
+!config/
+!config/machine-profiles/
+!config/machine-profiles/*.json
 
 

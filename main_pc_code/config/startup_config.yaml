@@ -167,7 +167,7 @@ agent_groups:
       config:
         zmq_port: ${PORT_OFFSET}+7211
         grpc_port: ${PORT_OFFSET}+7212
-        rest_port: ${PORT_OFFSET}+8008
+        rest_port: ${PORT_OFFSET}+8212
         max_workers: 16
         vram_soft_limit_mb: 22000
         eviction_threshold_pct: 90

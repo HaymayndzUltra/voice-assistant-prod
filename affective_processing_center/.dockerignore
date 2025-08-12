@@ -1,9 +1,6 @@
-**
 !Dockerfile
-!requirements.txt
-!supervisor.py
+!requirements*.txt
 !config/
 !config/machine-profiles/
 !config/machine-profiles/*.json
-
-
+!*.py

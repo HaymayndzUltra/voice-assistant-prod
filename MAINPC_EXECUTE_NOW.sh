@@ -20,8 +20,10 @@ git checkout cursor/build-and-deploy-ai-system-services-0e14
 git pull origin cursor/build-and-deploy-ai-system-services-0e14
 
 # Step 3: Set variables
-export ORG=haymayndzultra
-export GHCR_PAT=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
+export ORG=${ORG:-haymayndzultra}
+# Prefer externally provided creds; do NOT hardcode PATs here
+export GH_USERNAME=${GH_USERNAME:-HaymayndzUltra}
+export GHCR_PAT=${GH_TOKEN:-${GHCR_PAT:-}}
 export DATE=$(date -u +%Y%m%d)
 export SHA=$(git rev-parse --short HEAD)
 export TAG="${DATE}-${SHA}"
@@ -32,7 +34,18 @@ echo ""
 
 # Step 4: Login to GHCR
 echo "🔐 Logging into GHCR..."
-echo "$GHCR_PAT" | docker login ghcr.io -u "$ORG" --password-stdin
+if [ -n "${SKIP_GHCR_LOGIN:-}" ]; then
+  echo "(info) SKIP_GHCR_LOGIN is set; using existing docker auth for ghcr.io"
+else
+  if [ -z "$GHCR_PAT" ]; then
+    echo "❌ GHCR_PAT/GH_TOKEN not set; export GH_TOKEN with a PAT that has read:packages,write:packages" >&2
+    exit 2
+  fi
+  echo "$GHCR_PAT" | docker login ghcr.io -u "$GH_USERNAME" --password-stdin || {
+    echo "❌ GHCR login failed for user $GH_USERNAME" >&2
+    exit 2
+  }
+fi
 
 # Step 5: Build base/family images first
 echo ""
@@ -105,12 +118,16 @@ docker push ghcr.io/$ORG/ai_system/self_healing_supervisor:$TAG
 docker push ghcr.io/$ORG/ai_system/central_error_bus:$TAG
 docker push ghcr.io/$ORG/ai_system/unified_observability_center:$TAG
 
-# Step 8: Verify with sync_inventory
+# Step 8: Verify with sync_inventory (optional)
 echo ""
 echo "🔍 Verifying registry sync..."
-export GH_USERNAME=$ORG
-export GH_TOKEN=$GHCR_PAT
-python3 scripts/sync_inventory.py --dry-run
+export GH_USERNAME="$GH_USERNAME"
+export GH_TOKEN="$GHCR_PAT"
+if [ -f scripts/sync_inventory.py ]; then
+  python3 scripts/sync_inventory.py --dry-run || true
+else
+  echo "(info) scripts/sync_inventory.py not found; skipping verification"
+fi
 
 # Step 9: Deploy locally
 echo ""

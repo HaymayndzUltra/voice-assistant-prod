@@ -26,6 +26,7 @@ ENV PYTHONUNBUFFERED=1 \
     UVICORN_WORKERS=1
 
 # Runtime dependencies
+USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl tini ca-certificates \
   && rm -rf /var/lib/apt/lists/*
@@ -35,7 +36,7 @@ RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin ap
 WORKDIR /app
 
 # Copy machine profile (optional for observability)
-COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json || true
+COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 # Install Python deps from wheels
 COPY --from=builder /wheels /wheels
