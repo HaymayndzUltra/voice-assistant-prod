@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# UnifiedObservabilityCenter - Per plan.md line 120
+# Multi-stage Dockerfile for Unified Observability Center
 
 ARG BASE_IMAGE=ghcr.io/haymayndzultra/family-web:20250810-9c99cc9
 ARG MACHINE=mainpc
@@ -7,64 +7,67 @@ ARG MACHINE=mainpc
 # Builder stage
 FROM python:3.11-slim AS builder
 WORKDIR /build
+
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config curl git \
+    libffi-dev libssl-dev \
   && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip wheel setuptools && \
-    pip wheel -w /wheels -r requirements.txt
+
+# Copy common module and service code
+COPY common/ /build/common/
+COPY unified_observability_center/ /build/unified_observability_center/
+
+# Install packages
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -e /build/common && \
+    pip install -e /build/unified_observability_center
 
 # Runtime stage
 FROM ${BASE_IMAGE} AS runtime
 
 # Hardware-aware defaults
 ARG MACHINE=mainpc
+COPY unified_observability_center/config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    UVICORN_WORKERS=1
+    PYTHONPATH=/app
 
-# Runtime dependencies
-USER root
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl tini ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-
-# Create non-root user per plan.md (UID:GID 10001:10001)
-RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
+# Create non-root user (UID:GID 10001:10001)
+RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -d /app -s /sbin/nologin appuser
 WORKDIR /app
 
-# Copy machine profile (optional for observability)
-COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
-# Install Python deps from wheels
-COPY --from=builder /wheels /wheels
-COPY requirements.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
-    rm -rf /wheels
+# Copy common module and service code
+COPY common/ /app/common/
+COPY unified_observability_center/ /app/unified_observability_center/
 
-# Copy application code
-COPY . .
+# Install packages in runtime
+RUN pip install --no-deps /app/common && \
+    pip install --no-deps /app/unified_observability_center
 
-# Set permissions
-RUN mkdir -p /app/logs /app/data && \
-    chown -R appuser:appuser /app && \
-    chmod +x /usr/bin/tini
+# Runtime utilities
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl procps tini \
+  && rm -rf /var/lib/apt/lists/* && \
+  mkdir -p /app/data /app/logs && chown -R appuser:appuser /app
 
 USER appuser
 
-# Ports per plan.md line 120: 9100/9110
+# Health check and ports (9100/9110)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:9110/health || exit 1
 EXPOSE 9100 9110
 
-# Health check per plan.md
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:9110/health || exit 1
+# Metadata
+LABEL org.opencontainers.image.title="Unified Observability Center"
+LABEL org.opencontainers.image.description="Centralized monitoring and observability"
+LABEL org.opencontainers.image.version="1.0.0"
 
-ENV PYTHONPATH=/app
-
-# Use tini as PID 1 per plan.md
-ENTRYPOINT ["/usr/bin/tini", "--"]
+# Use tini as PID 1
+ENTRYPOINT ["/usr/bin/tini","--"]
 CMD ["python", "-m", "unified_observability_center.app"]
 

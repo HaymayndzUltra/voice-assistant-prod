@@ -1,75 +1,74 @@
 # syntax=docker/dockerfile:1.7
-# Affective Processing Center - Optimized per plan.md
+# Multi-stage Dockerfile for Affective Processing Center
 
-ARG BASE_IMAGE
+ARG BASE_IMAGE=ghcr.io/haymayndzultra/family-torch-cu121:20250810-9c99cc9
 ARG MACHINE=mainpc
 
 # Builder stage
 FROM python:3.11-slim AS builder
 WORKDIR /build
+
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config curl git \
     libffi-dev libssl-dev \
   && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip wheel setuptools && \
-    pip wheel -w /wheels -r requirements.txt
 
-# Runtime stage (family provides CUDA/Torch stack)
+# Copy common module and service code
+COPY common/ /build/common/
+COPY affective_processing_center/ /build/affective_processing_center/
+
+# Install packages
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -e /build/common && \
+    pip install -e /build/affective_processing_center
+
+# Runtime stage
 FROM ${BASE_IMAGE} AS runtime
 
 # Hardware-aware defaults
 ARG MACHINE=mainpc
+COPY affective_processing_center/config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+
 ENV PYTHONUNBUFFERED=1 \
-    TORCH_CUDA_ARCH_LIST="8.9;8.6" \
-    GPU_VISIBLE_DEVICES=${GPU_VISIBLE_DEVICES:-0}
+    PYTHONPATH=/app \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl tini \
-    ffmpeg libsndfile1 \
-  && rm -rf /var/lib/apt/lists/*
-
-# Create non-root user per plan.md (UID:GID 10001:10001)
-RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
+# Create non-root user (UID:GID 10001:10001)
+RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -d /app -s /sbin/nologin appuser
 WORKDIR /app
 
-# Copy machine profile
-COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
-# Install Python deps from wheels (no venv needed with family image)
-COPY --from=builder /wheels /wheels
-COPY requirements.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
-    rm -rf /wheels
+# Copy common module and service code
+COPY common/ /app/common/
+COPY affective_processing_center/ /app/affective_processing_center/
 
-# Copy application code
-COPY . .
+# Install packages in runtime
+RUN pip install --no-deps /app/common && \
+    pip install --no-deps /app/affective_processing_center
 
-# Set permissions
-RUN mkdir -p /app/logs /app/data /app/models /app/config && \
-    chown -R appuser:appuser /app && \
-    chmod +x /usr/bin/tini
-
-# Copy config
-COPY config/default.yaml /app/config/
+# Runtime utilities
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl procps tini \
+  && rm -rf /var/lib/apt/lists/* && \
+  mkdir -p /app/data /app/logs && chown -R appuser:appuser /app
 
 USER appuser
 
-# Ports per plan.md line 118: 5560/6560
+# Health check and ports (5560/6560)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:6560/health || exit 1
 EXPOSE 5560 6560
 
-# Health check per plan.md
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:6560/health || exit 1
+# Metadata
+LABEL org.opencontainers.image.title="Affective Processing Center"
+LABEL org.opencontainers.image.description="Emotion and affect analysis"
+LABEL org.opencontainers.image.version="1.0.0"
 
-# Production configuration
-ENV APC_ENV=production \
-    APC_LOG_LEVEL=INFO \
-    APC_CONFIG_PATH=/app/config/default.yaml
-
-# Use tini as PID 1 per plan.md
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["python", "app.py"]
+# Use tini as PID 1
+ENTRYPOINT ["/usr/bin/tini","--"]
+CMD ["python", "-m", "affective_processing_center.app"]

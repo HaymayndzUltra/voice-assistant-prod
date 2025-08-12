@@ -1,30 +1,34 @@
 # syntax=docker/dockerfile:1.7
 # Optimized multi-stage Dockerfile for ModelOps Coordinator
 
-ARG BASE_IMAGE
+ARG BASE_IMAGE=ghcr.io/haymayndzultra/family-llm-cu121:20250810-9c99cc9
 ARG MACHINE=mainpc
 
-# Base stage from family image provides CUDA/LLM stack
-FROM ${BASE_IMAGE} AS base
-
-# Builder stage – build wheels using slim Python, cache pip to speed up builds
+# Builder stage – build and install packages
 FROM python:3.11-slim AS builder
 WORKDIR /build
+
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config curl git \
     libffi-dev libssl-dev \
   && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt ./requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip wheel setuptools && \
-    pip wheel -w /wheels -r requirements.txt
 
-# Runtime stage – install only needed wheels on top of family base
+# Copy common module and service code
+COPY common/ /build/common/
+COPY model_ops_coordinator/ /build/model_ops_coordinator/
+
+# Install packages in editable mode for builder
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -e /build/common && \
+    pip install -e /build/model_ops_coordinator
+
+# Runtime stage
 FROM ${BASE_IMAGE} AS runtime
 
 # Hardware-aware defaults based on machine profile
 ARG MACHINE=mainpc
-COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+COPY model_ops_coordinator/config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
@@ -50,22 +54,23 @@ RUN if [ "$MACHINE" = "mainpc" ]; then \
 RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -d /app -s /sbin/nologin appuser
 WORKDIR /app
 
-# Copy wheels and install requirements using family-provided Python stack
-COPY --from=builder /wheels /wheels
-COPY requirements.txt ./requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
-    rm -rf /wheels
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
-# Copy application code (avoid venv duplication)
-COPY . .
+# Copy common module and service code for runtime
+COPY common/ /app/common/
+COPY model_ops_coordinator/ /app/model_ops_coordinator/
+
+# Install packages in the runtime
+RUN pip install --no-deps /app/common && \
+    pip install --no-deps /app/model_ops_coordinator
 
 # Minimal runtime utilities
+USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl procps \
+    curl procps tini \
   && rm -rf /var/lib/apt/lists/* && \
   mkdir -p /app/data /app/logs /app/config && chown -R appuser:appuser /app
-COPY config/default.yaml /app/config/
 
 USER appuser
 
@@ -82,4 +87,4 @@ LABEL org.opencontainers.image.authors="ModelOps Team"
 
 # Use tini as PID 1
 ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["python", "app.py"]
+CMD ["python", "-m", "model_ops_coordinator.app"]
