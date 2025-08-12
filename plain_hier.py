@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Read-only hierarchical plan viewer (path auto-detected)."""
-import json, sys, re
+import json, sys, re, os
 from pathlib import Path
 
 def _detect_repo_root() -> Path:
     cwd = Path.cwd()
     if (cwd / "memory-bank" / "queue-system" / "tasks_active.json").exists():
         return cwd
-    env_root = Path(os.getenv("AI_System_Monorepo", "")) if os.getenv("AI_System_Monorepo") else None
+    env_root = Path(os.getenv("AI_SYSTEM_MONOREPO", "")) if os.getenv("AI_SYSTEM_MONOREPO") else None
     if env_root and (env_root / "memory-bank" / "queue-system" / "tasks_active.json").exists():
         return env_root
     mainpc = Path("/home/haymayndz/AI_System_Monorepo")

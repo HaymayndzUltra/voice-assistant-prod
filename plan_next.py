@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Plan next-phase helper (path auto-detected)."""
-import json, re, sys
+import json, re, sys, os
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
