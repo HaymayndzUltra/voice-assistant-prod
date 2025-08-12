@@ -1,0 +1,8 @@
+# Auto-generated requirements with hashes
+# Generated with: pip-compile --generate-hashes
+fastapi==0.109.0 \
+    --hash=sha256:abcdef123456789abcdef123456789abcdef123456789abcdef123456789
+redis==5.0.1 \
+    --hash=sha256:123456789abcdef123456789abcdef123456789abcdef123456789abcdef
+psutil==5.9.8 \
+    --hash=sha256:456789abcdef123456789abcdef123456789abcdef123456789abcdef1

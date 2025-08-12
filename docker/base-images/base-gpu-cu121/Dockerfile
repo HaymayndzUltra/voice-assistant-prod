@@ -1,46 +1,41 @@
-# syntax=docker/dockerfile:1.7
-
+# syntax=docker/dockerfile:1.5
+# Base GPU CUDA 12.1 - Foundation for GPU services
 FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+# Install Python 3.11 and essential tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    tini \
+    curl \
+    wget \
+    git \
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+
+# Upgrade pip
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Create non-root user with specific UID:GID per plan.md
+RUN groupadd -g 10001 appuser && \
+    useradd -r -u 10001 -g appuser -m -d /home/appuser -s /bin/bash appuser
+
+# Set Python and CUDA environment
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Ensure running as root for apt-get (fix permission denied)
-USER root
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       software-properties-common \
-       ca-certificates \
-       curl \
-       git \
-       build-essential \
-       pkg-config \
-       libssl-dev \
-       libffi-dev \
-       tzdata \
-       tini \
-    && add-apt-repository ppa:deadsnakes/ppa -y \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-       python3.11 python3.11-venv python3.11-dev \
-    && curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py \
-    && python3.11 /tmp/get-pip.py \
-    && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
-    && ln -sf /usr/local/bin/pip3.11 /usr/local/bin/pip \
-    && rm -rf /var/lib/apt/lists/* /tmp/get-pip.py
-
-# Create non-root user per plan.md (UID:GID 10001:10001)
-RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
-
-WORKDIR /app
-RUN chown -R appuser:appuser /app
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    CUDA_HOME=/usr/local/cuda \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH \
+    TORCH_CUDA_ARCH_LIST="8.9;8.6"
 
 USER appuser
+WORKDIR /app
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["bash", "-lc", "python --version && pip --version"]
 
 

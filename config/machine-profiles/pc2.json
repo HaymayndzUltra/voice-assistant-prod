@@ -1,0 +1,10 @@
+{
+  "machine": "pc2",
+  "gpu": "RTX 3060",
+  "GPU_VISIBLE_DEVICES": "0",
+  "TORCH_CUDA_ALLOC_CONF": "max_split_size_mb:32",
+  "OMP_NUM_THREADS": "4",
+  "UVICORN_WORKERS": "8",
+  "MODEL_EVICT_THRESHOLD_PCT": "70",
+  "CUDA_ARCH": "8.6"
+}

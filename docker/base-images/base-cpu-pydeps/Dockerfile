@@ -1,27 +1,26 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.5
+# Base CPU Python Dependencies
+FROM ghcr.io/haymayndzultra/base-utils:20250812-latest
 
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
-
-ENV PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-RUN python -m pip install --upgrade pip setuptools wheel
-
-# Install tini
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends tini \
-    && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user per plan.md (UID:GID 10001:10001)
-RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
-
-WORKDIR /app
-RUN chown -R appuser:appuser /app
+# Install common Python dependencies per plan.md
+RUN pip install --no-cache-dir \
+    numpy==1.24.3 \
+    pydantic==2.5.3 \
+    fastapi==0.109.0 \
+    uvicorn==0.27.0 \
+    redis==5.0.1 \
+    psutil==5.9.8 \
+    pyzmq==25.1.2 \
+    httpx==0.26.0 \
+    pyyaml==6.0.1 \
+    python-dotenv==1.0.0 \
+    asyncio==3.4.3 \
+    aiofiles==23.2.1 \
+    prometheus-client==0.19.0
 
 USER appuser
-
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["bash", "-lc", "python --version && pip --version"]
+WORKDIR /app
 
 

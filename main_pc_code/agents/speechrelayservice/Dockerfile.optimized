@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1.5
+# SpeechRelayService - GPU/Audio service (PC2)
+FROM ghcr.io/haymayndzultra/family-torch-cu121:20250812-latest AS base
+
+ARG MACHINE=pc2
+ENV PYTHONUNBUFFERED=1
+    TORCH_CUDA_ARCH_LIST="8.6" \
+    GPU_VISIBLE_DEVICES=${{GPU_VISIBLE_DEVICES:-0}}
+    PULSE_SERVER=/run/pulse/native \
+    AUDIO_BACKEND=${{AUDIO_BACKEND:-alsa}}
+
+WORKDIR /app
+
+# Copy machine profile
+COPY config/machine-profiles/${MACHINE}.json /etc/machine-profile.json
+
+# Builder stage
+FROM base AS builder
+COPY requirements/speechrelayservice.txt ./requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --require-hashes -r requirements.txt
+
+# Runtime stage  
+FROM base AS runtime
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY speechrelayservice/ ./speechrelayservice
+COPY entrypoints/speechrelayservice_entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+USER appuser
+
+# Health check on port 8130
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -sf http://localhost:8130/health || exit 1
+
+# Expose service and health ports
+EXPOSE 7130 8130
+
+ENTRYPOINT ["/usr/bin/tini","--"]
+CMD ["/entrypoint.sh"]

@@ -1,33 +1,25 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.5
+# Base Utils - adds essential system utilities
+FROM ghcr.io/haymayndzultra/base-python:20250812-latest
 
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Ensure running as root for apt-get (fix permission denied)
 USER root
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       git \
-        build-essential \
-        pkg-config \
-        curl \
-        wget \
-        ca-certificates \
-        tzdata \
-        tini \
+
+# Add essential utilities per plan.md
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    wget \
+    dumb-init \
+    gosu \
+    tzdata \
+    git \
+    jq \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user per plan.md (UID:GID 10001:10001)
-RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /sbin/nologin appuser
-
-WORKDIR /app
-RUN chown -R appuser:appuser /app
+# Set timezone
+ENV TZ=UTC
 
 USER appuser
-
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["bash", "-lc", "python --version && pip --version"]
+WORKDIR /app
 
 
