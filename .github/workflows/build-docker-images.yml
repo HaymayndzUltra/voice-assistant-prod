@@ -1,0 +1,234 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+      - cursor/build-and-deploy-ai-system-services-0e14
+    paths:
+      - 'docker/**'
+      - 'model_ops_coordinator/**'
+      - 'real_time_audio_pipeline/**'
+      - 'affective_processing_center/**'
+      - 'unified_observability_center/**'
+      - 'memory_fusion_hub/**'
+      - 'services/**'
+      - '.github/workflows/build-docker-images.yml'
+  workflow_dispatch:
+    inputs:
+      build_base:
+        description: 'Build base images'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: haymayndzultra
+
+jobs:
+  # Job 1: Build base images
+  build-base:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.build_base == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+      
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push base-python
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker/base-images/base-python
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-python:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-python:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-python:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-python:buildcache,mode=max
+      
+      - name: Build and push base-utils
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker/base-images/base-utils
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-utils:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-utils:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-utils:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-utils:buildcache,mode=max
+      
+      - name: Build and push base-cpu-pydeps
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker/base-images/base-cpu-pydeps
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-cpu-pydeps:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-cpu-pydeps:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-cpu-pydeps:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-cpu-pydeps:buildcache,mode=max
+      
+      - name: Build and push base-gpu-cu121
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker/base-images/base-gpu-cu121
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-gpu-cu121:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-gpu-cu121:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-gpu-cu121:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base-gpu-cu121:buildcache,mode=max
+      
+      - name: Build and push legacy-py310-cpu
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker/base-images/legacy-py310-cpu
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/legacy-py310-cpu:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/legacy-py310-cpu:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/legacy-py310-cpu:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/legacy-py310-cpu:buildcache,mode=max
+
+  # Job 2: Build family images (depends on base)
+  build-family:
+    needs: build-base
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: family-web
+            context: ./docker/base-images/family-web
+          - name: family-torch-cu121
+            context: ./docker/base-images/family-torch-cu121
+          - name: family-llm-cu121
+            context: ./docker/base-images/family-llm-cu121
+          - name: family-vision-cu121
+            context: ./docker/base-images/family-vision-cu121
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:buildcache,mode=max
+
+  # Job 3: Build service images (depends on family)
+  build-services:
+    needs: build-family
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: model_ops_coordinator
+            context: .
+            dockerfile: ./model_ops_coordinator/Dockerfile.optimized
+            build-args: |
+              MACHINE=mainpc
+          - name: real_time_audio_pipeline
+            context: .
+            dockerfile: ./real_time_audio_pipeline/Dockerfile.optimized
+            build-args: |
+              MACHINE=mainpc
+          - name: affective_processing_center
+            context: .
+            dockerfile: ./affective_processing_center/Dockerfile.optimized
+            build-args: |
+              MACHINE=mainpc
+          - name: unified_observability_center
+            context: .
+            dockerfile: ./unified_observability_center/Dockerfile.optimized
+            build-args: |
+              MACHINE=mainpc
+          - name: memory_fusion_hub
+            context: .
+            dockerfile: ./memory_fusion_hub/Dockerfile.optimized
+            build-args: |
+              MACHINE=mainpc
+          - name: self_healing_supervisor
+            context: .
+            dockerfile: ./services/self_healing_supervisor/Dockerfile.optimized
+            build-args: |
+              MACHINE=mainpc
+          - name: central_error_bus
+            context: .
+            dockerfile: ./services/central_error_bus/Dockerfile.optimized
+            build-args: |
+              MACHINE=pc2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          build-args: ${{ matrix.build-args }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ai_system/${{ matrix.name }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ai_system/${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ai_system/${{ matrix.name }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ai_system/${{ matrix.name }}:buildcache,mode=max
+
+  # Job 4: Summary
+  summary:
+    needs: [build-services]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## ✅ Build Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Images built and pushed:" >> $GITHUB_STEP_SUMMARY
+          echo "- Base images: base-python, base-utils, base-cpu-pydeps, base-gpu-cu121, legacy-py310-cpu" >> $GITHUB_STEP_SUMMARY
+          echo "- Family images: family-web, family-torch-cu121, family-llm-cu121, family-vision-cu121" >> $GITHUB_STEP_SUMMARY
+          echo "- Services: model_ops_coordinator, real_time_audio_pipeline, affective_processing_center, unified_observability_center, memory_fusion_hub, self_healing_supervisor, central_error_bus" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### To pull images locally:" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/haymayndzultra/ai_system/model_ops_coordinator:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
