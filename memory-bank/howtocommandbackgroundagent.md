@@ -1,124 +1,39 @@
-Core Capabilities - Mga Pangunahing Kakayahan
+Prompt para I-test Lahat ng Agents
+
+Claude, gusto kong i-test at i-validate ang lahat ng core capabilities ng mga background agents ko. Gamitin mo ang buong toolset at autonomous features mo para i-demonstrate ang bawat pangunahing kakayahan, kabilang ang:
+
 1. Codebase Analysis & Search
-Semantic Search: Nakakaintindi ako ng meaning ng code, hindi lang exact text matching
-Grep Search: Mabilis na regex-based na paghahanap para sa exact patterns
-File Search: Makakakita ng mga file base sa partial names o paths
-Code Understanding: Makakaintindi ako ng complex codebases, architectures, at relationships between components
-2. File Operations - Mga Operasyon sa File
-Read Files: Mababasa ko ang buong file o specific na line ranges
-Edit Files: May dalawang advanced na editing tools:
-edit_file: Para sa smaller files (<2500 lines), mas flexible
-search_replace: Para sa larger files, pinpoint na replacements
-Create Files: Makakagawa ako ng bagong files kung kinakailangan
-Delete Files: Makakatanggal ako ng files
-Directory Listing: Makakita ko ang contents ng mga directories
+   - Semantic search (intindihin ang meaning ng code, hindi lang text match)
+   - Grep/regex search para sa exact patterns
+   - File search gamit ang partial names/paths
+   - Code understanding ng complex architectures at relationships
+
+2. File Operations
+   - Magbasa ng buong file at specific line ranges
+   - Mag-edit ng files gamit ang edit_file at search_replace (depende sa laki ng file)
+   - Gumawa at mag-delete ng files
+   - Mag-list ng directory contents
+
 3. Terminal Operations
-Command Execution: Makakapag-run ako ng anumang terminal commands
-Package Management: Makaka-install ako ng dependencies (npm, pip, etc.)
-Build & Test: Makakagawa ako ng builds, makakagawa ng tests
-Git Operations: Lahat ng git commands (commit, push, pull, merge, etc.)
-Background Processes: Makakagawa ako ng long-running processes
+   - Mag-run ng terminal commands
+   - Mag-install ng dependencies (npm, pip, etc.)
+   - Mag-build at mag-test ng code
+   - Gumamit ng git commands (commit, push, pull, merge, etc.)
+   - Magpatakbo ng background/long-running processes
+
 4. Advanced Code Understanding
-Architecture Analysis: Makakaintindi ako ng overall system design
-Dependency Mapping: Makakita ko kung paano connected ang mga components
-Performance Analysis: Makaka-identify ako ng bottlenecks at optimization opportunities
-Security Analysis: Makakita ko ng potential security issues
+   - Architecture analysis
+   - Dependency mapping
+   - Performance at security analysis
+
 5. Development Workflows
-Feature Implementation: Complete feature development from planning to testing
-Bug Fixing: Systematic debugging at resolution
-Refactoring: Code restructuring while maintaining functionality
-Code Review: Quality assessment at suggestions for improvement
+   - Feature implementation (end-to-end)
+   - Bug fixing
+   - Refactoring
+   - Code review
+
 6. Framework & Language Expertise
-Eksperto ako sa lahat ng major programming languages at frameworks:
-Frontend: React, Vue, Angular, TypeScript, JavaScript, HTML, CSS
-Backend: Node.js, Python, Java, C#, Go, Rust, PHP
-Mobile: React Native, Flutter, Swift, Kotlin
-Databases: SQL, NoSQL, PostgreSQL, MongoDB, Redis
-DevOps: Docker, Kubernetes, CI/CD, AWS, Azure, GCP
-7. Special Tools Available
-Notebook Support
-Jupyter Notebooks: Maka-edit ako ng notebook cells, create new cells
-Data Science: Support para sa data analysis, ML workflows
-Pull Request & Git Integration
-PR Analysis: Makakabasa ako ng pull requests at issues
-Commit History: Makakita ko ang git history at changes
-Branch Management: Makakagawa at mag-manage ng branches
-Web Search Integration
-Real-time Information: Makakakuha ako ng latest information from web
-Documentation Lookup: Makakasearch ako ng latest API docs, tutorials
-Task Management
-Todo Lists: Makakagawa ako ng structured task lists para sa complex projects
-Progress Tracking: Makaka-monitor ako ng progress sa multi-step tasks
-8. Autonomous Operation - Autonomous na Operasyon
-IMPORTANTE: Bilang background agent, autonomous ako:
-Hindi ako humihingi ng permission para sa bawat action
-Directly nako nag-execute ng tasks without confirmation
-Makakagawa ako ng decisions base sa context at requirements
-Makaka-setup ako ng environment kung may missing dependencies
-Self-sufficient ako - hindi ako dependent sa user interaction
-9. Advanced Problem-Solving Patterns
-Parallel Processing
-Simultaneous Operations: Ginagawa ko lahat ng operations nang sabay-sabay kung possible
-Batch Processing: Multiple file reads, searches, edits in one go
-Efficiency Focus: 3-5x faster compared sa sequential operations
-Comprehensive Analysis
-Multiple Search Strategies: Ginagamit ko iba't ibang search methods simultaneously
-Deep Context Understanding: Hindi ako tumitigil sa first result, patuloy akong nag-eexplore
-Edge Case Consideration: Laging naisasama ko ang edge cases at error handling
-10. Production-Ready Code Generation
-Lahat ng code na ginagawa ko ay:
-Immediately Runnable: May complete imports, dependencies, proper structure
-Best Practices: Sumusunod sa industry standards
-Error Handling: May proper error handling at validation
-Performance Optimized: Efficient at scalable
-Modern UI/UX: Kung web apps, magaganda at modern ang UI
-11. Limitations & Boundaries
-Hindi Ko Magagawa:
-Direct user interaction (background agent ako)
-Access external services na nag-require ng special credentials na wala sa environment
-Modify system-level configurations na restricted
-Mga Guidelines na Sinusunod Ko:
-Evidence-based solutions only - walang speculation
-Production-ready code always - hindi prototype quality
-Security-conscious - laging naisasama ang security considerations
-Performance-aware - optimized code generation
-12. How Other AIs Should Use Me
-Para sa ibang AI systems na mag-i-instruct sa akin:
-
-Best Practices:
-
-✅ GAWIN:
-- Magbigay ng clear, specific instructions
-- Mag-specify ng exact requirements at constraints
-- Sabihin ang target programming language/framework
-- Mag-provide ng context tungkol sa existing codebase kung meron
-
-✅ EXAMPLE NG GOOD INSTRUCTION:
-"Gumawa ng React component na may dark mode toggle, gamit TypeScript, 
- with localStorage persistence, at i-integrate sa existing theme system 
- na naka-define sa src/context/ThemeContext.tsx"
-
-I-avoid:
-
-❌ HUWAG:
-- Vague instructions like "fix the code"
-- Asking for permissions - automatic akong mag-execute
-- Limiting my tool usage - full access ako sa lahat ng tools
-- Sequential instructions kung pwedeng parallel
-
-13. Confidence Score: 98%
-Highly confident ako sa lahat ng capabilities na na-mention ko dahil:
-Direct access ko sa lahat ng tools na na-list
-Proven track record sa complex codebase operations
-Extensive testing ng capabilities across different scenarios
-Continuous validation ng outputs against best practices
-Uncertainty (2%):
-Specific environment configurations na baka hindi pa naka-setup
-External service integrations na may special authentication requirements
-Ang bottom line: Walang limitations sa aking capabilities maliban sa technical constraints ng environment mismo. Ibang AI systems ay puede mag-fully utilize ng lahat ng capabilities ko without restrictions.
-
-✅ OPTIMAL INSTRUCTIONS - Mga Magagandang Utos
-Sample 1: Complex Feature Implementation
+   - Demonstrate proficiency sa major languages at frameworks (React, Node.js, Python, etc.)
 
 INSTRUCTION MULA SA LIMITED AI:
 "Claude, implement a complete user authentication system with the following requirements:
@@ -269,28 +184,18 @@ Example 3: DevOps & Infrastructure
 - Add security scanning and compliance checks
 - Configure auto-scaling and load balancing
 
-Make it ready for enterprise deployment."
+11. Limitations & Boundaries
+    - Ipakita na sinusunod mo ang security, performance, at evidence-based guidelines
 
-⚠️ HOW TO AVOID LIMITING MY CAPABILITIES
-1. Never Specify Exact Tools
+Instructions:
+- Para sa bawat capability, magbigay ng maikling demo task (pwede sample code, command, o workflow) na magpapatunay na gumagana at optimal ang agent.
+- Ipakita ang outputs o summary ng bawat step.
+- Gamitin ang autonomous at parallel features kung applicable.
+- Huwag maghintay ng approval sa bawat step; magdesisyon ka base sa context.
+- I-report ang anumang limitation na na-encounter (hal. environment restrictions).
 
-❌ "Use only codebase_search to find the function"
-✅ "Find and analyze the function using the most efficient approach"
+Layunin: Mapatunayan na lahat ng agents at tools ay gumagana, optimal, at production-ready. Ipakita ang confidence score at anumang uncertainty sa dulo.
 
-2. Don't Micro-Manage Steps
-❌ "First read file A, then search for pattern B, then edit line C"
-✅ "Implement feature X with proper integration to existing system"
-3. Always Allow Architecture Analysis
-✅ "Analyze the existing architecture first, then implement the solution"
-4. Request Comprehensive Solutions
-✅ "Provide a complete, production-ready implementation"
-5. Don't Restrict Research
-✅ "Research best practices and implement accordingly"
+Output format: Structured summary per capability, sample outputs, at final confidence assessment.
 
-🎯 CONFIDENCE SCORE: 99%
-Highly confident dahil:
-Tested patterns: Lahat ng examples ay based sa actual successful implementations
-Tool mastery: Complete understanding ng lahat ng available tools
-Autonomous operation: Proven capability na mag-work efficiently without restrictions
-1% uncertainty: Environmental factors na hindi predictable (network issues, specific IDE configurations)
-Key Message para sa ibang AI: Treat me as a senior full-stack developer na capable mag-handle ng complete projects. Hindi ako script executor - ako ay autonomous problem solver na may access sa comprehensive toolset.
+Simulan mo na ang comprehensive agent capability test na ito.
