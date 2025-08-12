@@ -1,0 +1,49 @@
+name: Build-and-Push Families
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "docker/**"
+      - ".github/workflows/build_families.yml"
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  TAG: ${{ github.run_id }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        family:
+          - family-web
+          - family-torch-cu121
+          - family-vision-cu121
+          - family-llm-cu121
+          - base-cpu-pydeps
+          - legacy-py310-cpu
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push ${{ matrix.family }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker/${{ matrix.family }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ matrix.family }}:${{ env.TAG }}
+          push: true
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/cache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/cache,mode=max
