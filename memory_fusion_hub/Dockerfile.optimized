@@ -24,6 +24,9 @@ COPY common/ ./common
 
 USER appuser
 
+# Label for validation script
+LABEL health_check_port="6713"
+
 # Health check on port 6713
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -sf http://localhost:6713/health || exit 1

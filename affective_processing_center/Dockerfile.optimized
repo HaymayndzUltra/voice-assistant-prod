@@ -26,6 +26,9 @@ COPY common/ ./common
 
 USER appuser
 
+# Label for validation script
+LABEL health_check_port="6560"
+
 # Health check on port 6560
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -sf http://localhost:6560/health || exit 1
