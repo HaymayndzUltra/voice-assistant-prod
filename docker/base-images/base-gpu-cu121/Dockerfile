@@ -20,9 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Upgrade pip
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Create non-root user with specific UID:GID per plan.md
-RUN groupadd -g 10001 appuser && \
-    useradd -r -u 10001 -g appuser -m -d /home/appuser -s /bin/bash appuser
+# Create non-root user safely (idempotent) and set up /app
+RUN if ! getent group appuser >/dev/null; then groupadd -g 10001 appuser; fi \
+ && if ! id -u appuser >/dev/null 2>&1; then useradd -r -u 10001 -g appuser -m -d /home/appuser -s /bin/bash appuser; fi \
+ && mkdir -p /app && chown -R 10001:10001 /app
 
 # Set Python and CUDA environment
 ENV PYTHONUNBUFFERED=1 \
@@ -33,15 +34,7 @@ ENV PYTHONUNBUFFERED=1 \
     LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH \
     TORCH_CUDA_ARCH_LIST="8.9;8.6"
 
-USER appuser
 WORKDIR /app
-
-RUN groupadd -g 10001 appuser \
-    && useradd -u 10001 -g appuser -d /app -s /sbin/nologin appuser \
-    && chown -R 10001:10001 /app
-
 USER appuser
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-
-

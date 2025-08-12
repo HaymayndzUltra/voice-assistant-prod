@@ -1,42 +1,43 @@
 # syntax=docker/dockerfile:1.5
-# Family Vision CUDA 12.1 - For computer vision services
 FROM ghcr.io/haymayndzultra/base-gpu-cu121:20250812-latest
 
 USER root
 
-# Install system dependencies for OpenCV
+# System deps + full toolchain for dlib build
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    libgstreamer1.0-0 \
-    libgstreamer-plugins-base1.0-0 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
+    libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
+    build-essential cmake ninja-build pkg-config \
+    libopenblas-dev liblapack-dev libx11-dev libgtk-3-dev \
+ && rm -rf /var/lib/apt/lists/*
 
-# Install vision-specific Python dependencies
-RUN pip install --no-cache-dir \
-    opencv-python-headless==4.9.0.80 \
-    pillow==10.2.0 \
-    scikit-image==0.22.0 \
-    albumentations==1.3.1 \
-    ultralytics==8.0.238 \
-    mediapipe==0.10.9 \
-    face-recognition==1.3.0 \
-    dlib==19.24.2 \
-    pytesseract==0.3.10 \
-    onnx==1.15.0 \
-    onnxruntime-gpu==1.16.3
-
-# Install PyTorch for vision models
-RUN pip install --no-cache-dir \
-    torch==2.2.2+cu121 \
-    torchvision==0.17.2+cu121 \
-    --index-url https://download.pytorch.org/whl/cu121
-
+# Prefer apt cmake over any pip cmake inside build isolation
+ENV PATH="/usr/bin:${PATH}"
 ENV TORCH_CUDA_ARCH_LIST="8.9;8.6"
+
+# Pin Torch GPU stack first
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir \
+      torch==2.2.2+cu121 torchvision==0.17.2+cu121 torchaudio==2.2.2+cu121 \
+      --index-url https://download.pytorch.org/whl/cu121
+
+# Vision deps (force using system toolchain; avoid build isolation for dlib)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    PIP_NO_BUILD_ISOLATION=1 pip install --no-cache-dir \
+      opencv-python-headless==4.9.0.80 \
+      pillow==10.2.0 \
+      scikit-image==0.22.0 \
+      albumentations==1.3.1 \
+      mediapipe==0.10.9 \
+      dlib==19.24.2 \
+      face-recognition==1.3.0 \
+      pytesseract==0.3.10 \
+      onnx==1.15.0 \
+      onnxruntime-gpu==1.16.3
+
+# Avoid ultralytics pulling a different torch
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --no-deps ultralytics==8.0.238
 
 USER appuser
 WORKDIR /app
