@@ -28,6 +28,8 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 
 WORKDIR /app
 
+USER appuser
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["bash", "-lc", "python - <<'PY'\nimport torch; print('torch', torch.__version__); print('cuda', torch.version.cuda)\nPY"]
 
 

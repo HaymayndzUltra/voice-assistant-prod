@@ -36,6 +36,12 @@ ENV PYTHONUNBUFFERED=1 \
 USER appuser
 WORKDIR /app
 
+RUN groupadd -g 10001 appuser \
+    && useradd -u 10001 -g appuser -d /app -s /sbin/nologin appuser \
+    && chown -R 10001:10001 /app
+
+USER appuser
+
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
 

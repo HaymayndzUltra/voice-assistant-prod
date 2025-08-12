@@ -70,6 +70,22 @@ When Local Agent starts, it automatically reads:
 
 ---
 
+## **🔎 Auxiliary Read-Only Tools**
+
+- `python3 plan_next.py`
+  - Identifies next unfinished phase per task
+  - Extracts command previews from fenced blocks
+  - Lints plan: Phase 0 position, IMPORTANT NOTE presence, completion monotonicity
+
+- `python3 plain_hier.py <TASK_ID>`
+  - Shows compact hierarchical view of phases with checkmarks
+  - Prints snippet of "IMPORTANT NOTE:" if present
+  - Previews first fenced command block
+
+Use these before executing any phase to verify the IMPORTANT NOTE and expected commands.
+
+---
+
 ## **📊 TODO COMPLEXITY LEVELS**
 
 ### **SIMPLE TODOS:**
@@ -136,24 +152,14 @@ When Local Agent starts, it automatically reads:
 # Show plan
 python3 todo_manager.py show <TASK_ID>
 
-# Phase gate (REQUIRED before done)
 
-# Mark main TODO complete (only after gate passes)
 python3 todo_manager.py done <TASK_ID> <PHASE_INDEX>
 
 # Show all active tasks
 python3 todo_manager.py list
 ```
 
-## ✅ EXECUTION POLICY (ENFORCED)
-- BEFORE marking a phase done:
-  - MUST create: `memory-bank/DOCUMENTS/<task_id>_phase{k}_postreview.md`
-  - MUST create: `memory-bank/DOCUMENTS/<task_id>_phase{k+1}_preanalysis.md`
-  - MUST run the phase gate; HALT on failure
-  - MUST restate and check compliance with the current phase’s "IMPORTANT NOTE"
-- AFTER done:
-  - MUST show the plan to surface the next phase
-  - Auto-sync reflects focus in session state
+## ✅ EXECUTION POLICY (ENFORCED) 
 - ORDER ENFORCEMENT:
   - No skipping phases; mark in sequence only
   - If confidence < 90%, repeat review and pre-analysis

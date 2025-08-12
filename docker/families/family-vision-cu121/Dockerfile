@@ -23,6 +23,8 @@ RUN python -m pip install --no-cache-dir \
 
 WORKDIR /app
 
-CMD ["bash", "-lc", "python -c 'import numpy, PIL; print("vision base ready")'"]
+USER appuser
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["bash", "-lc", "python -c 'import numpy, PIL; print(\"vision base ready\")'"]
 
 
