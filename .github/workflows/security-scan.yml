@@ -1,0 +1,45 @@
+name: 🔒 Security Scan Docker Images
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔐 Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_NEW }}
+          
+      - name: 🔍 Build image for scanning
+        run: |
+          docker build -t security-scan:latest .
+          
+      - name: 🛡️ Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'security-scan:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: 📊 Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          
+      - name: 🚨 Security Summary
+        if: always()
+        run: |
+          echo "🔒 Security scan completed"
+          echo "📋 Check the Security tab for detailed results"
+          echo "⚠️  Review any vulnerabilities before merging"

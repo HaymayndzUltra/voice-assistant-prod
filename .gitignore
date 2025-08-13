@@ -1,129 +1,27 @@
-# ===================================================================
-# Python / General
-# ===================================================================
-memory-bank/current-session.md
-cursor_state.json
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-# Usually these files are created by a PyInstaller script
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# ===================================================================
-# AI / Machine Learning Specific
-# ===================================================================
-
-# Large model files - HUWAG ISAMA SA GIT!
-*.gguf
-*.bin
-*.pth
-*.pt
-*.onnx
-*.safetensors
-*.h5
-*.joblib
-*.pkl
-*.model
-
-# Explicitly ignore the models directory
-models/
-fine_tuned_models/
-
-# Datasets - HUWAG ISAMA SA GIT!
-data/
-*.csv
-
-*.jsonl
-*.parquet
-*.zip
-*.tar.gz
-
-# ===================================================================
-# Virtual Environments
-# ===================================================================
+# Docker and build artifacts
+.dockerignore
+*.env
 .env
-.venv
-env/
-venv/
-ENV/
-env.bak
-venv.bak
+.env.local
+.env.*.local
 
-# =o=================================================================
-# Project Specific
-# ===================================================================
+# Secrets directory
+.cursor_secrets/
+secrets/
+*.token
+*.key
+
+# Build outputs
+build/
+dist/
+*.tar.gz
+*.tar
 
 # Logs
-logs/
 *.log
-*.log.*
+logs/
 
-# Databases
-*.sqlite
-*.sqlite3
-*.db
-*.db-journal
-
-# Cache files
-.cache/
-cache/
-*.py-cache
-*.pkl
-*.pickle
-
-# Artifacts from runs
-artifacts/
-output/
-
-# ===================================================================
-# OS / Editor Specific
-# ===================================================================
-
-# OS-generated files
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -132,68 +30,14 @@ output/
 ehthumbs.db
 Thumbs.db
 
-# IDE / Editor specific
+# IDE files
 .vscode/
 .idea/
-*.code-workspace
-*.sublime-project
-*.sublime-workspace
-
-# ===================================================================
-# Backups
-# ===================================================================
-*.bak
-*.bak_cursor
-*.swo
 *.swp
-*.tmp
+*.swo
 *~
 
-# ===================================================================
-# Windows Specific
-# ===================================================================
-# Zone.Identifier files created by Windows when downloading files
-*:Zone.Identifier
-
-# Security & Secrets
-*.key_secret
-*.key_private
-**/secrets.yaml
-**/secrets.json
-**/*secret*.txt
-**/*secret*.json
-**/*secret*.yaml
-*.env.secrets
-secrets/
-**/secrets/
-certificates/*.key
-certificates/*.pem
-certificates/*.crt
-*.p12
-*.pfx
-
-# Environment & Config
-.env
-.env.*
-**/config/*secret*
-**/config/*password*
-**/config/*key*
-
-# Crypto Keys
-**/*.private
-**/*.secret
-**/private_keys/
-**/secrets/
-whisper.cpp/
-whisper.cpp
-models_cache/
-models_cache/
-models_cache/
-whisper.cpp/
-models_cache/
-whisper.cpp/
-secrets/
-.env
-memory-bank/current-session.md
-memory-bank/current-session.md
-dashboard/node_modules/
+# Temporary files
+*.tmp
+*.temp
+.cache/
