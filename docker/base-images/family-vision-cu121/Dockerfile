@@ -8,12 +8,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
     libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
     build-essential cmake ninja-build pkg-config \
+    python3-dev libboost-all-dev \
     libopenblas-dev liblapack-dev libx11-dev libgtk-3-dev \
  && rm -rf /var/lib/apt/lists/*
 
 # Prefer apt cmake over any pip cmake inside build isolation
 ENV PATH="/usr/bin:${PATH}"
 ENV TORCH_CUDA_ARCH_LIST="8.9;8.6"
+ENV CMAKE_BUILD_PARALLEL_LEVEL="8"
+# Force CPU-only dlib to avoid needing CUDA toolkits in runtime base
+ENV DLIB_USE_CUDA="0" \
+    DLIB_NO_GUI_SUPPORT="1" \
+    CMAKE_ARGS="-DDLIB_USE_CUDA=0 -DDLIB_NO_GUI_SUPPORT=1 -DUSE_AVX_INSTRUCTIONS=1"
 
 # Pin Torch GPU stack first
 RUN --mount=type=cache,target=/root/.cache/pip \
