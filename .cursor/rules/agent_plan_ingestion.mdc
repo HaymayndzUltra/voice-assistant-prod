@@ -4,10 +4,10 @@ alwaysApply: true
 ---
 ## Agent Plan Ingestion (No Scripts)
 
-Objective: Any AI/session MUST generate an actionable, phase-gated plan directly from the frozen source document (e.g., `memory-bank/DOCUMENTS/plan.md`) using understanding of the content. Do not rely on helper scripts to create files. Produce the final JSON content ready to be placed into `memory-bank/queue-system/tasks_active.json` by the system/operator.
+Objective: Any AI/session MUST generate an actionable, phase-gated plan directly from the frozen source document (e.g., `memory-bank/plan/organize.md`) using understanding of the content. Do not rely on helper scripts to create files. Produce the final JSON content ready to be placed into `memory-bank/queue-system/tasks_active.json` by the system/operator.
 
 ### Inputs
-- One frozen source document in `memory-bank/DOCUMENTS/*.md` (e.g., `plan.md`).
+- One frozen source document in `memory-bank/plan/*.md` (e.g., `organize.md`).
 - Use the document as the single source of truth for phase titles, explanations, constraints, and risk fallbacks.
 
 ### Output (Two-Pass, Agent-Only)

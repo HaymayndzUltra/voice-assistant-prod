@@ -60,7 +60,7 @@ jobs:
             --cache-to type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}cache,mode=max \
             -f model_ops_coordinator/Dockerfile.optimized \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}model-ops-coordinator:${DATE}-${SHA} \
-            .
+            
 
 name: Build and Push Docker Images
 

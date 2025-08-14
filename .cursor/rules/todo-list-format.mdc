@@ -11,19 +11,17 @@ Process & Principles:
 3.  Principle of Contextual Completeness (CRUCIAL): For each technical task derived from the source, you MUST include relevant context if available in the document. This includes, but is not limited to, `Root Cause`, `Blast Radius`, or `Why it was missed`. This provides the "why" behind the "what."
 4.  Principle of Verbatim Archiving (CRUCIAL): All core content for a task (explanations, lists, file paths, code snippets) MUST be preserved verbatim and mapped into their correct phase.
 
-Strict Draft Formatting Rules (NON-NEGOTIABLE): The draft MUST be formatted using Markdown and MUST include the following elements in order:
+Strict Draft Formatting Rules (NON-NEGOTIABLE): The draft MUST be formatted using Markdown and MUST include the following elements in order (aligned with `agent_plan_ingestion.mdc` and `tasks_active_schema.mdc`):
 *   A. Plan Header: A main header containing the Plan ID, Description, and Status. (e.g., `🗒️ PLAN: [plan_id]`)
 *   B. TODO Items Header: A sub-header for the list of tasks.
 *   C. Mandatory Phase 0 (Rich Cognitive Guidance): The draft MUST begin with a complete `PHASE 0: SETUP & PROTOCOL (READ FIRST)`. This phase's content MUST be comprehensive, including both the **Core Behavioral Mandates** and the **How-To/Workflow Protocol**. It must be marked with `[✗]`.
 *   D. Numbered Phases: All subsequent phases must be clearly separated, numbered, and marked with `[✗]`.
-*   E. Mandatory Phase Completion Protocol (Actionability Engine): The `Technical Artifacts / Tasks` section of **every single phase** MUST end with a clearly labeled protocol section.
-    *   **Title:** The title MUST be `**Concluding Step: Phase Completion Protocol**` (or `**Concluding Step: Plan Completion Protocol**` for the final phase).
-    *   **Introductory Text:** It MUST begin with the phrase: `To formally conclude this phase, update the plan's state, and prepare for the next, execute the following protocol:` (or similar text for the final phase).
-    *   **Protocol Steps:** It MUST be a numbered list containing the following actions in order:
-        1.  A `**Run Command (Review State):**` action with the `todo_manager.py show` command. **This action MUST be omitted from Phase 0.**
-        2.  A `**Run Command (Mark Complete):**` action with the `todo_manager.py done` command.
-        3.  An `**Analyze Next Phase:**` action instructing the user to read the next phase's content. **This action MUST be omitted from the final phase.**
-*   F. Mandatory IMPORTANT NOTE: Every single phase MUST end with a `──────────────────────────────────` separator followed by a context-aware `IMPORTANT NOTE:`.
+*   E. Mandatory Phase Completion Protocol (Canonical): Each phase MUST end with a fenced code block containing exactly two commands (applies to Phase 0 and all subsequent phases):
+    ```bash
+    python3 todo_manager.py show <TASK_ID>
+    python3 todo_manager.py done <TASK_ID> <PHASE_INDEX>
+    ```
+*   F. Mandatory IMPORTANT NOTE: Every phase MUST end with a context-aware `IMPORTANT NOTE:`.
 
 Output Format:
 1.  The output MUST BE plain text, not a JSON code block.
@@ -43,24 +41,24 @@ Strict JSON Output Format (Rules for Mode 2):
 3.  **Integrated Content:** The `text` field of every todo item MUST include all its content from the draft, including the fully detailed `Phase Completion Protocol`.
 4.  **Schema Adherence:** The JSON must follow the exact schema provided in the example.
 
-Example JSON Schema for Mode 2 (Reflecting Finalized Rules):
+Example JSON Schema for Mode 2 (Canonical, matches `tasks_active_schema.mdc`):
 ```json
 [
   {
-    "id": "20240524_finalized_plan",
+    "id": "docker_arch_blueprint_actionable_20250811",
     "description": "Action plan to systematically complete a given project based on provided documentation.",
     "todos": [
       {
-        "text": "PHASE 0: SETUP & PROTOCOL (READ FIRST)\n\n[...]\n\n**Concluding Step: Phase Completion Protocol**\nTo formally conclude this phase, update the plan's state, and prepare for the next, execute the following protocol:\n1.  **Run Command (Mark Complete):** `python3 todo_manager.py done 20240524_finalized_plan 0`\n2.  **Analyze Next Phase:** Before proceeding, read and understand the 'Explanations' and 'Tasks' for Phase 1.\n\n──────────────────────────────────\nIMPORTANT NOTE: This phase contains the operating manual [...].",
+        "text": "PHASE 0: SETUP & PROTOCOL (READ FIRST)\n\n...\n\n**Concluding Step: Phase Completion Protocol**\n```bash\npython3 todo_manager.py show <TASK_ID>\npython3 todo_manager.py done <TASK_ID> 0\n```\nIMPORTANT NOTE: ...",
         "done": false
       },
       {
-        "text": "PHASE 1: [TASK-SPECIFIC STEP TITLE]\n\n[...]\n\n**Concluding Step: Phase Completion Protocol**\nTo formally conclude this phase, update the plan's state, and prepare for the next, execute the following protocol:\n1.  **Run Command (Review State):** `python3 todo_manager.py show 20240524_finalized_plan`\n2.  **Run Command (Mark Complete):** `python3 todo_manager.py done 20240524_finalized_plan 1`\n3.  **Analyze Next Phase:** Before proceeding, read and understand the 'Explanations' and 'Tasks' for Phase 2.\n\n──────────────────────────────────\nIMPORTANT NOTE: [Context-aware warning specific to this phase's tasks.].",
+        "text": "PHASE 1: BUILD FOUNDATIONAL BASE IMAGES\n\n...\n\n**Concluding Step: Phase Completion Protocol**\n```bash\npython3 todo_manager.py show <TASK_ID>\npython3 todo_manager.py done <TASK_ID> 1\n```\nIMPORTANT NOTE: ...",
         "done": false
       }
     ],
     "status": "in_progress",
-    "created": "iso_timestamp",
-    "updated": "iso_timestamp"
+    "created": "2025-08-11T19:15:00+08:00",
+    "updated": "2025-08-11T19:15:00+08:00"
   }
 ]

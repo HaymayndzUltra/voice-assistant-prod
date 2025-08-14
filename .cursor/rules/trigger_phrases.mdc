@@ -11,7 +11,7 @@ Agents MUST interpret the following phrases (Tagalog/English) anywhere in the us
   - "Ingest mo ang plan", "Ingest plan now", "Gawa ka ng actionable plan", "Hatiin mo ang plan by phases"
   - "Prepare Human-Readable Plan Draft", "Phase-by-phase draft"
 - Action:
-  1. Read the frozen source (default: `memory-bank/DOCUMENTS/plan.md`).
+  1. Read the frozen source (default: `memory-bank/plan/organize.md`).
   2. Produce a complete Human-Readable Plan Draft per `agent_plan_ingestion.mdc` (include Phase 0, Explanations, Concluding Step, IMPORTANT NOTE per phase).
   3. Stop for approval.
 
