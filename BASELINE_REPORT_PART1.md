@@ -1,28 +1,34 @@
 §1 Inventory & Consolidation
 
-(a) In YAML/code but missing in plan.md
-- CrossMachineGPUScheduler – main_pc_code/config/startup_config.yaml:284-291 (present)
-- StreamingTranslationProxy – main_pc_code/config/startup_config.yaml:597-604 (present)
-- SpeechRelayService – pc2_code/config/startup_config.yaml:246-253 (present)
+Total services/agents evaluated: 92 (plan.md §F rows + additional YAML entries)
 
-(b) In plan.md but absent in YAML & code (deprecated)
-- GoalManager – memory-bank/DOCUMENTS/plan.md:375-381 (present), not in configs.
+(a) In YAML/code but missing in plan.md – count: **3**
+- CrossMachineGPUScheduler – 284-287:main_pc_code/config/startup_config.yaml
+- StreamingTranslationProxy – 597-604:main_pc_code/config/startup_config.yaml
+- SpeechRelayService – 246-251:pc2_code/config/startup_config.yaml
 
-(c) Present only in code (orphan)
-- PerformanceLoggerAgent – main_pc_code/integration/performance.py:26-27 (class listing) [citation pending]
+(b) In plan.md but absent in YAML & code (deprecated) – count: **1**
+- GoalManager – 375-381:memory-bank/DOCUMENTS/plan.md
 
-(d) Sub-agents launched standalone but should be internal to hubs
-- MoodTrackerAgent – main_pc_code/config/startup_config.yaml:548-555
-- HumanAwarenessAgent – main_pc_code/config/startup_config.yaml:556-563
-- ToneDetector – main_pc_code/config/startup_config.yaml:564-571
-- VoiceProfilingAgent – main_pc_code/config/startup_config.yaml:572-579
-- EmpathyAgent – main_pc_code/config/startup_config.yaml:580-587
-- AudioCapture – main_pc_code/config/startup_config.yaml:471-478
-- FusedAudioPreprocessor – main_pc_code/config/startup_config.yaml:478-485
-- StreamingInterruptHandler – main_pc_code/config/startup_config.yaml:486-494
-- StreamingSpeechRecognition – main_pc_code/config/startup_config.yaml:495-503
-- WakeWordDetector – main_pc_code/config/startup_config.yaml:514-522
-- StreamingLanguageAnalyzer – main_pc_code/config/startup_config.yaml:523-531
+(c) Present only in code (orphans) – count: **3**
+- VisionCaptureAgent – 60-61:main_pc_code/agents/vision_capture_agent.py
+- NoiseReductionAgent – 53-54:main_pc_code/agents/noise_reduction_agent.py
+- PerformanceLoggerAgent – 26-27:main_pc_code/integration/performance.py
+
+(d) Standalone sub-agents that should be internal to hubs – count: **11**
+- MoodTrackerAgent – 548-555:main_pc_code/config/startup_config.yaml
+- HumanAwarenessAgent – 556-563:main_pc_code/config/startup_config.yaml
+- ToneDetector – 564-571:main_pc_code/config/startup_config.yaml
+- VoiceProfilingAgent – 572-579:main_pc_code/config/startup_config.yaml
+- EmpathyAgent – 580-587:main_pc_code/config/startup_config.yaml
+- AudioCapture – 471-478:main_pc_code/config/startup_config.yaml
+- FusedAudioPreprocessor – 478-485:main_pc_code/config/startup_config.yaml
+- StreamingInterruptHandler – 486-494:main_pc_code/config/startup_config.yaml
+- StreamingSpeechRecognition – 495-503:main_pc_code/config/startup_config.yaml
+- WakeWordDetector – 514-522:main_pc_code/config/startup_config.yaml
+- StreamingLanguageAnalyzer – 523-531:main_pc_code/config/startup_config.yaml
+
+*Risk note:* Lists (d) overlap with design consolidation rows (§F plan.md lines 118–119) but remain active in configs, indicating partial consolidation.
 
 §2 Ports & Health Ports
 
