@@ -78,3 +78,29 @@ Counts: total rows in matrix = 19; duplicates flagged = 3 sets → 6 ports.
 | SpeechRelayService | pc2 | pc2 | 246-251 pc2 config |
 
 Summary: Out of 12 blueprint critical services, 1 drift (UOC absent on main).
+
+Additional machine assignment (selected utility/vision/audio groups):
+
+| service | design (plan.md §F) | actual YAML | citation |
+|---------|--------------------|-------------|----------|
+| FaceRecognitionAgent | main | main | 319-324 main config |
+| VisionProcessingAgent | pc2 | pc2 | 84-90 pc2 config |
+| DreamWorldAgent | pc2 | pc2 | 92-99 pc2 config |
+| STTService | main | main | 454-458 main config |
+| TTSService | main | main | 462-466 main config |
+| AudioCapture | main (legacy) | main (conditional) | 471-478 main config |
+| SpeechRelayService | pc2 | pc2 | 246-251 pc2 config |
+| TieredResponder | pc2 | pc2 | 60-65 pc2 config |
+| LearningManager | main | main | 346-354 main config |
+| TutoringServiceAgent | pc2 | pc2 | 228-234 pc2 config |
+
+Orphan code additions (present in code, no YAML entry):
+- VisionCaptureAgent – main_pc_code/agents/vision_capture_agent.py:60-61
+- NoiseReductionAgent – main_pc_code/agents/noise_reduction_agent.py:53-54
+- PerformanceLoggerAgent – main_pc_code/integration/performance.py:26-27
+
+Counts updated:
+(a) YAML/code missing in plan.md: 3 items
+(b) Plan-only deprecated: 1 item
+(c) Code-only orphans: 3 items
+(d) Standalone sub-agents needing consolidation: 11 items
