@@ -1,1 +1,15 @@
 host,group,agent,required,ports,signals,verdict,source_file
+MainPC,audio_interface,AudioCapture,False,"port:${PORT_OFFSET}+6550,health_check_port:${PORT_OFFSET}+7550",not-required|in-ledger,partial,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,audio_interface,FusedAudioPreprocessor,False,"port:${PORT_OFFSET}+6551,health_check_port:${PORT_OFFSET}+7551",not-required|in-ledger,partial,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,audio_interface,StreamingInterruptHandler,False,"port:${PORT_OFFSET}+5576,health_check_port:${PORT_OFFSET}+6576",not-required|in-ledger,partial,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,audio_interface,StreamingLanguageAnalyzer,False,"port:${PORT_OFFSET}+5579,health_check_port:${PORT_OFFSET}+6579",not-required|in-ledger,partial,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,audio_interface,StreamingSpeechRecognition,False,"port:${PORT_OFFSET}+6553,health_check_port:${PORT_OFFSET}+7553",not-required|in-ledger,partial,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,emotion_system,EmotionEngine,True,"port:${PORT_OFFSET}+5590,health_check_port:${PORT_OFFSET}+6590",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,emotion_system,EmpathyAgent,True,"port:${PORT_OFFSET}+5703,health_check_port:${PORT_OFFSET}+6703",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,emotion_system,MoodTrackerAgent,True,"port:${PORT_OFFSET}+5704,health_check_port:${PORT_OFFSET}+6704",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,emotion_system,ToneDetector,True,"port:${PORT_OFFSET}+5625,health_check_port:${PORT_OFFSET}+6625",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,language_processing,DynamicIdentityAgent,True,"port:${PORT_OFFSET}+5802,health_check_port:${PORT_OFFSET}+6802",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,learning_knowledge,ActiveLearningMonitor,True,"port:${PORT_OFFSET}+5638,health_check_port:${PORT_OFFSET}+6638",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,learning_knowledge,LearningManager,True,"port:${PORT_OFFSET}+5580,health_check_port:${PORT_OFFSET}+6580",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,learning_knowledge,LearningOpportunityDetector,True,"port:${PORT_OFFSET}+7202,health_check_port:${PORT_OFFSET}+8202",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
+MainPC,utility_services,PredictiveHealthMonitor,True,"port:${PORT_OFFSET}+5613,health_check_port:${PORT_OFFSET}+6613",in-ledger,active/legacy?,/workspace/main_pc_code/config/startup_config.yaml
