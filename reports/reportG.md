@@ -166,4 +166,8 @@ Summary of changes/actions
 - Located and read `memory-bank/DOCUMENTS/plan.md` and key configs.
 - Verified base image families and CI workflows implementing them.
 - Audited service presence, ports, RTAP flag, non-root+tini, and healthchecks.
+<<<<<<< HEAD
 - Identified discrepancies: PORT_OFFSET governance missing, Observability duplication on MainPC, missing machine profiles, and incomplete containerization coverage.
+=======
+- Identified discrepancies: PORT_OFFSET governance missing, Observability duplication on MainPC, missing machine profiles, and incomplete containerization coverage.
+>>>>>>> 7036a4df8d203f0558accb48071cfbba87e7d2ba
