@@ -1,3 +1,44 @@
+Step-by-Step Execution Plan (Ground-Truthed)
+================================================
+IMPORTANT NOTE: This plan respects the dual-machine design. Only the two authoritative config files are used as evidence sources:
+• main_pc_code/config/startup_config.yaml
+• pc2_code/config/startup_config.yaml
+
+P0 — Immediate (blocking issues)
+--------------------------------
+1. Fix undefined ${PORT_OFFSET} default.
+   • Define explicit value per host via env/CI (62-63:main_pc_code/config/startup_config.yaml; 18-19:pc2_code/config/startup_config.yaml; 65-69:batch_containerize_foundation.sh).
+2. Reconcile observability duplication on MainPC.
+   • UnifiedObservabilityCenter agent is already active (214-219:main_pc_config), but ObservabilityDashboardAPI duplicates metrics UI (612-615:main_pc_config). Decide: keep UOC, remove or disable ObservabilityDashboardAPI.
+3. RTAP gating alignment.
+   • RTAP_ENABLED default true (13:main_pc_config) yet legacy audio agents remain enabled (477-504, 521-528, 530-535:main_pc_config). Mark legacy agents required:false when RTAP_ENABLED=="true".
+4. Create missing Dockerfiles for required services.
+   • cross_gpu_scheduler, streaming_translation_proxy, speech_relay have no Dockerfile (services/cross_gpu_scheduler «dir list», services/streaming_translation_proxy «dir list», services/speech_relay «dir list»).
+5. Harden SelfHealingSupervisor container.
+   • Mount docker.sock read-only and add seccomp/apparmor profile (137-145:main_pc_config; 245:pc2_config; 25-32:services/self_healing_supervisor/Dockerfile.optimized).
+
+P1 — Short-Term (after P0)
+-------------------------
+6. Port-lint CI workflow.
+   • Integrate tools/validate_ports_unique.py (49-60:tools/validate_ports_unique.py) into GitHub Actions to fail on duplicates.
+7. Supply SBOM & Trivy scanning workflows.
+   • container-images.yml already builds SBOMs (122-149:.github/workflows/container-images.yml); add dedicated sbom.yml & security-scan.yml for service images.
+8. Generate build-lock.json for deterministic dependency digests.
+
+P2 — Medium-Term
+-----------------
+9. Replace legacy RequestCoordinator references.
+   • VRAMOptimizerAgent variants still import it (213-231 & 788-806:main_pc_code/agents/vram_optimizer_agent.py; 224-244 & 800-818:main_pc_code/agents/vram_optimizer_agent_day4_optimized.py).
+10. Verify NVIDIA driver ≥ 535 on PC-2 before deploying CUDA 12.1 images (39-41 & 179-181:this file).
+11. Convert SelfHealingSupervisor seccomp profile into shared baseline for all containers.
+
+Changelog (2025-08-14)
+----------------------
+• Added “Step-by-Step Execution Plan (Ground-Truthed)” section above original blueprint.
+• Linked every task to exact repo evidence lines.
+• Clarified two-machine evidence scope.
+• No other content changed below this section.
+
 FINAL Docker Architecture Blueprint (Dual-Machine 4090 + 3060)
 
 Version: v1.0
