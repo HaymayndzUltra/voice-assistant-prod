@@ -2,9 +2,9 @@
   {
     "id": "organized_actionable_20250816",
     "description": "Kompletong Checklist (+ Exact File/Path Refs) para sa Susunod na Sessions (memory-bank/plan/organized.md)",
-    "status": "in_progress",
+    "status": "completed",
     "created": "2025-08-16T21:00:00+08:00",
-    "updated": "2025-08-16T23:54:01.343996+08:00",
+    "updated": "2025-08-16T23:59:47.478811+08:00",
     "todos": [
       {
         "text": "PHASE 0: SETUP & PROTOCOL (READ FIRST)\n\n- Explanations: Ito ang master protocol para sa execution. Gagamitin natin ang frozen organizer `memory-bank/plan/organized.md` bilang single source of truth. Walang direct writes sa queue/state files; commands sa ibaba ay guidance para sa operator/system. Focus: reproducible audit → verify → preview → apply → documentation update.\n\n**Concluding Step: Phase Completion Protocol**\n```bash\npython3 todo_manager.py show <TASK_ID>\npython3 todo_manager.py done <TASK_ID> 0\n```\nIMPORTANT NOTE: [SYNTHESIZED FROM ORGANIZER]\n- Do not edit queue/state files directly; the system will ingest the JSON later.\n- Use only read-only analyzers for validation when applicable.\n- All commands are to be run from repo root on Linux/WSL2 with Python 3.\n- Preserve versions/tooling implied by organizer; no silent upgrades.\n- Ensure Git is clean or changes are intentional and committed per phase.",
@@ -20,15 +20,15 @@
       },
       {
         "text": "PHASE 3: VERIFY PROOFS (G.2, C, D)\n\n- Explanations: I-validate ang hub inclusion proofs at confidence metrics; i-cross-check sa organizer C/D guidance.\n  - Run verification per organizer G.2.\n  - Ensure `proof_matrix.csv` at `missing_or_weak.csv` ay consistent sa manifests at code roots.\n```bash\npython3 verify_hub_inclusion.py\n```\n\n**Concluding Step: Phase Completion Protocol**\n```bash\npython3 todo_manager.py show <TASK_ID>\npython3 todo_manager.py done <TASK_ID> 3\n```\nIMPORTANT NOTE:\n- Source: organizer G.2.\n- Proceed only if proof metrics are sound; investigate weak/missing proofs before continuing.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 4: PREVIEW COMMENTOUTS (G.3)\n\n- Explanations: Dry-run preview ng config edits; walang actual writes sa YAMLs sa step na ito.\n```bash\npython3 apply_commentouts.py --csv audits/commentout_candidates.csv --dry-run\n```\n\n**Concluding Step: Phase Completion Protocol**\n```bash\npython3 todo_manager.py show <TASK_ID>\npython3 todo_manager.py done <TASK_ID> 4\n```\nIMPORTANT NOTE:\n- Source: organizer G.3.\n- Confirm na ang preview aligns with hubs and confidence gating.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 5: APPLY COMMENTOUTS + FINAL-PLAN UPDATE (G.4, H)\n\n- Explanations: Apply actual edits kapag pasado ang proof checks, then i-update ang plan documentation ayon sa H.\n  - Apply per organizer G.4.\n  - Update `memory-bank/DOCUMENTS/plan.md`: mark agents as \"disabled (consolidated)\" kapag `exists_in_hub=true` at confidence ≥ 0.85, at na-comment-out sa YAML. Add note \"Baseline verified on commit <sha> via automated audit.\"\n```bash\npython3 apply_commentouts.py --csv audits/commentout_candidates.csv --apply\n```\n\n**Concluding Step: Phase Completion Protocol**\n```bash\npython3 todo_manager.py show <TASK_ID>\npython3 todo_manager.py done <TASK_ID> 5\n```\nIMPORTANT NOTE:\n- Sources: organizer G.4 and H.\n- Confidence gate: ≥ 0.85; ensure edits are committed with clear message including baseline SHA and regenerated audit artifacts.",
-        "done": false
+        "done": true
       }
     ]
   }
