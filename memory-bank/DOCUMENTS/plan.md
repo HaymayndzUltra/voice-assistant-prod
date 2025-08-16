@@ -171,7 +171,6 @@ RemoteConnectorAgent	3060	CPU	base-cpu-pydeps	7124 / 8124
 UnifiedWebAgent	3060	CPU/Web	family-web	7126 / 8126
 DreamingModeAgent	3060	GPU/Vision	family-vision-cu121	7127 / 8127
 AdvancedRouter	3060	CPU	base-cpu-pydeps	7129 / 8129
-UnifiedObservabilityCenter (pc2)	3060	CPU/Web	family-web	9100 / 9110
 TutoringServiceAgent	3060	CPU	base-cpu-pydeps	7108 / 8108
 SpeechRelayService	3060	GPU/Audio	family-torch-cu121	7130 / 8130
 G. Risk Register & Rollback
