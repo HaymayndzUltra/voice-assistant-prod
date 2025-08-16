@@ -2,57 +2,48 @@ version: 1
 hubs:
   - name: AffectiveProcessingCenter
     code_roots:
-      - "affective_processing_center"
+      - affective_processing_center
     registry_hints:
-      - "registry"
-      - "modules"
-      - "core"
-      - "app.py"
+      - registry
+      - modules
     include_globs:
       - "**/*.py"
+
   - name: RealTimeAudioPipeline
     code_roots:
-      - "real_time_audio_pipeline"
+      - real_time_audio_pipeline
     registry_hints:
-      - "core"
-      - "stages"
-      - "pipeline"
-      - "app.py"
-      - "transport"
+      - core
+      - stages
+      - pipeline
     include_globs:
       - "**/*.py"
+
   - name: ModelOpsCoordinator
-    host_scope: "MainPC"  # MainPC only (guard)
+    host_scope: MainPC
     code_roots:
-      - "model_ops_coordinator"
+      - model_ops_coordinator
     registry_hints:
-      - "registry"
-      - "services"
-      - "core"
-      - "app.py"
-      - "adapters"
+      - registry
+      - services
     include_globs:
       - "**/*.py"
+
   - name: UnifiedObservabilityCenter
     code_roots:
-      - "unified_observability_center"
+      - unified_observability_center
     registry_hints:
-      - "app.py"
-      - "routes"
-      - "adapters"
-      - "core"
-      - "api"
-      - "plugins"
+      - app.py
+      - routes
+      - adapters
     include_globs:
       - "**/*.py"
+
   - name: MemoryFusionHub
     code_roots:
-      - "memory_fusion_hub"
+      - memory_fusion_hub
     registry_hints:
-      - "fusion"
-      - "adapters"
-      - "core"
-      - "app.py"
-      - "proxy"
+      - fusion
+      - adapters
     include_globs:
       - "**/*.py"
