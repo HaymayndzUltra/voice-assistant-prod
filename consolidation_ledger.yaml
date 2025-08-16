@@ -1,0 +1,39 @@
+version: 1
+mappings:
+  # Legacy audio stack → RealTimeAudioPipeline hub (both machines)
+  - agent: AudioCapture
+    hub: RealTimeAudioPipeline
+  - agent: FusedAudioPreprocessor
+    hub: RealTimeAudioPipeline
+  - agent: StreamingSpeechRecognition
+    hub: RealTimeAudioPipeline
+  - agent: StreamingInterruptHandler
+    hub: RealTimeAudioPipeline
+  - agent: StreamingLanguageAnalyzer
+    hub: RealTimeAudioPipeline
+
+  # Emotion & affective agents → AffectiveProcessingCenter hub
+  - agent: EmotionEngine
+    hub: AffectiveProcessingCenter
+  - agent: MoodTrackerAgent
+    hub: AffectiveProcessingCenter
+  - agent: ToneDetector
+    hub: AffectiveProcessingCenter
+  - agent: EmpathyAgent
+    hub: AffectiveProcessingCenter
+  - agent: DynamicIdentityAgent
+    hub: AffectiveProcessingCenter
+
+  # Learning stack → MemoryFusionHub hub
+  - agent: LearningOpportunityDetector
+    hub: MemoryFusionHub
+  - agent: LearningManager
+    hub: MemoryFusionHub
+  - agent: ActiveLearningMonitor
+    hub: MemoryFusionHub
+
+  # Monitoring agents → UnifiedObservabilityCenter hub
+  - agent: PredictiveHealthMonitor
+    hub: UnifiedObservabilityCenter
+  - agent: ActiveLearningMonitor
+    hub: UnifiedObservabilityCenter
