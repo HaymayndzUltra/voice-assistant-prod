@@ -1,0 +1,32 @@
+agent,hub,implementation,safe_to_disable
+EmpathyAgent,AffectiveProcessingCenter,EmpathyModule,True
+MoodTrackerAgent,AffectiveProcessingCenter,MoodModule,True
+EmotionSynthesisAgent,AffectiveProcessingCenter,SynthesisModule,True
+ToneDetector,AffectiveProcessingCenter,ToneModule,True
+VoiceProfilingAgent,AffectiveProcessingCenter,VoiceProfileModule,True
+DynamicIdentityAgent,AffectiveProcessingCenter,SynthesisModule,True
+EmotionEngine,AffectiveProcessingCenter,MoodModule (base class),True
+AudioCapture,RealTimeAudioPipeline,AudioCaptureStage,True
+STTService,RealTimeAudioPipeline,SpeechToTextStage,True
+StreamingLanguageAnalyzer,RealTimeAudioPipeline,LanguageAnalysisStage,True
+StreamingSpeechRecognition,RealTimeAudioPipeline,SpeechToTextStage,True
+StreamingInterruptHandler,RealTimeAudioPipeline,PreprocessStage,True
+TTSService,RealTimeAudioPipeline,Not yet implemented (needs TTS stage),False
+StreamingTTSAgent,RealTimeAudioPipeline,Not yet implemented (needs TTS stage),False
+Responder,RealTimeAudioPipeline,Not yet implemented (needs response stage),False
+VoiceProfilingAgent,RealTimeAudioPipeline,Moved to AffectiveProcessingCenter,True
+NoiseReductionAgent,RealTimeAudioPipeline,PreprocessStage,True
+ChainOfThoughtAgent,ModelOpsCoordinator,Handled by model_manager,True
+TinyLlamaServiceEnhanced,ModelOpsCoordinator,Handled by model_manager,True
+CognitiveModelAgent,ModelOpsCoordinator,Handled by model_manager,True
+ModelManagerSuite,ModelOpsCoordinator,core/model_manager.py,True
+VRAMOptimizerAgent,ModelOpsCoordinator,core/resource_manager.py,True
+RequestCoordinator,ModelOpsCoordinator,Replaced by scheduler.py,True
+PredictiveHealthMonitor,UnifiedObservabilityCenter,api/health.py + plugins,True
+ActiveLearningMonitor,UnifiedObservabilityCenter,core/aggregator.py,True
+ObservabilityDashboardAPI,UnifiedObservabilityCenter,api/ endpoints,True
+ObservabilityHub,UnifiedObservabilityCenter,Entire UOC replaces this,True
+LearningOpportunityDetector,MemoryFusionHub,Not yet implemented,False
+LearningManager,MemoryFusionHub,Not yet implemented,False
+MemoryClient,MemoryFusionHub,proxy/ replaces this,True
+SessionMemoryAgent,MemoryFusionHub,core/fusion.py handles sessions,True
