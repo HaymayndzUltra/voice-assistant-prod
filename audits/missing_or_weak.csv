@@ -1,4 +1,5 @@
 hub,agent,host,strong_proofs,weak_proofs,exists_in_hub,confidence,source_file
+RealTimeAudioPipeline,AudioCapture,MainPC,none,not-required|in-ledger,false,0.50,/workspace/main_pc_code/config/startup_config.yaml
 RealTimeAudioPipeline,FusedAudioPreprocessor,MainPC,none,not-required|in-ledger,false,0.50,/workspace/main_pc_code/config/startup_config.yaml
 RealTimeAudioPipeline,StreamingInterruptHandler,MainPC,none,not-required|in-ledger,false,0.50,/workspace/main_pc_code/config/startup_config.yaml
 RealTimeAudioPipeline,StreamingLanguageAnalyzer,MainPC,none,not-required|in-ledger,false,0.50,/workspace/main_pc_code/config/startup_config.yaml
@@ -9,5 +10,6 @@ AffectiveProcessingCenter,MoodTrackerAgent,MainPC,none,in-ledger,false,0.25,/wor
 AffectiveProcessingCenter,ToneDetector,MainPC,none,in-ledger,false,0.25,/workspace/main_pc_code/config/startup_config.yaml
 AffectiveProcessingCenter,DynamicIdentityAgent,MainPC,none,in-ledger,false,0.25,/workspace/main_pc_code/config/startup_config.yaml
 MemoryFusionHub,ActiveLearningMonitor,MainPC,none,in-ledger,false,0.25,/workspace/main_pc_code/config/startup_config.yaml
+MemoryFusionHub,LearningManager,MainPC,none,in-ledger,false,0.25,/workspace/main_pc_code/config/startup_config.yaml
 MemoryFusionHub,LearningOpportunityDetector,MainPC,none,in-ledger,false,0.25,/workspace/main_pc_code/config/startup_config.yaml
 UnifiedObservabilityCenter,PredictiveHealthMonitor,MainPC,none,in-ledger,false,0.25,/workspace/main_pc_code/config/startup_config.yaml

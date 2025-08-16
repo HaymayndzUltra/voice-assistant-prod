@@ -21,3 +21,38 @@ jobs:
       - name: Lint for unused/duplicate imports (runtime code only)
         run: |
           flake8 --select=F401,F811 main_pc_code pc2_code unified_observability_center tools | cat
+      - name: RTAP/Legacy gating lint
+        run: |
+          python - << 'PY'
+          import yaml, sys
+          import pathlib
+          p1 = pathlib.Path('main_pc_code/config/startup_config.yaml')
+          p2 = pathlib.Path('pc2_code/config/startup_config.yaml')
+          errs = 0
+          def load(p):
+            with open(p,'r') as f:
+              return yaml.safe_load(f) or {}
+          def scan(doc, path):
+            global errs
+            ag = (doc.get('agent_groups') or {}) if isinstance(doc, dict) else {}
+            speech = ag.get('speech_io') if isinstance(ag, dict) else None
+            if isinstance(speech, dict):
+              def req(x):
+                v = speech.get(x, {})
+                v = v if isinstance(v, dict) else {}
+                return str(v.get('required', '')).strip().lower()
+              si, sla, ssr = req('StreamingInterruptHandler'), req('StreamingLanguageAnalyzer'), req('StreamingSpeechRecognition')
+              if ssr == 'false' and (si == 'true' or sla == 'true'):
+                print(f"[RTAP-GATE] {path}: SSR required=false but SI/SLA required=true mismatch")
+                errs += 1
+          for p in (p1, p2):
+            try:
+              scan(load(p), str(p))
+            except Exception as e:
+              print(f"[RTAP-GATE-PARSE] {p}: {e}")
+              errs += 1
+          if errs:
+            print(f"FAIL: RTAP gating lint found {errs} issue(s)")
+            sys.exit(1)
+          print('OK: RTAP gating lint passed')
+          PY

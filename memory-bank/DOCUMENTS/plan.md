@@ -140,7 +140,7 @@ DynamicIdentityAgent	4090	GPU/LLM	family-llm-cu121	5802 / 6802
 EmotionSynthesisAgent	4090	GPU/Audio	family-torch-cu121	5706 / 6706
 STTService	4090	GPU/Audio	family-torch-cu121	5800 / 6800
 TTSService	4090	GPU/Audio	family-torch-cu121	5801 / 6801
-AudioCapture	4090	CPU/Audio	base-cpu-pydeps	6550 / 7550
+AudioCapture	4090	CPU/Audio	family-cpu-pydeps	6550 / 7550
 StreamingSpeechRecognition	4090	GPU/Audio	family-torch-cu121	6553 / 7553
 StreamingTTSAgent	4090	GPU/Audio	family-torch-cu121	5562 / 6562
 ProactiveAgent	4090	GPU/LLM	family-llm-cu121	5624 / 6624
@@ -149,7 +149,6 @@ MoodTrackerAgent	4090	CPU	base-cpu-pydeps	5704 / 6704
 HumanAwarenessAgent	4090	CPU	base-cpu-pydeps	5705 / 6705
 ToneDetector	4090	CPU	base-cpu-pydeps	5625 / 6625
 VoiceProfilingAgent	4090	CPU	base-cpu-pydeps	5708 / 6708
-EmpathyAgent	4090	GPU/Audio	family-torch-cu121	5703 / 6703
 CloudTranslationService	4090	CPU/Web	family-web	5592 / 6592
 StreamingTranslationProxy	4090	CPU/Web	family-web	5596 / 6596
 ObservabilityDashboardAPI	4090	CPU/Web	family-web	8001 / 9007
@@ -198,3 +197,8 @@ Observability Integration – Emit image SBOM + Git SHA to UnifiedObservabilityC
 Rollback Procedure – Previous images retained with -prev tag; Supervisors can pin via env FORCE_IMAGE_TAG.
 
 End of Blueprint – signed-off on 2025-08-10.
+
+Consolidation Baseline
+- Baseline verified on commit 7036a4df8d20 via automated audit (audits/proof_matrix.csv)
+- Consolidated agents: none (exists_in_hub=true with confidence ≥ 0.85 not present)
+- Per-hub consolidated counts: {AffectiveProcessingCenter: 0, RealTimeAudioPipeline: 0, ModelOpsCoordinator: 0, UnifiedObservabilityCenter: 0, MemoryFusionHub: 0}

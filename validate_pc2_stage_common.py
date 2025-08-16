@@ -6,7 +6,7 @@ import time
 import re
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 
@@ -16,8 +16,7 @@ except Exception:
 	print("Requires PyYAML. Install with: pip install PyYAML", file=sys.stderr)
 	sys.exit(2)
 
-
-YAML_PATH = Path("main_pc_code/config/startup_config.yaml")
+YAML_PATH = Path("pc2_code/config/startup_config.yaml")
 PORT_OFFSET = int(os.getenv("PORT_OFFSET", "0") or 0)
 
 
@@ -42,7 +41,6 @@ def evaluate_port_value(value: Any) -> int:
 		m = re.match(r"\s*\$\{PORT_OFFSET\}\s*\+\s*(\d+)\s*", value)
 		if m:
 			return PORT_OFFSET + int(m.group(1))
-		# try plain int in string
 		try:
 			return int(value)
 		except ValueError:
@@ -61,24 +59,19 @@ def check_port(port: int, host: str = "127.0.0.1", path: str = "/health", timeou
 		return 0, (time.monotonic() - start)
 
 
-def main() -> int:
+def run_validation(stage_name: Optional[str] = None) -> int:
 	if not YAML_PATH.exists():
 		print(f"Missing {YAML_PATH}", file=sys.stderr)
 		return 2
 	with open(YAML_PATH, "r") as f:
 		cfg = yaml.safe_load(f)
 	ports = sorted(set(parse_ports(cfg)))
-	results: List[Dict[str, Any]] = []
 	ok = 0
+	results = []
 	for p in ports:
 		status, latency = check_port(p)
 		results.append({"port": p, "status": status, "latency_ms": int(latency * 1000)})
 		if status == 200:
 			ok += 1
-	print(json.dumps({"total": len(ports), "ok": ok, "results": results}, indent=2))
-	# Non-zero exit if nothing is up
+	print(json.dumps({"stage": stage_name or "all", "total": len(ports), "ok": ok, "results": results}, indent=2))
 	return 0 if ok > 0 else 1
-
-
-if __name__ == "__main__":
-	sys.exit(main())

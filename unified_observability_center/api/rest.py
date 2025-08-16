@@ -90,6 +90,19 @@ async def health() -> dict:
     return {"status": "ok"}
 
 
+@app.get("/introspect")
+async def introspect() -> dict:
+    # Read-only snapshot of internal state sizes; no secrets
+    alerts = list(app.state.alerts) if hasattr(app.state, "alerts") else []
+    actions = list(app.state.actions) if hasattr(app.state, "actions") else []
+    return {
+        "service": "UnifiedObservabilityCenter",
+        "alerts_cached": len(alerts),
+        "actions_cached": len(actions),
+        "features": {"metrics": True, "alerts_stream": True, "actions_stream": True},
+    }
+
+
 @app.get("/metrics")
 async def metrics(_: str = Depends(auth)) -> Response:
     data = generate_latest(REGISTRY)
