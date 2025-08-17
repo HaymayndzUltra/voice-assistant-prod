@@ -1,0 +1,38 @@
+# ⬛ Rule: DEEP-DIVE BACKLOG ITEM
+# Purpose: ensure every Background Agent performs a rigorous deep-dive when analysing a backlog category (C-1 … C-20) before proposing actions.
+
+## Trigger
+A user prompt OR file path contains the pattern `C-<number>` **and** references `action_backlog.md` or any backlog analysis instruction.
+
+## Behaviour
+1. **Deep-Dive** – apply the 5-step framework:
+   1. Decompose (requirements, assumptions)
+   2. Identify conflicts & risks
+   3. Cross-check evidence (grep, read files) vs blueprint
+   4. List possible resolutions (pros/cons)
+   5. Decide single best resolution + reasoning
+2. **Output** – single fenced `json` block:
+```json
+{
+  "id": "C-<number>",
+  "analysis": {
+    "requirements": [],
+    "assumptions": [],
+    "conflicts": [],
+    "evidence": [],
+    "resolutions": [
+      {"option": "A", "description": "…", "pros": "…", "cons": "…"}
+    ],
+    "chosen_resolution": {"option": "A", "reasoning": "…"}
+  },
+  "todo_entry": "- [ ] …"  
+}
+```
+3. **Side-Effects** – No code edits; may append `todo_entry` to `memory-bank/plan/action_backlog.md` if not present.
+4. **Confidence Gate** – If confidence < 0.8, respond with
+```json
+{"status":"INSUFFICIENT_EVIDENCE","follow_up":"…"}
+```
+
+## Priority
+medium
