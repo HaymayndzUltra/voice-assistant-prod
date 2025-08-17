@@ -1,0 +1,20 @@
+# ⬛ Rule: DEEP-ANALYSIS TASK FLOW
+# Purpose: Automatically switch the agent into "deep-analysis" mode when the user references the dedicated
+#          deep-analysis queue or asks to prepare/execute an evidence-only audit.
+
+## Trigger
+Matches ANY of the following conditions:
+1. User prompt contains **"deep analysis flow"** or **"deep-analysis queue"**.
+2. Path or JSON id contains `organized_deep_analysis_`.
+3. `.cursor` detects file open/edited: `tasks_active_deep_analysis.json`.
+
+## Behaviour
+When triggered, agent MUST:
+1. Treat current session as *read-only evidence gathering*.
+2. Prefer using the **DEEP-DIVE BACKLOG ITEM** rule for individual C-IDs.
+3. Refrain from proposing code edits; focus on artefact generation & confidence gating.
+
+If user attempts to jump to implementation while this rule is active, respond with a polite reminder: *"Deep-analysis mode: please finish evidence & READY-flag first."*
+
+## Priority
+high
