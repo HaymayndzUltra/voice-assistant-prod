@@ -26,3 +26,35 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python main_pc_code/system_launcher.py --dry-run --config main_pc_code/config/startup_config.yaml
+      - name: Hub audit and verification
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python hub_membership_audit.py --repo . \
+            --yaml main_pc_code/config/startup_config.yaml pc2_code/config/startup_config.yaml \
+            --hubs AffectiveProcessingCenter RealTimeAudioPipeline ModelOpsCoordinator UnifiedObservabilityCenter MemoryFusionHub \
+            --outdir audits/
+          python verify_hub_inclusion.py
+          python - << 'PY'
+          import csv, sys
+          from pathlib import Path
+          pm=Path('audits/proof_matrix.csv'); cc=Path('audits/commentout_candidates.csv')
+          res={}
+          with pm.open() as f:
+              rows=list(csv.DictReader(f))
+          viol=[r for r in rows if r.get('required','').lower()=='false' and r.get('exists_in_hub','').lower()=='false']
+          if viol:
+              print(f"FAIL: {len(viol)} entries with required=false and exists_in_hub=false")
+              sys.exit(1)
+          bad=[]
+          with cc.open() as f:
+              for i, line in enumerate(f):
+                  if i==0: continue
+                  ll=line.strip().lower()
+                  if any(k in ll for k in ['partial','active','invalid-scope']):
+                      bad.append(line)
+          if bad:
+              print(f"FAIL: commentout_candidates.csv contains {len(bad)} disallowed entries")
+              sys.exit(1)
+          print('OK: Hub audit checks passed')
+          PY

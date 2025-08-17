@@ -36,7 +36,21 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
-          
+      
+      - name: 📦 Generate SBOM (CycloneDX)
+        uses: CycloneDX/gh-python-generate-sbom@v2
+        with:
+          path: .
+          output: sbom.json
+          format: json
+      
+      - name: ⬆️ Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.json
+          retention-days: 7
+      
       - name: 🚨 Security Summary
         if: always()
         run: |
