@@ -1,0 +1,3 @@
+[33m0a7ce565[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/cursor/analyze-claims-and-create-remediation-plan-7099[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update agent audit reports with new system configuration details
+[33md1742fe0[m Add consolidation ledger mapping agents to their respective hubs
+[33m994340d1[m Simplify hub manifest: remove redundant registry hints and quotes
