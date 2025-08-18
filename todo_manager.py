@@ -14,6 +14,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+import re
+import subprocess
 
 DATA_FILE = Path(os.getcwd()) / "memory-bank" / "queue-system" / "tasks_active.json"
 
@@ -416,6 +418,145 @@ def _print_task(task: Dict[str, Any]) -> None:
     print()  # Add spacing for better readability
 
 
+# ------------------------------------------------------------------
+# Execution helpers -------------------------------------------------
+# ------------------------------------------------------------------
+
+def _extract_fenced_code_blocks(markdown: str) -> List[str]:
+    """Return contents of fenced code blocks from markdown text (no backticks)."""
+    if not markdown:
+        return []
+    pattern = re.compile(r"```(?:[a-zA-Z0-9_+-]+)?\n([\s\S]*?)\n```", re.MULTILINE)
+    return [m.group(1).strip() for m in pattern.finditer(markdown)]
+
+
+def _parse_sub_index(sub_index: str) -> (int, Optional[int]):
+    """Parse sub-index like '4.1' → (4, 0). If '4' → (4, None)."""
+    try:
+        if "." in sub_index:
+            phase_str, cmd_str = sub_index.split(".", 1)
+            phase_idx = int(phase_str)
+            cmd_idx = int(cmd_str) - 1
+            if cmd_idx < 0:
+                raise ValueError("Command index must be >= 1")
+            return phase_idx, cmd_idx
+        return int(sub_index), None
+    except Exception:
+        raise ValueError("Invalid sub-index format. Use 'K' or 'K.N' (e.g., 4 or 4.1)")
+
+
+def _replace_placeholders_in_command(command: str, task_id: str, phase_index: int, command_index_one_based: Optional[int]) -> str:
+    """Replace common placeholders in a command string with concrete values.
+
+    Supported placeholders:
+      - <task_id ReplaceAll>, <task_id Replace All>, <task_id>, <TASK_ID>
+      - <PHASE_INDEX>, <phase_index>
+      - <SUB_INDEX>, <sub_index> (uses 1-based index when available)
+    """
+    replacements = {
+        "<task_id ReplaceAll>": task_id,
+        "<task_id Replace All>": task_id,
+        "<task_id>": task_id,
+        "<TASK_ID>": task_id,
+        "<PHASE_INDEX>": str(phase_index),
+        "<phase_index>": str(phase_index),
+    }
+
+    if command_index_one_based is not None:
+        replacements.update(
+            {
+                "<SUB_INDEX>": str(command_index_one_based),
+                "<sub_index>": str(command_index_one_based),
+            }
+        )
+
+    for needle, value in replacements.items():
+        command = command.replace(needle, value)
+    return command
+
+
+def exec_substep(task_id: str, sub_index: str, run: bool = False) -> None:
+    """Preview (default) or run command(s) for a specific phase sub-step.
+
+    - sub_index format:
+      - 'K' → select phase K and preview all commands in its first fenced block
+      - 'K.N' → select the Nth command (1-based) inside the first fenced block of phase K
+    - run=False: print the command(s) to be executed (dry run)
+    - run=True: actually execute the command(s)
+    """
+    data = _load()
+    task = next((t for t in data if t.get("id") == task_id), None)
+    if task is None:
+        print(f"❌ Task '{task_id}' not found.")
+        return
+
+    try:
+        phase_idx, cmd_idx = _parse_sub_index(sub_index)
+    except ValueError as e:
+        print(f"❌ {e}")
+        return
+
+    todos = task.get("todos", [])
+    if phase_idx < 0 or phase_idx >= len(todos):
+        print(f"❌ Invalid phase index {phase_idx}. Valid range is 0 to {len(todos) - 1}")
+        return
+
+    phase = todos[phase_idx]
+    text = phase.get("text", "")
+    blocks = _extract_fenced_code_blocks(text)
+    if not blocks:
+        print("❌ No fenced code block found in this phase.")
+        return
+
+    lines = [ln for ln in blocks[0].splitlines() if ln.strip() and not ln.strip().startswith("#")]
+    # Resolve placeholders before preview/execution to avoid shell redirection issues
+    resolved_lines = [
+        _replace_placeholders_in_command(
+            ln, task_id=task_id, phase_index=phase_idx, command_index_one_based=(cmd_idx + 1) if cmd_idx is not None else None
+        )
+        for ln in lines
+    ]
+    if not lines:
+        print("❌ No executable lines found in the first fenced code block.")
+        return
+
+    selected: List[str]
+    if cmd_idx is None:
+        selected = resolved_lines
+        print("🔎 Selected all commands in phase block (dry-run by default):")
+    else:
+        if cmd_idx >= len(lines):
+            print(f"❌ Command index {cmd_idx + 1} out of range (1..{len(lines)})")
+            return
+        selected = [resolved_lines[cmd_idx]]
+        print(f"🔎 Selected command #{cmd_idx + 1} (dry-run by default):")
+
+    for cmd in selected:
+        print(f"   $ {cmd}")
+
+    if not run:
+        print("💡 Use '--run' to actually execute. Keeping it safe (preview only).")
+        return
+
+    print("🚀 Executing...")
+    for cmd in selected:
+        try:
+            # Use shell to allow pipelines; execution is explicit via --run flag
+            result = subprocess.run(cmd, shell=True, text=True, capture_output=True)
+            print(f"$ {cmd}")
+            print(f"↳ exit={result.returncode}")
+            if result.stdout:
+                print(result.stdout.rstrip())
+            if result.stderr:
+                print(result.stderr.rstrip())
+            if result.returncode != 0:
+                print("⚠️ Command returned non-zero status. Stopping further execution.")
+                break
+        except Exception as e:
+            print(f"❌ Execution failed: {e}")
+            break
+
+
 def main(argv: Optional[List[str]] = None) -> None:
     import argparse
 
@@ -446,6 +587,12 @@ def main(argv: Optional[List[str]] = None) -> None:
     sub_hard_delete.add_argument("task_id")
 
     sub_cleanup = sub.add_parser("cleanup", help="remove all completed tasks from memory")
+
+    # New: exec subcommand (safe preview by default; use --run to execute)
+    sub_exec = sub.add_parser("exec", help="execute a specific sub-step command (preview by default)")
+    sub_exec.add_argument("task_id")
+    sub_exec.add_argument("sub_index", help="Format: K or K.N (e.g., 4 or 4.1)")
+    sub_exec.add_argument("--run", action="store_true", help="Actually run the command(s)")
 
     args = parser.parse_args(argv)
 
@@ -487,6 +634,8 @@ def main(argv: Optional[List[str]] = None) -> None:
                 return
         
         delete_todo(args.task_id, index)
+    elif args.cmd == "exec":
+        exec_substep(args.task_id, args.sub_index, args.run)
     elif args.cmd == "show":
         show_task_details(args.task_id)
     elif args.cmd == "hard_delete":

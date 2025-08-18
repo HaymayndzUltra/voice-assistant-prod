@@ -6,6 +6,13 @@ Task Command Center and serve as a placeholder for future subcommands.
 import argparse
 import sys
 from typing import List, Optional
+from pathlib import Path
+
+# Allow running this file directly (not via -m) by adding package root to sys.path
+if __package__ in (None, ""):
+    pkg_root = Path(__file__).resolve().parent.parent
+    if str(pkg_root) not in sys.path:
+        sys.path.append(str(pkg_root))
 
 from memory_system import logger as _ms_logger
 
@@ -47,6 +54,9 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
 
     # Monitoring dashboard (placeholder)
     subparsers.add_parser("monitor", help="Launch real-time monitoring dashboard (TUI)")
+
+    # Compile analysis doc from tasks_active.json
+    subparsers.add_parser("compile-analysis", help="Compile analysis-only markdown (goaltomakelikethis.md) from tasks_active.json")
 
     # Save memory note (new)
     save_parser = subparsers.add_parser("save", help="Save a memory note to current-session and JSON store")
@@ -167,6 +177,10 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
         from memory_system.monitor import run_dashboard
 
         run_dashboard()
+    elif args.command == "compile-analysis":
+        from memory_system.scripts.compile_analysis_doc import main as compile_analysis_main
+
+        compile_analysis_main()
     elif args.command == "arch-mode":
         from architecture_mode_engine import handle_arch_mode_command
         
