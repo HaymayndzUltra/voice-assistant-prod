@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # Legacy Python 3.10 CPU - For exceptional cases only
-FROM python:3.10-slim-bullseye
+FROM python:3.14.0rc2-slim-trixie
 
 # Security updates and essential tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
