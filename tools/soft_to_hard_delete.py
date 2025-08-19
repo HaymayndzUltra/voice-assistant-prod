@@ -103,7 +103,12 @@ def parse_soft_review(path: Path) -> List[Tuple[Path, int]]:
 
 def is_under_safe_dir(rel_posix: str) -> bool:
     low = ("/" + rel_posix.strip("/")).lower()
-    return any(tok in low for tok in SAFE_DIR_TOKENS)
+    # token presence
+    if any(tok in low for tok in SAFE_DIR_TOKENS):
+        return True
+    # segment-based presence (handles trailing end like .../__pycache__)
+    segments = [seg for seg in rel_posix.replace("\\", "/").split("/") if seg]
+    return any(seg in SAFE_DIR_NAMES for seg in segments)
 
 
 def is_safe_dir(path: Path) -> bool:
@@ -111,7 +116,8 @@ def is_safe_dir(path: Path) -> bool:
     if path.is_file():
         return False
     rel = path.relative_to(REPO_ROOT).as_posix()
-    if path.name in SAFE_DIR_NAMES:
+    # If any segment is a safe dir name → safe
+    if any(seg in SAFE_DIR_NAMES for seg in Path(rel).parts):
         return True
     return is_under_safe_dir(rel)
 
@@ -129,16 +135,47 @@ def is_safe_file(path: Path) -> bool:
     for pat in BACKUP_NAME_PATTERNS:
         if re.search(pat, name_lower):
             return True
-    # Under safe dir with artifact-ish extension
+    # Under safe dir → consider safe even without special ext (e.g., node_modules/*)
     if is_under_safe_dir(rel):
         for ext in SAFE_FILE_EXT_IF_UNDER_SAFE_DIR:
             if name_lower.endswith(ext):
                 return True
+        # also allow any file under known cache dirs
+        return True
+    return False
+
+
+def load_keeplist() -> List[str]:
+    candidates = [REPO_ROOT / "keeplist.txt", REPO_ROOT / ".keeplist", REPO_ROOT / "KEEP.txt"]
+    for p in candidates:
+        if p.exists():
+            lines: List[str] = []
+            for line in p.read_text(encoding="utf-8", errors="ignore").splitlines():
+                s = line.strip()
+                if not s or s.startswith("#"):
+                    continue
+                lines.append(s)
+            return lines
+    return []
+
+
+def in_keeplist(path: Path, keeplist: List[str]) -> bool:
+    rel = path.relative_to(REPO_ROOT).as_posix()
+    for rule in keeplist:
+        if rel == rule.strip("/"):
+            return True
+        if rule.endswith("/") and rel.startswith(rule.rstrip("/")):
+            return True
+        if Path(rel).match(rule):
+            return True
+        if rule and rule in rel:
+            return True
     return False
 
 
 def select_safe(items: List[Tuple[Path, int]]) -> List[Path]:
     selected: List[Path] = []
+    keeplist = load_keeplist()
     for p, _ in items:
         try:
             if not p.exists():
@@ -146,6 +183,8 @@ def select_safe(items: List[Tuple[Path, int]]) -> List[Path]:
             if p == REPORT_DIR or REPORT_DIR in p.parents:
                 continue
             if any(seg == ".git" for seg in p.parts):
+                continue
+            if in_keeplist(p, keeplist):
                 continue
             if p.is_dir():
                 if is_safe_dir(p):
@@ -155,8 +194,8 @@ def select_safe(items: List[Tuple[Path, int]]) -> List[Path]:
                     selected.append(p)
         except Exception:
             continue
-    # Sort by path length descending so files inside dirs are first to avoid issues, but we'll use shutil.rmtree anyway
-    selected = sorted(set(selected), key=lambda x: (x.is_file(), x.as_posix()))
+    # De-dup and prefer deeper paths later; we'll delete files first
+    selected = sorted(set(selected), key=lambda x: (x.as_posix().count("/"), x.is_file(), x.as_posix()))
     return selected
 
 
