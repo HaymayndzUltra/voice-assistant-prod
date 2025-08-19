@@ -1,4 +1,4 @@
-ef294a68 chore(cleanup): auto-delete reviewed cache/log/build artifacts (files=0, dirs=0)
- .cleanup-report/commit_diff_preview.txt | 656 +-------------------------------
- tools/soft_to_hard_delete.py            |  49 ++-
- 2 files changed, 48 insertions(+), 657 deletions(-)
+1477e0ff chore(cleanup): auto-delete reviewed cache/log/build artifacts (files=0, dirs=0)
+ .cleanup-report/commit_diff_preview.txt |  8 ++++----
+ tools/soft_to_hard_delete.py            | 26 +++++++++++++++++++++-----
+ 2 files changed, 25 insertions(+), 9 deletions(-)

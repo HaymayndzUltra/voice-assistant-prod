@@ -84,8 +84,8 @@ def run_cmd(args: List[str]) -> Tuple[int, str, str]:
     return p.returncode, p.stdout, p.stderr
 
 
-def parse_soft_review(path: Path) -> List[Tuple[Path, int]]:
-    items: List[Tuple[Path, int]] = []
+def parse_soft_review(path: Path) -> List[Tuple[str, int]]:
+    items: List[Tuple[str, int]] = []
     if not path.exists():
         return items
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
@@ -112,8 +112,7 @@ def parse_soft_review(path: Path) -> List[Tuple[Path, int]]:
         # Normalize accidental command echoes in file (defensive)
         if rel.endswith("| cat") or rel.startswith("sed "):
             continue
-        p = (REPO_ROOT / rel).resolve()
-        items.append((p, score))
+        items.append((rel, score))
     return items
 
 
@@ -189,30 +188,60 @@ def in_keeplist(path: Path, keeplist: List[str]) -> bool:
     return False
 
 
-def select_safe(items: List[Tuple[Path, int]]) -> List[Path]:
-    selected: List[Path] = []
+def path_string_is_safe(rel: str) -> bool:
+    low = rel.strip()
+    if not low:
+        return False
+    # Under safe dir by tokens/segments
+    if is_under_safe_dir(rel):
+        return True
+    # Always safe extensions anywhere
+    name_lower = Path(rel).name.lower()
+    for ext in SAFE_FILE_EXT_ALWAYS:
+        if name_lower.endswith(ext):
+            return True
+    # Backup-like names
+    for pat in BACKUP_NAME_PATTERNS:
+        if re.search(pat, name_lower):
+            return True
+    return False
+
+
+def select_safe(items: List[Tuple[str, int]]) -> Tuple[List[str], List[Path]]:
+    safe_strings: List[str] = []
+    existing_selected: List[Path] = []
     keeplist = load_keeplist()
-    for p, _ in items:
+    for rel, _ in items:
         try:
-            if not p.exists():
+            if not rel:
                 continue
-            if p == REPORT_DIR or REPORT_DIR in p.parents:
+            # Skip report dir entries
+            if rel.startswith(".cleanup-report/"):
                 continue
-            if any(seg == ".git" for seg in p.parts):
+            # Guard keeplist
+            p_abs = (REPO_ROOT / rel).resolve()
+            if in_keeplist(p_abs, keeplist):
                 continue
-            if in_keeplist(p, keeplist):
-                continue
-            if p.is_dir():
-                if is_safe_dir(p):
-                    selected.append(p)
-            else:
-                if is_safe_file(p):
-                    selected.append(p)
+            if path_string_is_safe(rel):
+                safe_strings.append(rel)
+                # Track existing entries for deletion
+                if p_abs.exists():
+                    if p_abs == REPORT_DIR or REPORT_DIR in p_abs.parents:
+                        continue
+                    if any(seg == ".git" for seg in p_abs.parts):
+                        continue
+                    if p_abs.is_dir():
+                        if is_safe_dir(p_abs):
+                            existing_selected.append(p_abs)
+                    else:
+                        if is_safe_file(p_abs):
+                            existing_selected.append(p_abs)
         except Exception:
             continue
-    # De-dup and prefer deeper paths later; we'll delete files first
-    selected = sorted(set(selected), key=lambda x: (x.as_posix().count("/"), x.is_file(), x.as_posix()))
-    return selected
+    # De-dup and stable sort
+    safe_strings = sorted(set(safe_strings))
+    existing_selected = sorted(set(existing_selected), key=lambda x: (x.as_posix().count("/"), x.is_file(), x.as_posix()))
+    return safe_strings, existing_selected
 
 
 def ensure_branch(branch: str) -> None:
@@ -244,12 +273,12 @@ def delete_paths(paths: Iterable[Path]) -> Tuple[int, int]:
 def main() -> int:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     soft_items = parse_soft_review(SOFT_REVIEW)
-    safe = select_safe(soft_items)
+    safe_strings, safe_existing = select_safe(soft_items)
 
     # Write hard_delete.txt (paths only)
     with HARD_DELETE.open("w", encoding="utf-8") as f:
-        for p in safe:
-            f.write(p.relative_to(REPO_ROOT).as_posix() + "\n")
+        for rel in safe_strings:
+            f.write(rel + "\n")
 
     # Create/switch to branch and apply deletions
     ensure_branch(BRANCH_NAME)
@@ -257,7 +286,7 @@ def main() -> int:
     # Make sure report dir exists on branch
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
-    files_deleted, dirs_deleted = delete_paths(safe)
+    files_deleted, dirs_deleted = delete_paths(safe_existing)
 
     # Stage report and deletions
     run_cmd(["git", "add", ".cleanup-report/hard_delete.txt"])
@@ -280,7 +309,7 @@ def main() -> int:
         print("No changes to commit.")
 
     # Print summary counts for the caller
-    print(f"safe_to_delete_count={len(safe)}")
+    print(f"safe_to_delete_count={len(safe_strings)}")
     print(f"files_deleted={files_deleted}")
     print(f"dirs_deleted={dirs_deleted}")
     return 0
