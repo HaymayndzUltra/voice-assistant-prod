@@ -89,13 +89,29 @@ def parse_soft_review(path: Path) -> List[Tuple[Path, int]]:
     if not path.exists():
         return items
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        s = line.strip()
+        s = line.rstrip()
         if not s:
             continue
-        # Expect format: "path\tScore"
-        parts = s.split("\t")
-        rel = parts[0]
-        score = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else -1
+        # Accept either tab-delimited or whitespace-delimited with trailing integer score
+        rel: str = ""
+        score: int = -1
+        if "\t" in s:
+            parts = s.split("\t")
+            rel = parts[0].strip()
+            if len(parts) > 1 and parts[1].strip().isdigit():
+                score = int(parts[1].strip())
+        else:
+            m = re.match(r"^(?P<path>.*?)\s+(?P<score>\d+)$", s)
+            if m:
+                rel = m.group("path").strip()
+                score = int(m.group("score"))
+            else:
+                rel = s.strip()
+        if not rel:
+            continue
+        # Normalize accidental command echoes in file (defensive)
+        if rel.endswith("| cat") or rel.startswith("sed "):
+            continue
         p = (REPO_ROOT / rel).resolve()
         items.append((p, score))
     return items
