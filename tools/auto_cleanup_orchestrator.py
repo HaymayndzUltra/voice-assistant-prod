@@ -14,8 +14,8 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple
 REPO_ROOT = Path("/workspace").resolve()
 REPORT_DIR = REPO_ROOT / ".cleanup-report"
 
-PASS_MAX = 5
-SOFT_THRESHOLD = 50
+DEFAULT_PASS_MAX = 5
+DEFAULT_SOFT_THRESHOLD = 50
 
 SAFE_DIR_TOKENS = [
     "/build/",
@@ -59,6 +59,60 @@ SAFE_FILE_EXT_ALWAYS = {
 }
 
 BACKUP_NAME_PATTERNS = [r"~$", r"\.old$", r"\.orig$"]
+
+
+def env_list(key: str) -> List[str]:
+    val = os.environ.get(key, "").strip()
+    if not val:
+        return []
+    return [s.strip() for s in val.split(",") if s.strip()]
+
+
+def apply_env_overrides() -> Tuple[int, int]:
+    # Thresholds
+    try:
+        pass_max = int(os.environ.get("AUTO_CLEAN_PASS_MAX", str(DEFAULT_PASS_MAX)))
+    except Exception:
+        pass_max = DEFAULT_PASS_MAX
+    try:
+        soft_threshold = int(os.environ.get("AUTO_CLEAN_SOFT_THRESHOLD", str(DEFAULT_SOFT_THRESHOLD)))
+    except Exception:
+        soft_threshold = DEFAULT_SOFT_THRESHOLD
+
+    # Patterns
+    extra_dirs = env_list("AUTO_CLEAN_SAFE_DIRS")
+    extra_exts = env_list("AUTO_CLEAN_SAFE_EXTS")
+    extra_backup_suffixes = env_list("AUTO_CLEAN_BACKUP_SUFFIXES")
+
+    for d in extra_dirs:
+        if d.startswith("/"):
+            token = d if d.endswith("/") else d + "/"
+            if token not in SAFE_DIR_TOKENS:
+                SAFE_DIR_TOKENS.append(token)
+        # always consider name
+        name = d.strip("/")
+        if name:
+            SAFE_DIR_NAMES.add(name)
+
+    for e in extra_exts:
+        if not e.startswith("."):
+            e = "." + e
+        SAFE_FILE_EXT_ALWAYS.add(e.lower())
+
+    for suf in extra_backup_suffixes:
+        suf = suf.strip()
+        if not suf:
+            continue
+        if not suf.startswith(".") and suf != "~":
+            suf = "." + suf
+        if suf == "~":
+            pat = r"~$"
+        else:
+            pat = re.escape(suf) + "$"
+        if pat not in BACKUP_NAME_PATTERNS:
+            BACKUP_NAME_PATTERNS.append(pat)
+
+    return pass_max, soft_threshold
 
 
 def run_cmd(args: List[str]) -> Tuple[int, str, str]:
@@ -334,7 +388,9 @@ def orchestrate() -> None:
     all_deleted: List[str] = []
     kept_agg: Dict[str, str] = {}
 
-    for i in range(1, PASS_MAX + 1):
+    pass_max, soft_threshold = apply_env_overrides()
+
+    for i in range(1, pass_max + 1):
         branch = create_pass_branch(i, base_ref if i == 1 else last_branch)
 
         # Step 2: ensure scan
@@ -378,7 +434,7 @@ def orchestrate() -> None:
         soft_count = count_soft_review()
 
         last_branch = branch
-        if soft_count < SOFT_THRESHOLD:
+        if soft_count < soft_threshold:
             break
 
     # Step 7: finalization branch
