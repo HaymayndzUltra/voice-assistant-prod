@@ -36,3 +36,9 @@ c65e36a7 chore(cleanup-pass-01): delete safe cache/log/build artifacts (files=0,
  .cleanup-report/validation.md           | 2 +-
  2 files changed, 8 insertions(+), 1 deletion(-)
 
+
+===== FINAL REPORT =====
+a3c1b3dc chore(cleanup): attach final_report and reports
+ .cleanup-report/commit_diff_preview.txt | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
