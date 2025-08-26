@@ -1,0 +1,6 @@
+Claim,Source Reports,Your Verdict,Proof
+Dockerfile missing for CrossMachineGPUScheduler,A,B,C,Verified,NOT FOUND glob services/cross_gpu_scheduler/**/Dockerfile
+Legacy audio agents still enabled when RTAP_ENABLED=false,A,B,C,Verified,471-528:main_pc_code/config/startup_config.yaml
+PORT_OFFSET undefined,A,B,C,Verified,13:main_pc_code/config/startup_config.yaml;3-9:pc2_code/config/startup_config.yaml
+SelfHealingSupervisor docker.sock RW,A,B,C,Verified,144-145:main config;245:pc2 config;78:services/self_healing_supervisor/Dockerfile
+UOC missing on MainPC,A,B,C,Verified,627-633:main config group reference only (no agent);214-219:pc2 config
