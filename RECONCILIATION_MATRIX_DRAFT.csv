@@ -1,0 +1,11 @@
+Claim,Source Report(s) A/B/C,Your Verdict {Verified|Refuted|Unverifiable},Proof (path:lines)
+"Missing Dockerfiles for cross_gpu_scheduler, streaming_translation_proxy, speech_relay","A,B","Verified","services/cross_gpu_scheduler (no Dockerfile): 1:6:services/cross_gpu_scheduler | services/streaming_translation_proxy (no Dockerfile): 1:2:services/streaming_translation_proxy | services/speech_relay (no Dockerfile): 93:97:services/speech_relay/relay.py (no Dockerfile listed)"
+"SelfHealingSupervisor requires docker.sock (RW) and restarts","A,B,C","Verified","services/self_healing_supervisor/supervisor.py:6-7,21-23 | main_pc_code/config/startup_config.yaml:142-144 | pc2_code/config/startup_config.yaml:243-245"
+"PORT_OFFSET undefined in runtime configs (use 0)","A,B,C","Verified",".env*: 1:0:(none) | .ini: 1:0:(none) | .github/workflows (no PORT_OFFSET): 1:4:.github/workflows | batch_containerize_foundation.sh sets PORT_OFFSET=0: 65-69:batch_containerize_foundation.sh"
+"Legacy MFH Dockerfile exposes 8080/50051/5555 not aligned with 5713/6713","A","Verified","memory_fusion_hub/Dockerfile:66-73 | memory_fusion_hub/Dockerfile.optimized:30-36"
+"UOC missing on MainPC; PC2 defines UOC","A,B","Verified","main_pc_code/config/startup_config.yaml:626-637 (group refs only) | pc2_code/config/startup_config.yaml:214-221"
+"RTAP_ENABLED default false; legacy audio agents required when false","A,B,C","Verified","main_pc_code/config/startup_config.yaml:12-14,475,482,490,499,518,527"
+"Deprecated RequestCoordinator still referenced in VRAMOptimizerAgent","A,B","Verified","main_pc_code/agents/vram_optimizer_agent.py:213-231,788-806,1427-1431,1478-1481 | main_pc_code/agents/vram_optimizer_agent_day4_optimized.py:224-244,800-818,1428-1432,1469-1472"
+"ModelOpsCoordinator replacement API available (Infer/ListModels/AcquireGpuLease)","A","Verified","model_ops_coordinator/model_ops_pb2_grpc.py:39-68"
+"CI lacks dedicated port_lint.yml and sbom.yml but has equivalent checks","B","Verified",".github/workflows/quality-gates.yml:16-20 | .github/workflows/config-validation.yml:70-86 | .github/workflows/container-images.yml:122-149"
+"GPU base requires NVIDIA driver >=535 on PC2","B,C","Verified","memory-bank/DOCUMENTS/plan.md:39-41,179-181 (design); runtime verification TO-VERIFY"
