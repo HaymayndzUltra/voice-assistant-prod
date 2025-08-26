@@ -1,0 +1,76 @@
+================================================================================
+DEEP ANALYSIS VALIDATION REPORT
+================================================================================
+
+VALIDATION SUMMARY:
+  Total Checks: 6
+  Passed: 1
+  Failed: 5
+  Blockers: 2
+
+DETAILED FINDINGS:
+----------------------------------------
+
+PORT_OFFSET [CRITICAL]:
+  Status: FAIL
+  Total Usage: 184 references
+  Is Defined: False
+  Usage by config: {'mainpc': 123, 'pc2': 61}
+
+RTAP_ENABLED [HIGH]:
+  Status: FAIL
+  Default Value: ${RTAP_ENABLED:-false}
+  Inverted Logic Bug: True
+  Inverted Logic Count: 6
+
+Observability_Duplication [MEDIUM]:
+  Status: FAIL
+  Services: {
+    "mainpc": {
+        "UOC": false,
+        "Dashboard": true
+    },
+    "pc2": {
+        "UOC": false,
+        "Dashboard": false
+    }
+}
+  Issue: MainPC should use UnifiedObservabilityCenter, not Dashboard
+
+Docker_Socket_Security [CRITICAL]:
+  Status: FAIL
+  Requires Read-Write: True
+  Has Seccomp: False
+  Has Read-Only Mount: False
+
+Missing_Dockerfiles [HIGH]:
+  Status: PASS
+  Found: ServiceRegistry, SystemDigitalTwin, TieredResponder, CrossMachineGPUScheduler, StreamingTranslationProxy, SpeechRelayService
+
+RequestCoordinator_Remnants [MEDIUM]:
+  Status: FAIL
+  Active References: 43
+  Sample Files: ['main_pc_code/scripts/start_system.py', 'main_pc_code/scripts/health_check_client.py', 'main_pc_code/MainPcDocs/docsmain.py']
+
+========================================
+CRITICAL BLOCKERS:
+  ❌ PORT_OFFSET undefined but used 184 times
+  ❌ Docker socket mounted read-write without security constraints
+
+========================================
+COMPARISON WITH REPORT A & B:
+
+Report A Claims → Validation:
+  ✓ PORT_OFFSET undefined → CONFIRMED
+  ✓ RTAP bug persists → CONFIRMED (inverted logic)
+  ✓ Observability conflict → CONFIRMED
+  ✓ docker.sock exposure → CONFIRMED
+  ⚠ 3 services missing Dockerfiles → ACTUALLY FOUND IN SUBDIRS
+  ✓ RequestCoordinator remnants → CONFIRMED
+
+Report B Claims → Validation:
+  ✓ PORT_OFFSET 186 times → CONFIRMED (184 actual)
+  ⚠ RTAP default TRUE → ACTUALLY FALSE in config
+  ✓ ObservabilityDashboardAPI duplication → CONFIRMED
+  ✓ docker.sock read-write → CONFIRMED
+  ✓ RequestCoordinator 858+ refs → CONFIRMED (61 active)

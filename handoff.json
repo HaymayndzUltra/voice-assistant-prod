@@ -1,0 +1,461 @@
+{
+  "audit_timestamp": "2025-01-23T00:00:00Z",
+  "system_state": "pre-production",
+  "critical_issues": 5,
+  "total_issues": 67,
+  "estimated_remediation_days": 8.5,
+  "findings": [
+    {
+      "id": "F001",
+      "type": "port_conflict",
+      "severity": "critical",
+      "services": ["MemoryFusionHub", "RealTimeAudioPipeline", "SelfHealingSupervisor"],
+      "machines": ["mainpc", "pc2"],
+      "details": {
+        "conflicting_ports": [5713, 6713, 5557, 6557, 7009, 9008],
+        "root_cause": "Same PORT_OFFSET value across machines"
+      },
+      "resolution": "assign_different_port_offsets",
+      "files_affected": [
+        "main_pc_code/config/startup_config.yaml",
+        "pc2_code/config/startup_config.yaml"
+      ]
+    },
+    {
+      "id": "F002",
+      "type": "unconsolidated_agents",
+      "severity": "high",
+      "count": 11,
+      "agents": [
+        "MoodTrackerAgent",
+        "HumanAwarenessAgent",
+        "ToneDetector",
+        "VoiceProfilingAgent",
+        "EmpathyAgent",
+        "EmotionSynthesisAgent",
+        "STTService",
+        "TTSService",
+        "AudioCapture",
+        "StreamingSpeechRecognition",
+        "WakeWordDetector"
+      ],
+      "target_hubs": {
+        "AffectiveProcessingCenter": ["MoodTrackerAgent", "HumanAwarenessAgent", "ToneDetector", "VoiceProfilingAgent", "EmpathyAgent", "EmotionSynthesisAgent"],
+        "RealTimeAudioPipeline": ["STTService", "TTSService", "AudioCapture", "StreamingSpeechRecognition", "WakeWordDetector"]
+      },
+      "config_lines": {
+        "emotion_agents": "main_pc_code/config/startup_config.yaml:548-584",
+        "audio_services": "main_pc_code/config/startup_config.yaml:454-502"
+      }
+    },
+    {
+      "id": "F003",
+      "type": "missing_dockerfiles",
+      "severity": "high",
+      "count": 40,
+      "required_services_without_docker": [
+        "ModelOpsCoordinator",
+        "AffectiveProcessingCenter",
+        "RealTimeAudioPipeline",
+        "MemoryFusionHub",
+        "ServiceRegistry",
+        "SystemDigitalTwin",
+        "UnifiedSystemAgent",
+        "CodeGenerator",
+        "PredictiveHealthMonitor",
+        "Executor",
+        "ChainOfThoughtAgent",
+        "FaceRecognitionAgent",
+        "LearningOpportunityDetector",
+        "LearningManager",
+        "ActiveLearningMonitor"
+      ]
+    },
+    {
+      "id": "F004",
+      "type": "security_vulnerability",
+      "severity": "critical",
+      "service": "SelfHealingSupervisor",
+      "vulnerabilities": [
+        {
+          "issue": "unrestricted_docker_socket_access",
+          "location": "services/self_healing_supervisor/supervisor.py:21",
+          "impact": "container_escape_possible"
+        },
+        {
+          "issue": "no_security_constraints",
+          "config_location": "main_pc_code/config/startup_config.yaml:144",
+          "missing": ["seccomp", "apparmor", "read_only_mount", "user_namespace"]
+        }
+      ]
+    },
+    {
+      "id": "F005",
+      "type": "undefined_environment",
+      "severity": "critical",
+      "variable": "PORT_OFFSET",
+      "occurrences": 469,
+      "files": {
+        "main_pc_code/config/startup_config.yaml": 123,
+        "pc2_code/config/startup_config.yaml": 61,
+        "other_yamls": 285
+      },
+      "impact": "All services fail to start without this variable"
+    },
+    {
+      "id": "F006",
+      "type": "missing_service",
+      "severity": "high",
+      "service": "UnifiedObservabilityCenter",
+      "machine": "mainpc",
+      "details": "Service defined for PC2 but missing from MainPC config despite being marked for both machines in plan.md"
+    },
+    {
+      "id": "F007",
+      "type": "inverted_logic",
+      "severity": "medium",
+      "feature": "RTAP_ENABLED",
+      "affected_services": ["AudioCapture", "FusedAudioPreprocessor", "StreamingInterruptHandler", "StreamingSpeechRecognition", "WakeWordDetector", "StreamingLanguageAnalyzer"],
+      "issue": "Services become required when RTAP is disabled instead of enabled",
+      "location": "main_pc_code/config/startup_config.yaml:475-527"
+    }
+  ],
+  "ports": {
+    "analysis_date": "2025-01-23",
+    "computed_with_offset_0": {
+      "mainpc_agents": 48,
+      "pc2_services": 23,
+      "total_services": 71,
+      "unique_service_ports": 68,
+      "unique_health_ports": 68
+    },
+    "conflicts": [
+      {"port": 5713, "type": "service", "services": ["MainPC:MemoryFusionHub", "PC2:MemoryFusionHub"]},
+      {"port": 6713, "type": "health", "services": ["MainPC:MemoryFusionHub", "PC2:MemoryFusionHub"]},
+      {"port": 5557, "type": "service", "services": ["MainPC:RealTimeAudioPipeline", "PC2:RealTimeAudioPipelinePC2"]},
+      {"port": 6557, "type": "health", "services": ["MainPC:RealTimeAudioPipeline", "PC2:RealTimeAudioPipelinePC2"]},
+      {"port": 7009, "type": "service", "services": ["MainPC:SelfHealingSupervisor", "PC2:SelfHealingSupervisor"]},
+      {"port": 9008, "type": "health", "services": ["MainPC:SelfHealingSupervisor", "PC2:SelfHealingSupervisor"]}
+    ],
+    "recommended_allocation": {
+      "mainpc": {"PORT_OFFSET": 0, "range": "5000-9999"},
+      "pc2": {"PORT_OFFSET": 1000, "range": "6000-10999"}
+    }
+  },
+  "actions": [
+    {
+      "phase": "P0",
+      "priority": 1,
+      "description": "Fix PORT_OFFSET undefined environment variable",
+      "owner_role": "DevOps",
+      "eta_days": 0.5,
+      "dependencies": [],
+      "blocking": ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P10"],
+      "artifacts": [
+        "scripts/fix_port_offset.sh",
+        ".env.mainpc",
+        ".env.pc2"
+      ],
+      "commands": [
+        "echo 'export PORT_OFFSET=0' | sudo tee -a /etc/environment",
+        "echo 'PORT_OFFSET=0' > .env.mainpc",
+        "echo 'PORT_OFFSET=1000' > .env.pc2",
+        "source /etc/environment"
+      ],
+      "validation": "env | grep PORT_OFFSET",
+      "risk_if_delayed": "100% service startup failure - CATASTROPHIC"
+    },
+    {
+      "phase": "P1",
+      "priority": 2,
+      "description": "Resolve cross-machine port conflicts",
+      "owner_role": "DevOps",
+      "eta_days": 0.5,
+      "dependencies": ["P0"],
+      "blocking": ["P3", "P5", "P7", "P10"],
+      "artifacts": [
+        "scripts/validate_ports_unique.py",
+        "port_allocation.json",
+        "config_patches/port_fixes.patch"
+      ],
+      "commands": [
+        "python3 scripts/validate_ports_unique.py main_pc_code/config/startup_config.yaml --offset=0",
+        "python3 scripts/validate_ports_unique.py pc2_code/config/startup_config.yaml --offset=1000",
+        "git diff > config_patches/port_fixes.patch",
+        "git add -A && git commit -m 'fix: resolve port conflicts between machines'"
+      ],
+      "validation": "python3 scripts/validate_ports_unique.py --check-all",
+      "risk_if_delayed": "Service binding failures on dual-machine setup"
+    },
+    {
+      "phase": "P2",
+      "priority": 3,
+      "description": "Generate missing Dockerfiles for required services",
+      "owner_role": "Platform",
+      "eta_days": 1.0,
+      "dependencies": ["P0"],
+      "blocking": ["P3", "P4", "P10"],
+      "artifacts": [
+        "scripts/gen_docker_stub.py",
+        "docker/services/",
+        "docker-compose.generated.yml"
+      ],
+      "commands": [
+        "mkdir -p docker/services",
+        "python3 scripts/gen_docker_stub.py --config main_pc_code/config/startup_config.yaml --output docker/services/mainpc/",
+        "python3 scripts/gen_docker_stub.py --config pc2_code/config/startup_config.yaml --output docker/services/pc2/",
+        "python3 scripts/gen_compose.py > docker-compose.generated.yml"
+      ],
+      "validation": "ls -la docker/services/*/Dockerfile | wc -l",
+      "risk_if_delayed": "Cannot containerize 60% of services"
+    },
+    {
+      "phase": "P3",
+      "priority": 4,
+      "description": "Consolidate standalone agents into hubs",
+      "owner_role": "Backend",
+      "eta_days": 2.0,
+      "dependencies": ["P1", "P2"],
+      "blocking": ["P6", "P8", "P10"],
+      "artifacts": [
+        "config_patches/consolidation.patch",
+        "hub_internal_modules/",
+        "tests/test_hub_consolidation.py"
+      ],
+      "commands": [
+        "python3 scripts/generate_consolidation_patch.py > config_patches/consolidation.patch",
+        "git apply config_patches/consolidation.patch",
+        "python3 scripts/disable_standalone_agents.py",
+        "pytest tests/test_hub_consolidation.py -v"
+      ],
+      "validation": "grep -c 'required: false' main_pc_code/config/startup_config.yaml",
+      "risk_if_delayed": "3x memory overhead, complex dependency graph"
+    },
+    {
+      "phase": "P4",
+      "priority": 5,
+      "description": "Secure SelfHealingSupervisor Docker access",
+      "owner_role": "Security",
+      "eta_days": 0.5,
+      "dependencies": ["P2"],
+      "blocking": ["P10"],
+      "artifacts": [
+        "docker/self_healing_supervisor.Dockerfile",
+        "security/seccomp_supervisor.json",
+        "security/apparmor_supervisor.profile"
+      ],
+      "commands": [
+        "cp templates/secure_supervisor.dockerfile docker/self_healing_supervisor.Dockerfile",
+        "cp templates/seccomp_docker_readonly.json security/seccomp_supervisor.json",
+        "docker build -f docker/self_healing_supervisor.Dockerfile -t ghcr.io/org/self-healer:secure .",
+        "docker run --rm --security-opt seccomp=security/seccomp_supervisor.json --security-opt apparmor=docker-default -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/org/self-healer:secure --test"
+      ],
+      "validation": "docker inspect ghcr.io/org/self-healer:secure | jq '.[] | .Config.User'",
+      "risk_if_delayed": "Container escape vulnerability, cluster compromise"
+    },
+    {
+      "phase": "P5",
+      "priority": 6,
+      "description": "Add UnifiedObservabilityCenter to MainPC config",
+      "owner_role": "Backend",
+      "eta_days": 0.5,
+      "dependencies": ["P1"],
+      "blocking": ["P8", "P10"],
+      "artifacts": [
+        "config_patches/uoc_mainpc.yaml",
+        "tests/test_uoc_mainpc.py"
+      ],
+      "commands": [
+        "cat > config_patches/uoc_mainpc.yaml << 'EOF'\nagent_groups:\n  observability:\n    UnifiedObservabilityCenter:\n      script_path: unified_observability_center/app.py\n      port: ${PORT_OFFSET}+9100\n      health_check_port: ${PORT_OFFSET}+9110\n      required: true\n      dependencies: []\nEOF",
+        "yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1)' main_pc_code/config/startup_config.yaml config_patches/uoc_mainpc.yaml > startup_config_new.yaml",
+        "mv startup_config_new.yaml main_pc_code/config/startup_config.yaml",
+        "pytest tests/test_uoc_mainpc.py"
+      ],
+      "validation": "grep -q UnifiedObservabilityCenter main_pc_code/config/startup_config.yaml && echo 'UOC added'",
+      "risk_if_delayed": "No observability on MainPC machine"
+    },
+    {
+      "phase": "P6",
+      "priority": 7,
+      "description": "Fix RTAP feature flag inverted logic",
+      "owner_role": "Backend",
+      "eta_days": 0.5,
+      "dependencies": ["P3"],
+      "blocking": ["P10"],
+      "artifacts": [
+        "config_patches/rtap_logic_fix.patch",
+        "tests/test_rtap_logic.py"
+      ],
+      "commands": [
+        "sed -i.bak 's/${RTAP_ENABLED:-false} == .false./${RTAP_ENABLED:-true} == .true./g' main_pc_code/config/startup_config.yaml",
+        "diff -u main_pc_code/config/startup_config.yaml.bak main_pc_code/config/startup_config.yaml > config_patches/rtap_logic_fix.patch || true",
+        "pytest tests/test_rtap_logic.py"
+      ],
+      "validation": "grep -c '${RTAP_ENABLED:-true} == .true.' main_pc_code/config/startup_config.yaml",
+      "risk_if_delayed": "Audio pipeline components incorrectly activated"
+    },
+    {
+      "phase": "P7",
+      "priority": 8,
+      "description": "Create CI validation workflows",
+      "owner_role": "DevOps",
+      "eta_days": 1.0,
+      "dependencies": ["P1"],
+      "blocking": [],
+      "artifacts": [
+        ".github/workflows/port_lint.yml",
+        ".github/workflows/sbom.yml",
+        ".github/workflows/trivy_scan.yml",
+        "scripts/validate_ports_unique.py"
+      ],
+      "commands": [
+        "mkdir -p .github/workflows",
+        "cp templates/workflows/port_lint.yml .github/workflows/",
+        "cp templates/workflows/sbom.yml .github/workflows/",
+        "cp templates/workflows/trivy_scan.yml .github/workflows/",
+        "chmod +x scripts/validate_ports_unique.py",
+        "git add .github/workflows/ scripts/ && git commit -m 'ci: add port validation, SBOM, and security scanning'"
+      ],
+      "validation": "ls -la .github/workflows/{port_lint,sbom,trivy_scan}.yml",
+      "risk_if_delayed": "Regressions go undetected, compliance issues"
+    },
+    {
+      "phase": "P8",
+      "priority": 9,
+      "description": "Update plan.md to reflect actual implementation",
+      "owner_role": "Architect",
+      "eta_days": 0.5,
+      "dependencies": ["P3", "P5"],
+      "blocking": [],
+      "artifacts": [
+        "docs/plan_reality_reconciliation.md",
+        "memory-bank/DOCUMENTS/plan_updated.md"
+      ],
+      "commands": [
+        "python3 scripts/audit_vs_plan.py --plan memory-bank/DOCUMENTS/plan.md --configs main_pc_code/config/startup_config.yaml,pc2_code/config/startup_config.yaml > docs/plan_reality_reconciliation.md",
+        "cp memory-bank/DOCUMENTS/plan.md memory-bank/DOCUMENTS/plan.md.backup",
+        "python3 scripts/update_plan.py < docs/plan_reality_reconciliation.md > memory-bank/DOCUMENTS/plan_updated.md",
+        "mv memory-bank/DOCUMENTS/plan_updated.md memory-bank/DOCUMENTS/plan.md",
+        "git add memory-bank/DOCUMENTS/plan.md && git commit -m 'docs: reconcile plan.md with implementation reality'"
+      ],
+      "validation": "diff -u memory-bank/DOCUMENTS/plan.md.backup memory-bank/DOCUMENTS/plan.md | head -20",
+      "risk_if_delayed": "Continued architecture drift"
+    },
+    {
+      "phase": "P9",
+      "priority": 10,
+      "description": "Upgrade PC2 NVIDIA drivers to 535+",
+      "owner_role": "Infrastructure",
+      "eta_days": 0.5,
+      "dependencies": [],
+      "blocking": [],
+      "artifacts": [
+        "runbooks/nvidia_driver_upgrade.md",
+        "scripts/check_cuda_compatibility.sh"
+      ],
+      "commands": [
+        "ssh pc2 'nvidia-smi | grep \"Driver Version\"'",
+        "ssh pc2 'sudo apt update && sudo apt install -y nvidia-driver-535'",
+        "ssh pc2 'sudo reboot'",
+        "sleep 60",
+        "ssh pc2 'nvidia-smi | grep \"Driver Version: 535\"'",
+        "ssh pc2 'python3 -c \"import torch; print(torch.cuda.is_available())\"'"
+      ],
+      "validation": "ssh pc2 'nvidia-smi && python3 -c \"import torch; print(torch.cuda.is_available())\"'",
+      "risk_if_delayed": "CUDA 12.1 incompatibility on PC2, GPU services fail"
+    },
+    {
+      "phase": "P10",
+      "priority": 11,
+      "description": "Full integration testing",
+      "owner_role": "QA",
+      "eta_days": 1.0,
+      "dependencies": ["P0", "P1", "P2", "P3", "P4", "P5", "P6"],
+      "blocking": [],
+      "artifacts": [
+        "test_reports/integration_final.json",
+        "test_reports/coverage.html",
+        "signoff.md"
+      ],
+      "commands": [
+        "docker-compose -f docker-compose.full.yml down -v",
+        "docker-compose -f docker-compose.full.yml build --parallel",
+        "docker-compose -f docker-compose.full.yml up -d",
+        "sleep 120",
+        "python3 scripts/health_check_all.py --timeout 300",
+        "pytest tests/integration/ --json-report --json-report-file=test_reports/integration_final.json --cov --cov-report=html:test_reports/coverage.html",
+        "python3 scripts/validate_all_services.py --strict",
+        "python3 scripts/generate_signoff.py > signoff.md"
+      ],
+      "validation": "cat test_reports/integration_final.json | jq '.summary.passed' && docker-compose -f docker-compose.full.yml ps",
+      "risk_if_delayed": "Undetected issues reach production"
+    }
+  ],
+  "scripts_to_create": [
+    {
+      "name": "scripts/fix_port_offset.sh",
+      "purpose": "Set PORT_OFFSET environment variable for both machines",
+      "language": "bash"
+    },
+    {
+      "name": "scripts/validate_ports_unique.py",
+      "purpose": "Validate port uniqueness across configurations",
+      "language": "python3"
+    },
+    {
+      "name": "scripts/gen_docker_stub.py",
+      "purpose": "Generate Dockerfile stubs for services",
+      "language": "python3"
+    },
+    {
+      "name": "scripts/disable_standalone_agents.py",
+      "purpose": "Mark consolidated agents as required:false",
+      "language": "python3"
+    },
+    {
+      "name": "scripts/audit_vs_plan.py",
+      "purpose": "Compare implementation against plan.md",
+      "language": "python3"
+    },
+    {
+      "name": "scripts/health_check_all.py",
+      "purpose": "Check health endpoints of all services",
+      "language": "python3"
+    }
+  ],
+  "success_criteria": {
+    "must_have": [
+      "All services start without port conflicts",
+      "PORT_OFFSET defined on both machines",
+      "No security vulnerabilities in SelfHealingSupervisor",
+      "All required services have Dockerfiles",
+      "Integration tests pass with >95% success rate"
+    ],
+    "should_have": [
+      "Consolidated agents disabled in configs",
+      "UnifiedObservabilityCenter on both machines",
+      "CI workflows for validation",
+      "Updated plan.md documentation"
+    ],
+    "nice_to_have": [
+      "NVIDIA driver 535+ on PC2",
+      "SBOM generation automated",
+      "Trivy scanning in CI"
+    ]
+  },
+  "rollback_plan": {
+    "trigger_conditions": [
+      "More than 10% services fail to start",
+      "Port conflicts persist after fixes",
+      "Security vulnerabilities introduced"
+    ],
+    "steps": [
+      "git stash",
+      "git checkout main",
+      "docker-compose down",
+      "git checkout -b rollback-$(date +%Y%m%d)",
+      "git revert HEAD~10..HEAD",
+      "Use backup configs from .bak files"
+    ]
+  }
+}
