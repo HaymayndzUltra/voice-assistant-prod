@@ -1,0 +1,171 @@
+{
+  "timestamp": "2025-08-13T17:18:22.521293",
+  "folders_analyzed": {
+    "unified_observability_center": {
+      "exists": true,
+      "has_dockerfile": true,
+      "has_entrypoint": false,
+      "has_docker_compose": false,
+      "has_requirements": true,
+      "main_entry": "app.py",
+      "consolidated_agents": []
+    },
+    "real_time_audio_pipeline": {
+      "exists": true,
+      "has_dockerfile": true,
+      "has_entrypoint": false,
+      "has_docker_compose": true,
+      "has_requirements": true,
+      "main_entry": "app.py",
+      "consolidated_agents": []
+    },
+    "model_ops_coordinator": {
+      "exists": true,
+      "has_dockerfile": true,
+      "has_entrypoint": false,
+      "has_docker_compose": false,
+      "has_requirements": true,
+      "main_entry": "app.py",
+      "consolidated_agents": []
+    },
+    "memory_fusion_hub": {
+      "exists": true,
+      "has_dockerfile": true,
+      "has_entrypoint": false,
+      "has_docker_compose": true,
+      "has_requirements": true,
+      "main_entry": "app.py",
+      "consolidated_agents": []
+    },
+    "affective_processing_center": {
+      "exists": true,
+      "has_dockerfile": true,
+      "has_entrypoint": false,
+      "has_docker_compose": true,
+      "has_requirements": true,
+      "main_entry": "app.py",
+      "consolidated_agents": []
+    }
+  },
+  "agents_consolidated": {},
+  "docker_status": {
+    "running_containers": [],
+    "images": []
+  },
+  "discrepancies": [
+    {
+      "severity": "MEDIUM",
+      "type": "MISSING_ENTRYPOINT",
+      "service": "unified_observability_center",
+      "message": "unified_observability_center missing entrypoint.sh"
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "MISSING_ENTRYPOINT",
+      "service": "real_time_audio_pipeline",
+      "message": "real_time_audio_pipeline missing entrypoint.sh"
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "MISSING_ENTRYPOINT",
+      "service": "model_ops_coordinator",
+      "message": "model_ops_coordinator missing entrypoint.sh"
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "MISSING_ENTRYPOINT",
+      "service": "memory_fusion_hub",
+      "message": "memory_fusion_hub missing entrypoint.sh"
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "MISSING_ENTRYPOINT",
+      "service": "affective_processing_center",
+      "message": "affective_processing_center missing entrypoint.sh"
+    },
+    {
+      "severity": "CRITICAL",
+      "type": "NO_CONTAINERS_RUNNING",
+      "message": "No Docker containers are currently running"
+    },
+    {
+      "severity": "HIGH",
+      "type": "NO_BASE_IMAGES",
+      "message": "No family-* or base-* Docker images found"
+    }
+  ],
+  "action_items": [
+    {
+      "priority": 1,
+      "action": "Start Docker daemon and verify Docker installation",
+      "command": "sudo systemctl start docker && docker version"
+    },
+    {
+      "priority": 2,
+      "action": "Build base Docker images according to blueprint",
+      "command": "bash build-images.sh"
+    },
+    {
+      "priority": 3,
+      "action": "Build unified_observability_center Docker image",
+      "command": "docker build -t unified_observability_center:latest ./unified_observability_center/"
+    },
+    {
+      "priority": 3,
+      "action": "Build real_time_audio_pipeline Docker image",
+      "command": "docker build -t real_time_audio_pipeline:latest ./real_time_audio_pipeline/"
+    },
+    {
+      "priority": 3,
+      "action": "Build model_ops_coordinator Docker image",
+      "command": "docker build -t model_ops_coordinator:latest ./model_ops_coordinator/"
+    },
+    {
+      "priority": 3,
+      "action": "Build memory_fusion_hub Docker image",
+      "command": "docker build -t memory_fusion_hub:latest ./memory_fusion_hub/"
+    },
+    {
+      "priority": 3,
+      "action": "Build affective_processing_center Docker image",
+      "command": "docker build -t affective_processing_center:latest ./affective_processing_center/"
+    },
+    {
+      "priority": 4,
+      "action": "Start all services using docker-compose",
+      "command": "docker-compose up -d"
+    }
+  ],
+  "compliance_score": 59.09,
+  "startup_configs": {
+    "main_pc_code": {
+      "groups": [
+        "foundation_services",
+        "utility_services",
+        "gpu_infrastructure",
+        "reasoning_services",
+        "vision_processing",
+        "learning_knowledge",
+        "language_processing",
+        "speech_services",
+        "audio_interface",
+        "emotion_system",
+        "translation_services",
+        "docker_groups",
+        "observability",
+        "core_hubs",
+        "vision_gpu",
+        "speech_gpu",
+        "learning_gpu",
+        "reasoning_gpu",
+        "language_stack",
+        "utility_cpu",
+        "gpu_scheduler",
+        "translation_proxy",
+        "observability_ui",
+        "self_healing"
+      ],
+      "total_agents": 73
+    }
+  }
+}
